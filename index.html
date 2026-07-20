@@ -2120,11 +2120,16 @@
             // Apply Effective Annual Tax Rate to the current month's profit for accurate provision
             const monthlyTaxProvision = monthlyNet > 0 ? (monthlyNet * globalEffectiveTaxRate) : 0;
 
-            document.getElementById('dash-monthly-gross').innerText = `£${monthlyGross.toFixed(2)}`;
-            document.getElementById('dash-monthly-overhead').innerText = `£${monthlyTotalOverhead.toFixed(2)}`;
-            document.getElementById('dash-monthly-net').innerText = `£${monthlyNet.toFixed(2)}`;
-            document.getElementById('dash-monthly-tax').innerText = `£${monthlyTaxProvision.toFixed(2)}`;
-            document.getElementById('dash-monthly-sessions').innerText = monthlySessionsCount;
+            const dashGrossEl = document.getElementById('dash-monthly-gross');
+            const dashOverheadEl = document.getElementById('dash-monthly-overhead');
+            const dashNetEl = document.getElementById('dash-monthly-net');
+            const dashTaxEl = document.getElementById('dash-monthly-tax');
+            const dashSessionsEl = document.getElementById('dash-monthly-sessions');
+            if (dashGrossEl) dashGrossEl.innerText = `£${monthlyGross.toFixed(2)}`;
+            if (dashOverheadEl) dashOverheadEl.innerText = `£${monthlyTotalOverhead.toFixed(2)}`;
+            if (dashNetEl) dashNetEl.innerText = `£${monthlyNet.toFixed(2)}`;
+            if (dashTaxEl) dashTaxEl.innerText = `£${monthlyTaxProvision.toFixed(2)}`;
+            if (dashSessionsEl) dashSessionsEl.innerText = monthlySessionsCount;
         }
 
         function changeDashboardYear(year) {
