@@ -2679,4 +2679,81 @@
                         <strong style="font-size: 0.95rem;">${formatTimeBySetting(apt.time)}</strong>
                         <span style="font-weight: 500; margin-left: 8px;">${apt.clientName}</span><br>
                         <span style="font-size:0.75rem; color: var(--text-muted);">${apt.location}</span>
+                    </div>
+                    <div class="appointment-strip-actions">${actionsHtml}</div>
+                `;
+                container.appendChild(strip);
+            });
+        }
+
+        function renderUpcomingAppointments() {
+            const container = document.getElementById('upcoming-appointments-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const todayStr = toLocalISODateString(new Date());
+            
+            const upcoming = (dataStore.appointments || [])
+                .filter(a => a.date >= todayStr && a.status === 'Scheduled')
+                .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
+            if (upcoming.length === 0) {
+                container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted); font-style:italic;">No upcoming scheduled sessions.</p>`;
+                return;
+            }
+
+            upcoming.forEach(apt => {
+                const item = document.createElement('div');
+                item.className = 'appointment-strip';
+                item.innerHTML = `
+                    <div class="appointment-strip-details">
+                        <span style="font-weight: 600; color: var(--accent);">${formatDateToUK(apt.date)} @ ${formatTimeBySetting(apt.time)}</span><br>
+                        <strong style="margin-right: 8px;">${apt.clientName}</strong>
+                        <span style="font-size:0.75rem; color: var(--text-muted);">(${apt.location})</span>
+                    </div>
+                    <div class="appointment-strip-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function completeAppointmentFromCalendar(aptId) {
+            const apt = dataStore.appointments.find(a => a.id === aptId);
+            if (!apt) return;
+            
+            // Mark completed
+            apt.status = 'Completed';
+            persist();
+            
+            // Cache the time for the logger
+            cachedSessionTime = apt.time;
+
+            // Redirect to profile to log notes
+            navigate('profile', apt.clientId);
+
+            setTimeout(() => {
+                setInputVal('session-date', apt.date);
+                setInputVal('session-location', apt.location);
                 
+                const notesArea = document.getElementById('session-notes');
+                if (notesArea) {
+                    notesArea.placeholder = `Add clinical notes for the completed appointment on ${formatDateToUK(apt.date)} at ${formatTimeBySetting(apt.time)}...`;
+                    notesArea.focus();
+                }
+            }, 150);
+        }
+
+        function cancelAppointment(aptId) {
+            showConfirm("Cancel Appointment", "Are you sure you want to cancel this appointment?", function() {
+                const apt = dataStore.appointments.find(a => a.id === aptId);
+                if (apt) { apt.status = 'Cancelled'; persist(); renderAppointmentsPage(); }
+            });
+        }
+    </script>
+    
+    <!-- Note: the previous Firebase cloud-sync stub (inactive outside its original sandbox) has been
+         replaced with real Google Drive sync — see the "Google Drive Sync" panel in Settings. -->
+</body>
+</html>
