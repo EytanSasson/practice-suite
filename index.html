@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
             --bg-app: #f8fafc;
@@ -933,6 +934,24 @@
                             </div>
                         </div>
                         <button class="btn" style="margin-bottom: 24px;" onclick="savePracticeSettings()">Update Core Settings</button>
+                    </div>
+
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Drive Sync</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                            Connect your Google account to back up your data to your own Google Drive. Nobody but you can access this file.
+                        </p>
+                        <div class="form-group">
+                            <label>Google OAuth Client ID</label>
+                            <input type="text" id="google-client-id" class="control" placeholder="e.g. 123456-abc.apps.googleusercontent.com">
+                        </div>
+                        <button class="btn btn-secondary" style="width: 100%; justify-content: center; margin-bottom: 16px;" onclick="saveGoogleClientId()">Save Client ID</button>
+                        <div id="google-status" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">⚪ Not connected</div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="initGoogleAuth()">Connect Google Account</button>
+                            <button class="btn" style="width: 100%; justify-content: center;" onclick="saveToGoogleDrive()">Save to Google Drive Now</button>
+                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="loadFromGoogleDrive()">Load Latest from Google Drive</button>
+                        </div>
                     </div>
 
                     <div class="panel" style="max-width: 600px;">
@@ -2223,6 +2242,130 @@
         function exportTaxYearArchive() {
              showAlert("Notice", "Tax export functionality is enabled in the full module.");
         }
+        // ---- Google Drive Sync ----
+        let googleTokenClient = null;
+        let googleAccessToken = null;
+        let driveFileId = localStorage.getItem('sasson_drive_file_id') || null;
+        const DRIVE_FILE_NAME = 'sasson_practice_suite_backup.json';
+
+        function updateGoogleStatus(connected) {
+            const el = document.getElementById('google-status');
+            if (!el) return;
+            el.textContent = connected ? '✅ Connected to Google Drive' : '⚪ Not connected';
+            el.style.color = connected ? 'var(--success)' : 'var(--text-muted)';
+        }
+
+        function saveGoogleClientId() {
+            const val = document.getElementById('google-client-id').value.trim();
+            if (!val) { showAlert('Missing Client ID', 'Please paste your Google OAuth Client ID first.'); return; }
+            localStorage.setItem('sasson_google_client_id', val);
+            showAlert('Saved', 'Client ID saved. Click "Connect Google Account" to sign in.');
+        }
+
+        function getGoogleClientId() {
+            return localStorage.getItem('sasson_google_client_id') || '';
+        }
+
+        function initGoogleAuth() {
+            const clientId = getGoogleClientId();
+            if (!clientId) { showAlert('Setup Required', 'Please paste and save your Google OAuth Client ID first.'); return; }
+            if (typeof google === 'undefined' || !google.accounts) {
+                showAlert('Error', 'Google sign-in script has not loaded. Check your internet connection and reload the page.');
+                return;
+            }
+            googleTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: clientId,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                callback: async (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        googleAccessToken = tokenResponse.access_token;
+                        updateGoogleStatus(true);
+                        await findExistingDriveFile();
+                        showAlert('Connected', 'Google Drive connected successfully.');
+                    }
+                },
+            });
+            googleTokenClient.requestAccessToken();
+        }
+
+        async function findExistingDriveFile() {
+            if (driveFileId) return; // already know the file
+            try {
+                const res = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=name%3D'${DRIVE_FILE_NAME}'+and+trashed%3Dfalse&fields=files(id,name)`,
+                    { headers: { 'Authorization': 'Bearer ' + googleAccessToken } }
+                );
+                const data = await res.json();
+                if (data.files && data.files.length > 0) {
+                    driveFileId = data.files[0].id;
+                    localStorage.setItem('sasson_drive_file_id', driveFileId);
+                }
+            } catch (err) { console.error('Drive lookup failed:', err); }
+        }
+
+        async function saveToGoogleDrive() {
+            if (!googleAccessToken) { showAlert('Not Connected', 'Please click "Connect Google Account" first.'); return; }
+            const fileContent = JSON.stringify(dataStore, null, 2);
+            try {
+                if (driveFileId) {
+                    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': 'Bearer ' + googleAccessToken, 'Content-Type': 'application/json' },
+                        body: fileContent
+                    });
+                    if (!res.ok) throw new Error('Update failed: ' + res.status);
+                } else {
+                    const boundary = 'sasson_boundary_' + Date.now();
+                    const metadata = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
+                    const multipartBody =
+                        `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+                        `--${boundary}\r\nContent-Type: application/json\r\n\r\n${fileContent}\r\n` +
+                        `--${boundary}--`;
+                    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + googleAccessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
+                        body: multipartBody
+                    });
+                    if (!res.ok) throw new Error('Create failed: ' + res.status);
+                    const result = await res.json();
+                    driveFileId = result.id;
+                    localStorage.setItem('sasson_drive_file_id', driveFileId);
+                }
+                showAlert('Saved to Drive', 'Your data has been backed up to Google Drive.');
+            } catch (err) {
+                console.error(err);
+                showAlert('Error', 'Failed to save to Google Drive. Try clicking "Connect Google Account" again (your session may have expired).');
+            }
+        }
+
+        async function loadFromGoogleDrive() {
+            if (!googleAccessToken) { showAlert('Not Connected', 'Please click "Connect Google Account" first.'); return; }
+            if (!driveFileId) { showAlert('No Backup Found', 'No saved file was found on Drive yet. Use "Save to Google Drive Now" first.'); return; }
+            try {
+                const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
+                    headers: { 'Authorization': 'Bearer ' + googleAccessToken }
+                });
+                if (!res.ok) throw new Error('Load failed: ' + res.status);
+                const parsed = await res.json();
+                showConfirm('Load from Drive', 'This will replace the data currently in this browser with the version saved on Google Drive. Continue?', function() {
+                    dataStore = parsed;
+                    persist();
+                    calculateAndRender();
+                    showAlert('Loaded', 'Data loaded from Google Drive.');
+                });
+            } catch (err) {
+                console.error(err);
+                showAlert('Error', 'Failed to load from Google Drive.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const idField = document.getElementById('google-client-id');
+            if (idField) idField.value = getGoogleClientId();
+            updateGoogleStatus(false);
+        });
+        // ---- End Google Drive Sync ----
+
         function exportDatabase() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataStore, null, 2));
             const dlAnchorElem = document.createElement('a');
@@ -2543,76 +2686,7 @@
         }
     </script>
     
-    <!-- Firebase Cloud Sync Infrastructure -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sasson-practice-suite';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        
-        if (firebaseConfig) {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-
-            window.persistToCloud = async function() {
-                if (!auth.currentUser) return;
-                const userId = auth.currentUser.uid;
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'crm_state', 'main');
-                    await setDoc(docRef, dataStore);
-                } catch (err) {
-                    console.error("Cloud sync save failed:", err);
-                }
-            };
-
-            async function loadFromCloud() {
-                if (!auth.currentUser) return;
-                const userId = auth.currentUser.uid;
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'crm_state', 'main');
-                    const snap = await getDoc(docRef);
-                    if (snap.exists()) {
-                        const cloudData = snap.data();
-                        if (cloudData && cloudData.clients) {
-                            dataStore = cloudData;
-                            localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore)); 
-                            calculateAndRender();
-                            if (activeProfileId) renderClientProfile();
-                        }
-                    }
-                } catch (err) {
-                    console.error("Cloud sync load failed:", err);
-                }
-            }
-
-            async function initAuth() {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (err) {
-                    console.error("Cloud Auth Init failed:", err);
-                }
-            }
-
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    const titleEl = document.getElementById('sidebar-brand-text');
-                    if (titleEl && !titleEl.innerText.includes('☁️')) {
-                        titleEl.innerText += ' ☁️';
-                        titleEl.title = "Cloud Sync Active (Secured to your Account)";
-                    }
-                    loadFromCloud();
-                }
-            });
-
-            initAuth();
-        }
-    </script>
+    <!-- Note: the previous Firebase cloud-sync stub (inactive outside its original sandbox) has been
+         replaced with real Google Drive sync — see the "Google Drive Sync" panel in Settings. -->
 </body>
 </html>
