@@ -247,9 +247,12 @@
             <div style="margin-bottom: 16px; color: var(--accent);">
                 <svg style="width: 48px; height: 48px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
             </div>
-            <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700;">Biometric Authentication Required</h3>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Verify your identity with Touch ID, Face ID, or your security key to unlock PracticeSuite.</p>
-            <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerPasskeyAuth()">Unlock with Passkey</button>
+            <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700;" id="passkey-modal-title">Biometric Authentication Required</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;" id="passkey-modal-desc">Verify your identity with Touch ID, Face ID, or your security key to unlock PracticeSuite.</p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerPasskeyAuth()">Unlock with Passkey</button>
+                <button id="btn-skip-passkey" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px; display: none;" onclick="skipPasskeyRegistration()">Set up later in Settings</button>
+            </div>
         </div>
     </div>
 
@@ -322,7 +325,7 @@
     <div id="timeout-modal" class="custom-modal-overlay">
         <div class="custom-modal-card" style="text-align: center;">
             <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700; color: var(--warning);">Are you still there?</h3>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">For your security, you will be automatically logged out in <strong id="timeout-countdown" style="color: var(--danger);">60</strong> seconds due to inactivity.</p>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">For your security, your workspace will lock in <strong id="timeout-countdown" style="color: var(--danger);">60</strong> seconds due to inactivity.</p>
             <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="stayLoggedIn()">Stay Logged In</button>
         </div>
     </div>
@@ -1589,6 +1592,7 @@
         function showLoginGate(message) {
             document.getElementById('app-root').style.display = 'none';
             document.getElementById('onboarding-overlay').style.display = 'none';
+            document.getElementById('passkey-lock-overlay').style.display = 'none';
             const gate = document.getElementById('login-gate-overlay');
             gate.style.display = 'flex';
             const msgEl = document.getElementById('login-gate-message');
@@ -1598,6 +1602,7 @@
         function showApp() {
             document.getElementById('login-gate-overlay').style.display = 'none';
             document.getElementById('onboarding-overlay').style.display = 'none';
+            document.getElementById('passkey-lock-overlay').style.display = 'none';
             document.getElementById('app-root').style.display = 'flex';
             applySettingsBranding();
             initPickers();
@@ -1608,6 +1613,7 @@
         function showCreateProfileForm() {
             document.getElementById('login-gate-overlay').style.display = 'none';
             document.getElementById('app-root').style.display = 'none';
+            document.getElementById('passkey-lock-overlay').style.display = 'none';
             document.getElementById('onboarding-overlay').style.display = 'flex';
             
             const localCur = Intl.NumberFormat().resolvedOptions().currency || 'GBP';
@@ -2554,7 +2560,7 @@
         let googleAccessToken = null;
         const DRIVE_FILE_NAME = 'sasson_practice_suite_backup.json';
         
-        // Idle Logout Timers
+        // Idle Lock Timers
         let idleLogoutTimer = null;
         let timeoutWarningTimer = null;
         let countdownInterval = null;
@@ -2637,10 +2643,10 @@
                     });
                     const parsed = await res.json();
                     await loadDriveDataIntoApp(parsed);
-                    showApp();
+                    checkPostLoginPasskeySetup();
                 } catch (err) {
                     console.error(err);
-                    if (practiceSettings) { showApp(); } else { showCreateProfileForm(); }
+                    if (practiceSettings) { checkPostLoginPasskeySetup(); } else { showCreateProfileForm(); }
                 }
             } else {
                 showCreateProfileForm();
@@ -2676,7 +2682,7 @@
 
         function continueOffline() {
             if (practiceSettings) {
-                showApp();
+                checkPostLoginPasskeySetup();
             } else {
                 showCreateProfileForm();
             }
@@ -2784,14 +2790,14 @@
         function isWebAuthnSupported() {
             return window.PublicKeyCredential !== undefined;
         }
-        
-        async function registerPasskey() {
+
+        async function registerPasskey(isMandatoryPrompt = false) {
             if (!isWebAuthnSupported()) {
-                return showAlert("Not Supported", "Your browser or device does not support WebAuthn Passkeys.");
+                if (!isMandatoryPrompt) showAlert("Not Supported", "Your browser or device does not support WebAuthn Passkeys.");
+                return false;
             }
 
             try {
-                // Generate a cryptographically secure random challenge
                 const challenge = new Uint8Array(32);
                 window.crypto.getRandomValues(challenge);
 
@@ -2816,7 +2822,6 @@
                     attestation: "none"
                 };
 
-                // Isolate the credential request from extension context pollution
                 const credential = await window.navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
                 
                 if (!credential) {
@@ -2827,20 +2832,36 @@
                 localStorage.setItem('practice_suite_credential_id', btoa(String.fromCharCode(...new Uint8Array(credential.rawId))));
 
                 updatePasskeyStatusUI(true);
-                showAlert("Success", "Hardware passkey registered successfully! This device is now secured.");
+                
+                if (isMandatoryPrompt) {
+                    document.getElementById('passkey-lock-overlay').style.display = 'none';
+                    showApp();
+                } else {
+                    showAlert("Success", "Hardware passkey registered successfully! This device is now secured.");
+                }
+                return true;
             } catch (err) {
                 console.error("Passkey registration error:", err);
-                // If it's a DOMException abort, the user canceled it
-                if (err.name === 'NotAllowedError') {
-                    showAlert("Cancelled", "Biometric registration was canceled or blocked by the environment.");
-                } else {
-                    showAlert("Registration Failed", err.message || "Passkey creation failed due to an extension or browser block.");
+                if (!isMandatoryPrompt) {
+                    if (err.name === 'NotAllowedError') {
+                        showAlert("Cancelled", "Biometric registration was canceled or blocked by the environment.");
+                    } else {
+                        showAlert("Registration Failed", err.message || "Passkey creation failed due to an extension or browser block.");
+                    }
                 }
+                return false;
             }
         }
 
         async function triggerPasskeyAuth() {
             if (!isWebAuthnSupported()) return;
+
+            // Check if we are in the mandatory post-login registration flow
+            const isMandatoryReg = document.getElementById('passkey-lock-overlay').dataset.mode === 'register';
+            if (isMandatoryReg) {
+                const success = await registerPasskey(true);
+                if (success) return;
+            }
 
             try {
                 const challenge = new Uint8Array(32);
@@ -2860,11 +2881,15 @@
                     userVerification: "required"
                 };
 
-                const assertion = await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
+                const assertion = await window.navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
                 
                 if (assertion) {
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
-                    attemptSilentReconnect();
+                    // Reset idle timer upon successful unlock
+                    resetIdleLogoutTimer();
+                    if (document.getElementById('app-root').style.display === 'none') {
+                        showApp();
+                    }
                 }
             } catch (err) {
                 console.error("Passkey auth error:", err);
@@ -2888,7 +2913,27 @@
             }
         }
 
-        // --- IDLE TIMEOUT LOGIC ---
+        function checkPostLoginPasskeySetup() {
+            const hasPasskey = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
+            if (!hasPasskey && isWebAuthnSupported()) {
+                // Prompt user to register passkey right after login
+                const overlay = document.getElementById('passkey-lock-overlay');
+                overlay.dataset.mode = 'register';
+                document.getElementById('passkey-modal-title').innerText = "Secure Your Workspace";
+                document.getElementById('passkey-modal-desc').innerText = "Set up a biometric passkey (Touch ID, Face ID, or Windows Hello) to protect your patient records on this device.";
+                document.getElementById('passkey-lock-overlay').style.display = 'flex';
+                document.getElementById('btn-skip-passkey').style.display = 'block';
+            } else {
+                showApp();
+            }
+        }
+
+        function skipPasskeyRegistration() {
+            document.getElementById('passkey-lock-overlay').style.display = 'none';
+            showApp();
+        }
+
+        // --- IDLE TIMEOUT LOCK LOGIC (Replaces Logout with Passkey Lock) ---
         function resetIdleLogoutTimer() {
             clearTimeout(idleLogoutTimer);
             clearTimeout(timeoutWarningTimer);
@@ -2916,9 +2961,28 @@
 
             idleLogoutTimer = setTimeout(() => {
                 document.getElementById('timeout-modal').classList.remove('active');
-                signOutGoogle(true);
-                showLoginGate('You were signed out due to 5 minutes of inactivity.');
+                lockWorkspaceForInactivity();
             }, 60 * 1000);
+        }
+
+        function lockWorkspaceForInactivity() {
+            clearTimeout(idleLogoutTimer);
+            clearTimeout(timeoutWarningTimer);
+            clearInterval(countdownInterval);
+
+            // Hide workspace and show passkey lock screen without destroying Google Session
+            document.getElementById('app-root').style.display = 'none';
+            const overlay = document.getElementById('passkey-lock-overlay');
+            overlay.dataset.mode = 'auth';
+            document.getElementById('passkey-modal-title').innerText = "Workspace Locked";
+            document.getElementById('passkey-modal-desc').innerText = "Locked due to inactivity. Verify your identity with Touch ID, Face ID, or Windows Hello to continue.";
+            document.getElementById('btn-skip-passkey').style.display = 'none';
+            overlay.style.display = 'flex';
+
+            // Auto-trigger prompt if passkey exists
+            if (localStorage.getItem('practice_suite_passkey_enabled') === 'true') {
+                setTimeout(() => triggerPasskeyAuth(), 300);
+            }
         }
 
         function stayLoggedIn() {
@@ -2970,8 +3034,14 @@
             // Intercept app loading immediately if a passkey lock is enabled
             if (localStorage.getItem('practice_suite_passkey_enabled') === 'true') {
                 document.getElementById('app-root').style.display = 'none';
-                document.getElementById('passkey-lock-overlay').style.display = 'flex';
+                const overlay = document.getElementById('passkey-lock-overlay');
+                overlay.dataset.mode = 'auth';
+                document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
+                document.getElementById('passkey-modal-desc').innerText = "Verify your identity with Touch ID, Face ID, or your security key to unlock PracticeSuite.";
+                document.getElementById('btn-skip-passkey').style.display = 'none';
+                overlay.style.display = 'flex';
                 updatePasskeyStatusUI(true);
+                setTimeout(() => triggerPasskeyAuth(), 300);
                 return;
             }
 
