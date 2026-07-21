@@ -3084,24 +3084,37 @@
         function triggerClearAllUserData() {
             showConfirm(
                 "DANGER: Clear All User Data", 
-                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, and settings from this browser storage. This cannot be undone!", 
-                () => {
-                    // Clear all local storage keys related to the app
-                    localStorage.removeItem('sasson_practice_secure_store');
-                    localStorage.removeItem('sasson_practice_settings');
-                    localStorage.removeItem('practice_suite_session_id');
-                    localStorage.removeItem('practice_suite_passkey_enabled');
-                    localStorage.removeItem('practice_suite_credential_id');
+                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings from this device. This cannot be undone!", 
+                async () => {
+                    try {
+                        // 1. Wipe all localStorage items
+                        localStorage.clear();
 
-                    // Reset variables
-                    dataStore = { clients: [], expenses: [], categories: [] };
-                    practiceSettings = null;
+                        // 2. Wipe IndexedDB document stores (Contracts and Receipts)
+                        const dbReq = indexedDB.deleteDatabase(DB_NAME);
+                        
+                        dbReq.onsuccess = function() {
+                            console.log("IndexedDB successfully deleted.");
+                        };
+                        dbReq.onerror = function() {
+                            console.error("Error deleting IndexedDB.");
+                        };
 
-                    showAlert("Data Cleared", "All local application data has been successfully wiped. The page will now reload.", () => {
-                        window.location.reload();
-                    });
+                        // 3. Reset global memory store variables
+                        dataStore = { clients: [], expenses: [], categories: [], appointments: [] };
+                        practiceSettings = null;
+                        googleAccessToken = null;
+                        driveFileId = null;
+
+                        showAlert("Data Cleared", "All application data and files have been successfully wiped. The page will now reload.", () => {
+                            window.location.reload(true);
+                        });
+                    } catch (err) {
+                        console.error("Clear data error:", err);
+                        window.location.reload(true);
+                    }
                 }, 
-                true // Is destructive action (red button)
+                true // Destructive red confirmation button
             );
         }
         
