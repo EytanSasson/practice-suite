@@ -3085,34 +3085,25 @@
             showConfirm(
                 "DANGER: Clear All User Data", 
                 "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings from this device. This cannot be undone!", 
-                async () => {
-                    try {
-                        // 1. Wipe all localStorage items
-                        localStorage.clear();
+                () => {
+                    // 1. Wipe all localStorage items immediately
+                    localStorage.clear();
 
-                        // 2. Wipe IndexedDB document stores (Contracts and Receipts)
-                        const dbReq = indexedDB.deleteDatabase(DB_NAME);
-                        
-                        dbReq.onsuccess = function() {
-                            console.log("IndexedDB successfully deleted.");
-                        };
-                        dbReq.onerror = function() {
-                            console.error("Error deleting IndexedDB.");
-                        };
+                    // 2. Wipe IndexedDB and wait for it to finish before reloading
+                    const dbReq = indexedDB.deleteDatabase(DB_NAME);
+                    
+                    dbReq.onsuccess = function() {
+                        window.location.href = window.location.pathname; // Hard reload without cache
+                    };
+                    
+                    dbReq.onerror = function() {
+                        window.location.href = window.location.pathname;
+                    };
 
-                        // 3. Reset global memory store variables
-                        dataStore = { clients: [], expenses: [], categories: [], appointments: [] };
-                        practiceSettings = null;
-                        googleAccessToken = null;
-                        driveFileId = null;
-
-                        showAlert("Data Cleared", "All application data and files have been successfully wiped. The page will now reload.", () => {
-                            window.location.reload(true);
-                        });
-                    } catch (err) {
-                        console.error("Clear data error:", err);
-                        window.location.reload(true);
-                    }
+                    dbReq.onblocked = function() {
+                        // Forces reload even if connection was open
+                        window.location.href = window.location.pathname;
+                    };
                 }, 
                 true // Destructive red confirmation button
             );
