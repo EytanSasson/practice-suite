@@ -32,7 +32,6 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         
-        /* Fixed mobile height strategy */
         body { background-color: var(--bg-app); color: var(--text-main); margin: 0; padding: 0; position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; }
         .app-root { display: flex; height: 100%; width: 100%; overflow: hidden; }
 
@@ -236,9 +235,15 @@
             .form-layout { grid-template-columns: 1fr; }
             .form-group.full-width { grid-column: span 1; }
             .calendar-cell { min-height: 60px; }
-            .flatpickr-calendar { width: 94vw !important; max-width: 340px; }
-            .flatpickr-time { height: 64px !important; }
-            .flatpickr-time input { font-size: 1.3rem !important; }
+            
+            /* Responsive Cards Mobile Table Override to completely eliminate horizontal scrolling */
+            table { display: block; width: 100%; border-collapse: collapse; }
+            thead { display: none; }
+            tbody, tr, td { display: block; width: 100%; }
+            tr { margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; background: #fff; padding: 8px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+            td { text-align: right; padding: 12px 16px; border: none; border-bottom: 1px solid var(--border); position: relative; font-size: 0.95rem; }
+            td:last-child { border-bottom: none; }
+            td::before { content: attr(data-label); position: absolute; left: 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; width: 40%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         }
         @media (min-width: 769px) {
             .mobile-nav-toggle { display: none; }
@@ -328,7 +333,7 @@
                 border: 1px solid var(--border);"></div>
                 
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <button class="btn" id="btn-ai-summarize" onclick="summarizeCurrentNote()" style="display: none; background-color: #8b5cf6; border: none; color: white;">
+                <button class="btn" id="btn-ai-summarize" onclick="summarizeCurrentNote()" style="display: inline-flex; background-color: #8b5cf6; border: none; color: white;">
                     <svg style="width: 16px; height: 16px; margin-right: 6px; vertical-align: text-bottom;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     Summarize (On-Device AI)
                 </button>
@@ -429,7 +434,7 @@
     </div>
 
     <!-- LOGIN GATE -->
-    <div id="login-gate-overlay">
+    <div id="login-gate-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 16px;">
         <div class="onboarding-card splash-fade" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; max-width: 440px; width: 100%;">
             <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 24px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="300" height="90" style="display: block; margin: 0 auto;">
@@ -456,7 +461,7 @@
     </div>
 
     <!-- ONBOARDING MODAL OVERLAY -->
-    <div id="onboarding-overlay">
+    <div id="onboarding-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px;">
         <div class="onboarding-card">
             <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">Setup Your Practice</h2>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">Welcome to your Practice Management Suite. Please configure your initial workspace settings to get started.</p>
@@ -835,7 +840,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Amount *</label>
-                                        <input type="number" id="exp-amount" class="control" value="0.00" step="0.01" min="0">
+                                        <input type="number" id="exp-amount" class="control" placeholder="0.00" step="0.01" min="0">
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -1316,15 +1321,15 @@
             }
             const is24h = !practiceSettings || practiceSettings.timeFormat !== '12h';
             
-            // disableMobile is set to FALSE so native date wheels work flawlessly on mobile
+            // disableMobile is strictly TRUE so the custom UI is used, preventing cross-device mobile bug
             const dateInputs = document.querySelectorAll('input[type="date"]');
             dateInputs.forEach(el => {
-                const fp = flatpickr(el, { altInput: true, altFormat: "d/m/Y", dateFormat: "Y-m-d", disableMobile: false });
+                const fp = flatpickr(el, { altInput: true, altFormat: "d/m/Y", dateFormat: "Y-m-d", disableMobile: true });
                 fpInstances.push(fp);
             });
             const timeInputs = document.querySelectorAll('input[type="time"]');
             timeInputs.forEach(el => {
-                const fp = flatpickr(el, { enableTime: true, noCalendar: true, altInput: true, altFormat: is24h ? "H:i" : "h:i K", dateFormat: "H:i", time_24hr: is24h, disableMobile: false });
+                const fp = flatpickr(el, { enableTime: true, noCalendar: true, altInput: true, altFormat: is24h ? "H:i" : "h:i K", dateFormat: "H:i", time_24hr: is24h, disableMobile: true });
                 fpInstances.push(fp);
             });
         }
@@ -1369,12 +1374,8 @@
             
             const btn = document.getElementById('btn-ai-summarize');
             if (btn) {
-                if ('Summarizer' in self || ('ai' in self && 'summarizer' in self.ai)) {
-                    btn.style.display = 'inline-flex';
-                    btn.disabled = false;
-                } else {
-                    btn.style.display = 'none';
-                }
+                btn.style.display = 'inline-flex';
+                btn.disabled = false;
             }
 
             document.getElementById('view-note-modal').classList.add('active');
@@ -1390,7 +1391,12 @@
             const btn = document.getElementById('btn-ai-summarize');
             
             let api = ('Summarizer' in self) ? self.Summarizer : (self.ai ? self.ai.summarizer : null);
-            if (!api) return;
+            
+            if (!api) {
+                summaryBox.style.display = 'block';
+                summaryBox.innerHTML = '<span style="color: var(--warning); font-weight: 600;">On-Device AI is not currently supported on this browser or device. Try Chrome Desktop.</span>';
+                return;
+            }
 
             summaryBox.style.display = 'block';
             summaryBox.innerHTML = '<span style="color: #6d28d9;"><em>Securely analyzing notes on-device...</em></span>';
@@ -1409,7 +1415,7 @@
                 }
 
                 if (!isAvailable) {
-                    throw new Error("The built-in AI model is unavailable.");
+                    throw new Error("The built-in AI model is currently unavailable on this device.");
                 }
 
                 const summarizer = await api.create(options);
@@ -2275,7 +2281,7 @@
         function clearExpenseForm() {
             setInputVal('exp-date', toLocalISODateString(new Date()));
             document.getElementById('exp-description').value = '';
-            document.getElementById('exp-amount').value = '0.00';
+            document.getElementById('exp-amount').value = '';
             setInputVal('exp-repeat-until', '');
             document.getElementById('exp-repeat').value = 'none';
             toggleExpRepeatUntil();
@@ -2312,12 +2318,12 @@
                 const tr = document.createElement('tr');
                 const receiptUi = exp.hasReceipt ? `<button class="btn btn-secondary btn-sm" onclick="viewDoc('${STORE_RECEIPTS}', '${exp.id}')">View</button>` : 'None';
                 tr.innerHTML = `
-                    <td><strong>${formatDateToUK(exp.date)}</strong></td>
-                    <td>${exp.description}</td>
-                    <td><span class="badge badge-closed">${exp.category}</span></td>
-                    <td style="color: var(--danger); font-weight: 600;">-${cur}${exp.amount.toFixed(2)}</td>
-                    <td>${receiptUi}</td>
-                    <td><button class="btn btn-danger btn-sm" onclick="deleteExpense('${exp.id}')">Del</button></td>
+                    <td data-label="Date"><strong>${formatDateToUK(exp.date)}</strong></td>
+                    <td data-label="Description">${exp.description}</td>
+                    <td data-label="Category"><span class="badge badge-closed">${exp.category}</span></td>
+                    <td data-label="Amount" style="color: var(--danger); font-weight: 600;">-${cur}${exp.amount.toFixed(2)}</td>
+                    <td data-label="Receipt">${receiptUi}</td>
+                    <td data-label="Action"><button class="btn btn-danger btn-sm" onclick="deleteExpense('${exp.id}')">Del</button></td>
                 `;
                 list.appendChild(tr);
             });
@@ -2593,14 +2599,14 @@
                     shownDashboardCount++;
                     const row = document.createElement('tr');
                     row.className = 'clickable'; row.onclick = () => navigate('profile', client.id);
-                    row.innerHTML = `<td><strong>${client.name}</strong></td><td>${formatDateToUK(client.startDate)}</td><td>${cur}${client.rate.toFixed(2)}</td><td>${formatDateToUK(lastSessionDate)}</td><td style="color:var(--success); font-weight:600;">${cur}${(gross - clientRoomCost).toFixed(2)}</td>`;
+                    row.innerHTML = `<td data-label="Client Name"><strong>${client.name}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Rate / Hr">${cur}${client.rate.toFixed(2)}</td><td data-label="Last Session">${formatDateToUK(lastSessionDate)}</td><td data-label="Net Yield" style="color:var(--success); font-weight:600;">${cur}${(gross - clientRoomCost).toFixed(2)}</td>`;
                     dashTable.appendChild(row);
                 }
                 
                 if (dirTable && (currentDirectoryFilter === 'All' || currentDirectoryFilter === client.status)) {
                     const dRow = document.createElement('tr');
                     dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
-                    dRow.innerHTML = `<td><strong>${client.name}</strong></td><td>${formatDateToUK(client.startDate)}</td><td>${cur}${client.rate.toFixed(2)}</td><td>${client.phone}</td><td><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${client.status}</span></td>`;
+                    dRow.innerHTML = `<td data-label="Client Name"><strong>${client.name}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${client.phone}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${client.status}</span></td>`;
                     dirTable.appendChild(dRow);
                 }
             });
@@ -3141,7 +3147,7 @@
             showApp();
         }
 
-        // --- IDLE TIMEOUT LOCK LOGIC (NO BACKGROUND INSTA-LOCK) ---
+        // --- IDLE TIMEOUT LOCK LOGIC ---
         function resetIdleLogoutTimer() {
             lastActivityTime = Date.now();
             document.getElementById('timeout-modal').classList.remove('active');
