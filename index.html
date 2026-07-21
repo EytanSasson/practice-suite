@@ -511,19 +511,6 @@
                 </div>
             </div>
             <button class="btn" style="width: 100%; margin-top: 12px; justify-content: center; padding: 12px;" onclick="completeOnboarding()">Initialize Practice Portal</button>
-            
-            <div style="margin-top: 24px; display: flex; align-items: center; gap: 12px;">
-                <div style="flex: 1; height: 1px; background-color: var(--border);"></div>
-                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">OR</span>
-                <div style="flex: 1; height: 1px; background-color: var(--border);"></div>
-            </div>
-
-            <div style="margin-top: 20px;">
-                <input type="file" id="ob-import-file" style="display: none;" accept=".json" onchange="importDatabaseFromOnboarding(event)">
-                <button class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px;" onclick="document.getElementById('ob-import-file').click()">
-                    Restore from Local Backup (.json)
-                </button>
-            </div>
         </div>
     </div>
 
@@ -1135,7 +1122,7 @@
                     <!-- GOOGLE ACCOUNT PANEL -->
                     <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
-                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #14532d; margin-bottom: 0;">Google Account Sync</h3>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #14532d; margin-bottom: 0;">Google Account</h3>
                             <div id="google-status" style="font-size: 0.9rem; font-weight: 600;">⚪ Not connected</div>
                         </div>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
@@ -1148,19 +1135,13 @@
                     </div>
 
                     <div class="panel" style="max-width: 600px;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Backup & Data Synchronization</h3>
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Backup & Data Archive</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
                             Because this software operates entirely locally inside your browser, download a data backup file periodically. We recommend downloading the complete ZIP backup archive.
                         </p>
                         <div style="display: flex; flex-direction: column; gap: 16px;">
                             <div><button class="btn" style="width: 100%; justify-content: center;" onclick="exportDatabase()">Download CRM Database Backup (.json)</button></div>
                             <div><button class="btn btn-charcoal" style="width: 100%; justify-content: center; background-color: #0f172a;" onclick="exportAllAsZip()">Download Complete ZIP Document Archive (.zip)</button></div>
-                            <hr style="border:0; border-top: 1px solid var(--border);">
-                            <div>
-                                <label style="margin-bottom: 8px; font-weight: 600; display: block;">Restore Database from Backup File</label>
-                                <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importDatabase(event)">
-                                <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="document.getElementById('import-file').click()">Select & Import Backup (.json)</button>
-                            </div>
                         </div>
                     </div>
 
@@ -1453,31 +1434,6 @@
             if (confirmed && callback) callback(value);
         }
 
-        function importDatabaseFromOnboarding(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (parsed && Array.isArray(parsed.clients)) {
-                        dataStore = parsed; 
-                        persist(); 
-                        if (!practiceSettings) {
-                            practiceSettings = { practiceName: "Imported Practice", defaultRate: 60, defaultOfficeCost: 10, timeFormat: '24h', reportingPeriodStartMonth: 4, reportingPeriodStartDay: 6, currency: '£' };
-                            localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
-                        }
-                        showApp();
-                        showAlert('Import Completed', 'Database loaded successfully.');
-                    } else {
-                        showAlert('Error', 'Invalid file format. Could not find client data.');
-                    }
-                } catch(err) { showAlert('Error', 'Invalid JSON file.'); }
-                event.target.value = '';
-            };
-            reader.readAsText(file);
-        }
-
         function triggerAddCategoryModal() {
             showPrompt("New Expense Category", "Enter a unique category name for tracking practice overheads (e.g. Rent, Supervision):", function(val) {
                 if (!val) return;
@@ -1654,13 +1610,18 @@
 
             practiceSettings = { practiceName: name, defaultRate: rate, defaultOfficeCost: roomCost, timeFormat: timeFormat, currency: currency, reportingPeriodStartMonth: reportingMonth, reportingPeriodStartDay: reportingDay };
             localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
-            if (dataStore.categories.length === 0) {
+            
+            if (!dataStore.categories || dataStore.categories.length === 0) {
                 dataStore.categories = ['Rent', 'Supervision', 'Training & CPD', 'Travel', 'Insurance', 'Membership Fees', 'Other'];
                 localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
                 populateCategoryDropdown();
             }
             
-            if (localStorage.getItem('practice_suite_session_id')) saveToGoogleDrive(true);
+            document.getElementById('onboarding-overlay').style.display = 'none';
+            
+            if (localStorage.getItem('practice_suite_session_id')) {
+                saveToGoogleDrive(true);
+            }
             checkPostLoginPasskeySetup();
         }
 
@@ -2994,6 +2955,9 @@
         }
 
         function checkPostLoginPasskeySetup() {
+            // Immediately hide the onboarding overlay to prevent z-index conflicts
+            document.getElementById('onboarding-overlay').style.display = 'none';
+            
             const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
             const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
 
@@ -3086,23 +3050,6 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataStore, null, 2));
             const dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", `practice_backup.json`); dlAnchorElem.click();
-        }
-        function importDatabase(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (parsed && Array.isArray(parsed.clients)) {
-                        dataStore = parsed; persist(); showAlert('Import Completed', 'Database loaded successfully.'); navigate('dashboard');
-                    } else {
-                        showAlert('Error', 'Invalid file format. Could not find client data.');
-                    }
-                } catch(err) { showAlert('Error', 'Invalid JSON file.'); }
-                event.target.value = ''; 
-            };
-            reader.readAsText(file);
         }
 
         // --- CLEAR ALL USER DATA / FACTORY RESET ---
