@@ -810,7 +810,7 @@
                                             <option value="monthly">Monthly</option>
                                         </select>
                                     </div>
-                                    <div class="form-group" id="exp-repeat-until-group" style="display: none;">
+                                    <div class="form-group" id="repeat-until-group" style="display: none;">
                                         <label>Repeat Until Date *</label>
                                         <input type="date" id="exp-repeat-until" class="control date-picker-ui">
                                     </div>
@@ -1283,7 +1283,6 @@
             
             const btn = document.getElementById('btn-ai-summarize');
             if (btn) {
-                // Feature detection for Chrome's Built-in AI Summarizer
                 if ('Summarizer' in self || ('ai' in self && 'summarizer' in self.ai)) {
                     btn.style.display = 'inline-flex';
                     btn.disabled = false;
@@ -1304,19 +1303,17 @@
             const summaryBox = document.getElementById('view-note-summary');
             const btn = document.getElementById('btn-ai-summarize');
             
-            // Re-check API capability dynamically 
             let api = ('Summarizer' in self) ? self.Summarizer : (self.ai ? self.ai.summarizer : null);
             if (!api) return;
 
             summaryBox.style.display = 'block';
-            summaryBox.innerHTML = '<span style="color: #6d28d9;"><em>Securely analyzing notes on-device... (If this is the first time, Chrome may take a moment to prepare the AI model).</em></span>';
+            summaryBox.innerHTML = '<span style="color: #6d28d9;"><em>Securely analyzing notes on-device...</em></span>';
             btn.disabled = true;
 
             try {
                 const options = { type: 'key-points', format: 'plain-text', length: 'medium' };
                 let isAvailable = true;
 
-                // Handle old experimental syntax versus the modern Chrome 138+ standard
                 if (api.availability) {
                     const avail = await api.availability(options);
                     if (avail === 'no' || avail === 'unavailable') isAvailable = false;
@@ -1326,13 +1323,12 @@
                 }
 
                 if (!isAvailable) {
-                    throw new Error("The built-in AI model is unavailable. Your device may not meet the hardware requirements, or the model hasn't downloaded yet.");
+                    throw new Error("The built-in AI model is unavailable.");
                 }
 
                 const summarizer = await api.create(options);
                 const summary = await summarizer.summarize(currentViewedNoteText);
                 
-                // Format basic Markdown bullet points or bolding into HTML
                 const formattedSummary = summary
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/^\* (.*)/gm, '<li style="margin-left: 20px;">$1</li>');
@@ -1613,7 +1609,7 @@
                 populateCategoryDropdown();
             }
             showApp();
-            if (googleAccessToken) saveToGoogleDrive(true);
+            if (localStorage.getItem('practice_suite_session_id')) saveToGoogleDrive(true);
         }
 
         function applySettingsBranding() {
@@ -2526,7 +2522,7 @@
              showAlert("Notice", "Tax export functionality is enabled in the full module.");
         }
         
-        // --- SECURE BACKEND GATEWAY SYNC ---
+        // --- SECURE TOKEN-BASED GATEWAY SYNC ---
         const BACKEND_URL = 'https://practice-suite.eyt-sasn.workers.dev';
         let driveFileId = null; 
         let driveAutoSyncTimer = null;
@@ -2553,14 +2549,31 @@
         }
 
         function gateGoogleSignIn() {
-            // Redirect strictly to the Cloudflare Worker login endpoint
             window.location.href = BACKEND_URL + "/login";
         }
 
         async function attemptSilentReconnect() {
+            // Check for session_id passed via URL fragment after login redirect
+            if (window.location.hash.includes('session_id=')) {
+                const hashParts = window.location.hash.replace('#', '').split('&');
+                for (let part of hashParts) {
+                    if (part.startsWith('session_id=')) {
+                        const sessionId = part.split('=')[1];
+                        localStorage.setItem('practice_suite_session_id', sessionId);
+                    }
+                }
+                // Clean the URL hash
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            const sessionId = localStorage.getItem('practice_suite_session_id');
+            if (!sessionId) {
+                showLoginGate();
+                return;
+            }
+
             try {
-                // Securely request a short-lived token from our backend using the HttpOnly cookie
-                const res = await fetch(BACKEND_URL + "/get-token", { credentials: "include" });
+                const res = await fetch(BACKEND_URL + `/get-token?session_id=${sessionId}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.access_token) {
@@ -2570,6 +2583,7 @@
                         showLoginGate();
                     }
                 } else {
+                    localStorage.removeItem('practice_suite_session_id');
                     showLoginGate();
                 }
             } catch (err) {
@@ -2577,10 +2591,11 @@
             }
         }
 
-        // Helper function to guarantee an active token before saving
         async function refreshAndGetToken() {
+            const sessionId = localStorage.getItem('practice_suite_session_id');
+            if (!sessionId) return null;
             try {
-                const res = await fetch(BACKEND_URL + "/get-token", { credentials: "include" });
+                const res = await fetch(BACKEND_URL + `/get-token?session_id=${sessionId}`);
                 if (res.ok) {
                     const data = await res.json();
                     return data.access_token;
@@ -2717,16 +2732,22 @@
         }
         
         function signOutGoogle(silent) {
+            const sessionId = localStorage.getItem('practice_suite_session_id');
+            if (sessionId) {
+                fetch(BACKEND_URL + `/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + sessionId }
+                }).catch(() => {});
+            }
+
             googleAccessToken = null;
             driveFileId = null;
+            localStorage.removeItem('practice_suite_session_id');
             clearTimeout(idleLogoutTimer);
             clearTimeout(timeoutWarningTimer);
             clearInterval(countdownInterval);
             updateGoogleStatus(false);
             setSyncIndicator('');
-            
-            // Call backend to destroy the secure cookie
-            fetch(BACKEND_URL + "/logout", { credentials: "include" }).catch(() => {});
 
             if (!silent) {
                 showAlert('Disconnected', 'Your session has been securely destroyed.');
@@ -2734,7 +2755,6 @@
             }
         }
 
-        // Hook auto-sync into your existing persist method
         window.persistToCloud = function() { scheduleAutoDriveSync(); };
 
         // --- IDLE TIMEOUT LOGIC ---
