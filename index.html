@@ -9,9 +9,8 @@
     <!-- Flatpickr for custom Date/Time formats -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <style>
         :root {
             --bg-app: #f8fafc;
@@ -1103,7 +1102,7 @@
                         <div id="google-status" style="font-size: 0.9rem; margin-bottom: 4px; font-weight: 600;">⚪ Not connected</div>
                         <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
                         <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <button class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="initGoogleAuth()">Connect Google Account</button>
+                            <button class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
                             <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="saveToGoogleDrive()">Save to Google Drive Now</button>
                             <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="loadFromGoogleDrive()">Load Latest from Google Drive</button>
                             <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="signOutGoogle()">Disconnect Google Account</button>
@@ -2527,9 +2526,8 @@
              showAlert("Notice", "Tax export functionality is enabled in the full module.");
         }
         
-        // --- GOOGLE DRIVE SYNC & AUTHENTICATION ---
-        const GOOGLE_CLIENT_ID = '346455482629-sj1et964qmepqe9m2sj6kme86bceu9bb.apps.googleusercontent.com';
-        let googleTokenClient = null;
+        // --- SECURE BACKEND GATEWAY SYNC ---
+        const BACKEND_URL = 'https://practice-suite.eyt-sasn.workers.dev';
         let driveFileId = null; 
         let driveAutoSyncTimer = null;
         let googleAccessToken = null;
@@ -2555,57 +2553,44 @@
         }
 
         function gateGoogleSignIn() {
-            if (typeof google === 'undefined' || !google.accounts) {
-                alert('Google sign-in script has not loaded. Check your internet connection and reload the page.');
-                return;
-            }
-            googleTokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
-                scope: 'https://www.googleapis.com/auth/drive.file',
-                callback: (tokenResponse) => {
-                    if (tokenResponse && tokenResponse.access_token) {
-                        googleAccessToken = tokenResponse.access_token;
-                        driveFileId = null;
-                        proceedPastLogin();
-                    }
-                },
-            });
-            googleTokenClient.requestAccessToken();
+            // Redirect strictly to the Cloudflare Worker login endpoint
+            window.location.href = BACKEND_URL + "/login";
         }
 
-        function initGoogleAuth() {
-            gateGoogleSignIn();
-        }
-
-        function attemptSilentReconnect() {
-            const previouslyConnected = localStorage.getItem('sasson_google_previously_connected') === 'true';
-            if (!previouslyConnected || typeof google === 'undefined' || !google.accounts) {
-                showLoginGate();
-                return;
-            }
-            googleTokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
-                scope: 'https://www.googleapis.com/auth/drive.file',
-                callback: (tokenResponse) => {
-                    if (tokenResponse && tokenResponse.access_token) {
-                        googleAccessToken = tokenResponse.access_token;
-                        driveFileId = null;
+        async function attemptSilentReconnect() {
+            try {
+                // Securely request a short-lived token from our backend using the HttpOnly cookie
+                const res = await fetch(BACKEND_URL + "/get-token", { credentials: "include" });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.access_token) {
+                        googleAccessToken = data.access_token;
                         proceedPastLogin();
                     } else {
                         showLoginGate();
                     }
-                },
-                error_callback: () => { showLoginGate(); },
-            });
-            googleTokenClient.requestAccessToken({ prompt: '' });
-            setTimeout(() => {
-                if (!googleAccessToken) showLoginGate();
-            }, 2500);
+                } else {
+                    showLoginGate();
+                }
+            } catch (err) {
+                showLoginGate();
+            }
+        }
+
+        // Helper function to guarantee an active token before saving
+        async function refreshAndGetToken() {
+            try {
+                const res = await fetch(BACKEND_URL + "/get-token", { credentials: "include" });
+                if (res.ok) {
+                    const data = await res.json();
+                    return data.access_token;
+                }
+            } catch (e) {}
+            return null;
         }
 
         async function proceedPastLogin() {
             updateGoogleStatus(true);
-            localStorage.setItem('sasson_google_previously_connected', 'true');
             await findExistingDriveFile();
             if (driveFileId) {
                 try {
@@ -2626,6 +2611,10 @@
 
         async function findExistingDriveFile() {
             if (driveFileId) return; 
+            
+            googleAccessToken = await refreshAndGetToken() || googleAccessToken;
+            if (!googleAccessToken) return;
+
             try {
                 const res = await fetch(
                     `https://www.googleapis.com/drive/v3/files?q=name%3D'${DRIVE_FILE_NAME}'+and+trashed%3Dfalse&fields=files(id,name)`,
@@ -2663,10 +2652,13 @@
         }
 
         async function saveToGoogleDrive(silent) {
+            googleAccessToken = await refreshAndGetToken();
             if (!googleAccessToken) {
-                if (!silent) alert('Please click "Connect Google Account" first.');
+                if (!silent) showAlert('Session Expired', 'Please securely sign in again.');
+                showLoginGate();
                 return;
             }
+
             setSyncIndicator('Syncing to Drive…');
             const fileContent = JSON.stringify({ dataStore: dataStore, practiceSettings: practiceSettings }, null, 2);
             try {
@@ -2695,33 +2687,36 @@
                 }
                 const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 setSyncIndicator(`✓ Synced at ${timeStr}`, 'var(--success)');
-                if (!silent) alert('Saved to Drive');
+                if (!silent) showAlert('Success', 'Data saved securely to Drive.');
             } catch (err) {
                 setSyncIndicator('⚠ Sync failed', 'var(--warning)');
             }
         }
 
         async function loadFromGoogleDrive() {
-            if (!googleAccessToken) return alert('Please connect Google Account first.');
+            googleAccessToken = await refreshAndGetToken();
+            if (!googleAccessToken) {
+                showAlert('Session Expired', 'Please securely sign in again.');
+                showLoginGate();
+                return;
+            }
+
             if (!driveFileId) await findExistingDriveFile();
-            if (!driveFileId) return alert('No Backup Found on Drive.');
+            if (!driveFileId) return showAlert('Not Found', 'No Backup Found on Drive.');
             try {
                 const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
                     headers: { 'Authorization': 'Bearer ' + googleAccessToken }
                 });
                 const parsed = await res.json();
                 await loadDriveDataIntoApp(parsed);
-                alert('Data loaded from Google Drive.');
+                showAlert('Success', 'Data loaded securely from Google Drive.');
                 window.location.reload(); 
             } catch (err) {
-                alert('Failed to load from Google Drive.');
+                showAlert('Error', 'Failed to load from Google Drive.');
             }
         }
         
         function signOutGoogle(silent) {
-            if (googleAccessToken && typeof google !== 'undefined' && google.accounts) {
-                google.accounts.oauth2.revoke(googleAccessToken, () => {});
-            }
             googleAccessToken = null;
             driveFileId = null;
             clearTimeout(idleLogoutTimer);
@@ -2729,9 +2724,12 @@
             clearInterval(countdownInterval);
             updateGoogleStatus(false);
             setSyncIndicator('');
+            
+            // Call backend to destroy the secure cookie
+            fetch(BACKEND_URL + "/logout", { credentials: "include" }).catch(() => {});
+
             if (!silent) {
-                localStorage.removeItem('sasson_google_previously_connected');
-                showAlert('Disconnected', 'Your Google account has been disconnected from this browser. Local data is unaffected.');
+                showAlert('Disconnected', 'Your session has been securely destroyed.');
                 showLoginGate();
             }
         }
@@ -2747,7 +2745,6 @@
             
             if (!googleAccessToken) return; 
 
-            // Trigger warning after 4 minutes (240,000 ms)
             timeoutWarningTimer = setTimeout(() => {
                 showTimeoutWarning();
             }, 4 * 60 * 1000); 
@@ -2766,7 +2763,6 @@
                 }
             }, 1000);
 
-            // Log out 1 minute after modal appears
             idleLogoutTimer = setTimeout(() => {
                 document.getElementById('timeout-modal').classList.remove('active');
                 signOutGoogle(true);
