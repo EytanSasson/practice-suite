@@ -257,7 +257,7 @@
     <div id="print-isolated-target"></div>
 
     <!-- PASSKEY LOCK SCREEN OVERLAY -->
-    <div id="passkey-lock-overlay">
+    <div id="passkey-lock-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1005; padding: 16px;">
         <div class="onboarding-card splash-fade">
             <div style="margin-bottom: 16px; color: var(--accent);">
                 <svg style="width: 48px; height: 48px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
@@ -428,7 +428,7 @@
     </div>
 
     <!-- LOGIN GATE -->
-    <div id="login-gate-overlay">
+    <div id="login-gate-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 16px;">
         <div class="onboarding-card splash-fade" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; max-width: 440px; width: 100%;">
             <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 24px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="300" height="90" style="display: block; margin: 0 auto;">
@@ -455,7 +455,7 @@
     </div>
 
     <!-- ONBOARDING MODAL OVERLAY -->
-    <div id="onboarding-overlay">
+    <div id="onboarding-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px;">
         <div class="onboarding-card">
             <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">Setup Your Practice</h2>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">Welcome to your Practice Management Suite. Please configure your initial workspace settings to get started.</p>
@@ -2776,7 +2776,15 @@
                     showLoginGate();
                 }
             } catch (err) {
-                showLoginGate();
+                console.warn("Offline or network error, continuing with local data");
+                updateGoogleStatus(false);
+                setSyncIndicator('Operating Offline', 'var(--warning)');
+                
+                if (practiceSettings) {
+                    checkPostLoginPasskeySetup(); 
+                } else {
+                    showLoginGate();
+                }
             }
         }
 
@@ -2865,7 +2873,7 @@
         }
 
         function scheduleAutoDriveSync() {
-            if (!googleAccessToken) return;
+            if (!localStorage.getItem('practice_suite_session_id')) return;
             setSyncIndicator('Auto-syncing to cloud...', 'var(--accent)');
             clearTimeout(driveAutoSyncTimer);
             driveAutoSyncTimer = setTimeout(() => saveToGoogleDriveSilently(), 1500);
@@ -2873,7 +2881,10 @@
 
         async function saveToGoogleDriveSilently() {
             googleAccessToken = await refreshAndGetToken();
-            if (!googleAccessToken) return;
+            if (!googleAccessToken) {
+                setSyncIndicator('⚠ Sync paused (Session Expired)', 'var(--warning)');
+                return;
+            }
 
             const fileContent = JSON.stringify({ dataStore: dataStore, practiceSettings: practiceSettings }, null, 2);
             try {
@@ -2903,7 +2914,7 @@
                 const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 setSyncIndicator(`Synced to cloud at ${timeStr}`, 'var(--success)');
             } catch (err) {
-                setSyncIndicator('⚠ Auto-sync failed', 'var(--warning)');
+                setSyncIndicator('⚠ Auto-sync failed (Offline?)', 'var(--warning)');
             }
         }
         
@@ -2954,7 +2965,7 @@
                     user: {
                         id: Uint8Array.from("practice_user_id", c => c.charCodeAt(0)),
                         name: "eyt.sasn@gmail.com",
-                        displayName: "Eytan Sasson"
+                        displayName: "PracticeSuite Admin"
                     },
                     pubKeyCredParams: [
                         { alg: -7, type: "public-key" },   // ES256
@@ -3010,7 +3021,6 @@
                 const challenge = new Uint8Array(32);
                 window.crypto.getRandomValues(challenge);
 
-                // Removing allowCredentials allows any synced credential to work
                 const publicKeyCredentialRequestOptions = {
                     challenge: challenge,
                     timeout: 60000,
@@ -3022,14 +3032,17 @@
                 if (assertion) {
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
                     resetIdleLogoutTimer();
-                    if (document.getElementById('app-root').style.display === 'none') {
-                        showApp();
+                    
+                    if (!googleAccessToken && localStorage.getItem('practice_suite_session_id')) {
+                        attemptSilentReconnect();
+                    } else {
+                        if (document.getElementById('app-root').style.display === 'none') {
+                            showApp();
+                        }
                     }
                 }
             } catch (err) {
                 console.error("Passkey auth error on this device:", err);
-                // Do NOT unlock or disable the passkey if they cancel the prompt!
-                // Just keep the lock screen up.
                 showAlert("Authentication Failed", "Biometric verification failed or was canceled. Please try again.");
             }
         }
