@@ -1109,16 +1109,22 @@
                         <button class="btn" style="margin-bottom: 24px;" onclick="savePracticeSettings()">Update Core Settings</button>
                     </div>
 
-                    <!-- PASSKEY SETTINGS PANEL -->
+                    <!-- PASSKEY SETTINGS PANEL WITH TOGGLE -->
                     <div class="panel" style="max-width: 600px; border: 1.5px solid var(--accent);">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Hardware Passkey Security (WebAuthn)</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--accent); margin-bottom: 0;">Hardware Passkey Security (WebAuthn)</h3>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 0;">
+                                <span style="font-size: 0.85rem; font-weight: 600;" id="passkey-toggle-label">Enabled</span>
+                                <input type="checkbox" id="passkey-toggle-checkbox" onchange="togglePasskeySetting(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                            </label>
+                        </div>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                            Lock your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows Hello).
+                            Protect your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows Hello).
                         </p>
                         <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 12px; font-weight: 600;">⚪ Passkey not configured on this device</div>
                         <div style="display: flex; gap: 12px;">
                             <button class="btn" style="flex: 1; justify-content: center;" onclick="registerPasskey()">Register This Device</button>
-                            <button class="btn btn-danger" style="flex: 1; justify-content: center;" onclick="removePasskey()">Disable Passkey</button>
+                            <button class="btn btn-secondary" style="flex: 1; justify-content: center;" onclick="removePasskey()">Remove Passkey</button>
                         </div>
                     </div>
 
@@ -1667,6 +1673,7 @@
                     graphTitle.innerText = `Revenue Breakdown (${dates.start} to ${dates.end})`;
                 }
             }
+            updatePasskeyStatusUI(localStorage.getItem('practice_suite_passkey_enabled') === 'true');
         }
 
         function savePracticeSettings() {
@@ -2856,7 +2863,6 @@
         async function triggerPasskeyAuth() {
             if (!isWebAuthnSupported()) return;
 
-            // Check if we are in the mandatory post-login registration flow
             const isMandatoryReg = document.getElementById('passkey-lock-overlay').dataset.mode === 'register';
             if (isMandatoryReg) {
                 const success = await registerPasskey(true);
@@ -2885,7 +2891,6 @@
                 
                 if (assertion) {
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
-                    // Reset idle timer upon successful unlock
                     resetIdleLogoutTimer();
                     if (document.getElementById('app-root').style.display === 'none') {
                         showApp();
@@ -2897,26 +2902,51 @@
         }
 
         function removePasskey() {
-            showConfirm("Disable Passkey", "Are you sure you want to remove hardware passkey protection from this device?", () => {
+            showConfirm("Remove Passkey", "Are you sure you want to remove your hardware passkey credentials from this device?", () => {
                 localStorage.removeItem('practice_suite_passkey_enabled');
                 localStorage.removeItem('practice_suite_credential_id');
                 updatePasskeyStatusUI(false);
-                showAlert("Disabled", "Passkey security has been removed.");
+                showAlert("Removed", "Passkey security credentials have been deleted.");
             }, true);
+        }
+
+        function togglePasskeySetting(checkbox) {
+            const isEnabled = checkbox.checked;
+            localStorage.setItem('practice_suite_passkey_enabled', isEnabled ? 'true' : 'false');
+            updatePasskeyStatusUI(isEnabled);
+            if (isEnabled && !localStorage.getItem('practice_suite_credential_id')) {
+                registerPasskey();
+            }
         }
 
         function updatePasskeyStatusUI(isEnabled) {
             const statusEl = document.getElementById('passkey-status-text');
+            const checkboxEl = document.getElementById('passkey-toggle-checkbox');
+            const labelEl = document.getElementById('passkey-toggle-label');
+            
+            if (checkboxEl) checkboxEl.checked = isEnabled;
+            if (labelEl) labelEl.textContent = isEnabled ? "Enabled" : "Disabled";
+
             if (statusEl) {
-                statusEl.textContent = isEnabled ? "✅ Active and securing this browser" : "⚪ Passkey not configured on this device";
-                statusEl.style.color = isEnabled ? "var(--success)" : "var(--text-muted)";
+                const hasCred = !!localStorage.getItem('practice_suite_credential_id');
+                if (isEnabled && hasCred) {
+                    statusEl.textContent = "✅ Active and securing this browser";
+                    statusEl.style.color = "var(--success)";
+                } else if (isEnabled && !hasCred) {
+                    statusEl.textContent = "⚠️ Enabled, but device not registered yet. Click 'Register This Device'.";
+                    statusEl.style.color = "var(--warning)";
+                } else {
+                    statusEl.textContent = "⚪ Passkey security disabled";
+                    statusEl.style.color = "var(--text-muted)";
+                }
             }
         }
 
         function checkPostLoginPasskeySetup() {
-            const hasPasskey = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
-            if (!hasPasskey && isWebAuthnSupported()) {
-                // Prompt user to register passkey right after login
+            const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
+            const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
+
+            if (isPasskeyEnabled && !hasCredential && isWebAuthnSupported()) {
                 const overlay = document.getElementById('passkey-lock-overlay');
                 overlay.dataset.mode = 'register';
                 document.getElementById('passkey-modal-title').innerText = "Secure Your Workspace";
@@ -2979,8 +3009,7 @@
             document.getElementById('btn-skip-passkey').style.display = 'none';
             overlay.style.display = 'flex';
 
-            // Auto-trigger prompt if passkey exists
-            if (localStorage.getItem('practice_suite_passkey_enabled') === 'true') {
+            if (localStorage.getItem('practice_suite_passkey_enabled') === 'true' && localStorage.getItem('practice_suite_credential_id')) {
                 setTimeout(() => triggerPasskeyAuth(), 300);
             }
         }
@@ -3031,8 +3060,11 @@
             
             updateGoogleStatus(false);
             
-            // Intercept app loading immediately if a passkey lock is enabled
-            if (localStorage.getItem('practice_suite_passkey_enabled') === 'true') {
+            // Intercept app loading immediately if a passkey lock is enabled and configured
+            const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
+            const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
+
+            if (isPasskeyEnabled && hasCredential) {
                 document.getElementById('app-root').style.display = 'none';
                 const overlay = document.getElementById('passkey-lock-overlay');
                 overlay.dataset.mode = 'auth';
