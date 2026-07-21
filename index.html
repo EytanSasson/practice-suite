@@ -1494,6 +1494,11 @@
 
             practiceSettings = { practiceName: name, defaultRate: rate, defaultOfficeCost: roomCost, timeFormat: timeFormat, reportingPeriodStartMonth: reportingMonth, reportingPeriodStartDay: reportingDay };
             localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
+            if (dataStore.categories.length === 0) {
+                dataStore.categories = ['Rent', 'Supervision', 'Training & CPD', 'Travel', 'Insurance', 'Membership Fees', 'Other'];
+                localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
+                populateCategoryDropdown();
+            }
             showApp();
             if (googleAccessToken) saveToGoogleDrive(true);
         }
