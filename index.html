@@ -2788,7 +2788,7 @@
             return window.PublicKeyCredential !== undefined;
         }
 
-        async function registerPasskey() {
+async function registerPasskey() {
             if (!isWebAuthnSupported()) {
                 return showAlert("Not Supported", "Your browser or device does not support WebAuthn Passkeys.");
             }
@@ -2805,9 +2805,17 @@
                         name: "eyt.sasn@gmail.com",
                         displayName: "Eytan Sasson"
                     },
-                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                    pubKeyCredParams: [
+                        { alg: -7, type: "public-key" },   // ES256
+                        { alg: -257, type: "public-key" }  // RS256
+                    ],
+                    authenticatorSelection: {
+                        authenticatorAttachment: "platform", // Forces built-in biometrics (TouchID/FaceID/Windows Hello)
+                        userVerification: "required",
+                        residentKey: "preferred"
+                    },
                     timeout: 60000,
-                    attestation: "direct"
+                    attestation: "none"
                 };
 
                 const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
@@ -2818,8 +2826,8 @@
                 updatePasskeyStatusUI(true);
                 showAlert("Success", "Hardware passkey registered successfully! This device is now secured.");
             } catch (err) {
-                console.error(err);
-                showAlert("Registration Failed", "Passkey creation was canceled or failed.");
+                console.error("Passkey registration error:", err);
+                showAlert("Registration Failed", err.message || "Passkey creation was canceled or failed.");
             }
         }
 
