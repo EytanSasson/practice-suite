@@ -2883,9 +2883,9 @@ async function registerPasskey() {
         function checkPasskeyLockOnStartup() {
             const isEnabled = localStorage.getItem('practice_suite_passkey_enabled');
             if (isEnabled === 'true') {
+                // Keep the app hidden and show the lock overlay until manually clicked
                 document.getElementById('app-root').style.display = 'none';
                 document.getElementById('passkey-lock-overlay').style.display = 'flex';
-                setTimeout(() => triggerPasskeyAuth(), 300);
             }
             updatePasskeyStatusUI(isEnabled === 'true');
         }
