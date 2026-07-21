@@ -258,7 +258,7 @@
             <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700;" id="passkey-modal-title">Biometric Authentication Required</h3>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;" id="passkey-modal-desc">Verify your identity with Touch ID, Face ID, or your security key to unlock PracticeSuite.</p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerPasskeyAuth()">Unlock with Passkey</button>
+                <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="handlePasskeyModalAction()" id="passkey-modal-action-btn">Unlock with Passkey</button>
                 <button id="btn-skip-passkey" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px; display: none;" onclick="skipPasskeyRegistration()">Set up later in Settings</button>
             </div>
         </div>
@@ -1178,6 +1178,15 @@
                                 <button class="btn" style="width: 100%; height: 42px; background-color: #1e3a8a; justify-content: center;" onclick="exportTaxYearArchive()">Export Tax Year ZIP</button>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- DANGER ZONE: CLEAR ALL DATA -->
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid var(--danger); background-color: #fef2f2;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid #fecaca; padding-bottom: 8px;">⚠️ Danger Zone: Clear All User Data</h3>
+                        <p style="font-size: 0.9rem; color: #991b1b; margin-bottom: 16px; line-height: 1.5; font-weight: 500;">
+                            <strong>WARNING:</strong> This action is completely irreversible. Clicking this button will permanently erase all client profiles, financial records, session history logs, appointments, local settings, and saved documents stored on this device. Make sure you have downloaded a backup file first!
+                        </p>
+                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerClearAllUserData()">Clear All Data & Factory Reset</button>
                     </div>
 
                     <div class="panel" style="max-width: 600px; border-color: var(--danger);">
@@ -2860,7 +2869,6 @@
                         showAlert("Registration Failed", err.message || "Passkey creation failed due to an extension or browser block.");
                     }
                 } else {
-                    // If mandatory setup was canceled/skipped, turn off the toggle and let them in
                     localStorage.setItem('practice_suite_passkey_enabled', 'false');
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
                     showApp();
@@ -2871,12 +2879,6 @@
 
         async function triggerPasskeyAuth() {
             if (!isWebAuthnSupported()) return;
-
-            const isMandatoryReg = document.getElementById('passkey-lock-overlay').dataset.mode === 'register';
-            if (isMandatoryReg) {
-                const success = await registerPasskey(true);
-                if (success) return;
-            }
 
             try {
                 const challenge = new Uint8Array(32);
@@ -2910,6 +2912,15 @@
             }
         }
 
+        async function handlePasskeyModalAction() {
+            const mode = document.getElementById('passkey-lock-overlay').dataset.mode;
+            if (mode === 'register') {
+                await registerPasskey(true);
+            } else {
+                await triggerPasskeyAuth();
+            }
+        }
+
         function removePasskey() {
             showConfirm("Remove Passkey", "Are you sure you want to remove your hardware passkey credentials from this device?", () => {
                 localStorage.removeItem('practice_suite_passkey_enabled');
@@ -2925,11 +2936,9 @@
             updatePasskeyStatusUI(isEnabled);
 
             if (isEnabled) {
-                // If toggled on and no passkey exists, trigger registration immediately
                 if (!localStorage.getItem('practice_suite_credential_id')) {
                     const success = await registerPasskey(false);
                     if (!success) {
-                        // If registration failed or was cancelled, revert the toggle
                         checkbox.checked = false;
                         localStorage.setItem('practice_suite_passkey_enabled', 'false');
                         updatePasskeyStatusUI(false);
@@ -2963,13 +2972,20 @@
             const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
             const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
 
-            if (isPasskeyEnabled && !hasCredential && isWebAuthnSupported()) {
+            // If passkey is turned off or not configured, prompt the user to enable/register it post-login
+            if (!isPasskeyEnabled || !hasCredential) {
+                if (!isWebAuthnSupported()) {
+                    showApp();
+                    return;
+                }
+
                 const overlay = document.getElementById('passkey-lock-overlay');
                 overlay.dataset.mode = 'register';
-                document.getElementById('passkey-modal-title').innerText = "Secure Your Workspace";
-                document.getElementById('passkey-modal-desc').innerText = "Set up a biometric passkey (Touch ID, Face ID, or Windows Hello) to protect your patient records on this device.";
-                document.getElementById('passkey-lock-overlay').style.display = 'flex';
+                document.getElementById('passkey-modal-title').innerText = "Enable Passkey Security?";
+                document.getElementById('passkey-modal-desc').innerText = "Protect your patient workspace with your device's biometric scanner (Touch ID, Face ID, or Windows Hello).";
+                document.getElementById('passkey-modal-action-btn').innerText = "Enable & Register Passkey";
                 document.getElementById('btn-skip-passkey').style.display = 'block';
+                document.getElementById('passkey-lock-overlay').style.display = 'flex';
             } else {
                 showApp();
             }
@@ -3019,13 +3035,13 @@
             clearTimeout(timeoutWarningTimer);
             clearInterval(countdownInterval);
 
-            // Only lock if passkey is enabled and configured
             if (localStorage.getItem('practice_suite_passkey_enabled') === 'true' && localStorage.getItem('practice_suite_credential_id')) {
                 document.getElementById('app-root').style.display = 'none';
                 const overlay = document.getElementById('passkey-lock-overlay');
                 overlay.dataset.mode = 'auth';
                 document.getElementById('passkey-modal-title').innerText = "Workspace Locked";
                 document.getElementById('passkey-modal-desc').innerText = "Locked due to inactivity. Verify your identity with Touch ID, Face ID, or Windows Hello to continue.";
+                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
                 document.getElementById('btn-skip-passkey').style.display = 'none';
                 overlay.style.display = 'flex';
                 setTimeout(() => triggerPasskeyAuth(), 300);
@@ -3063,6 +3079,31 @@
             };
             reader.readAsText(file);
         }
+
+        // --- CLEAR ALL USER DATA / FACTORY RESET ---
+        function triggerClearAllUserData() {
+            showConfirm(
+                "DANGER: Clear All User Data", 
+                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, and settings from this browser storage. This cannot be undone!", 
+                () => {
+                    // Clear all local storage keys related to the app
+                    localStorage.removeItem('sasson_practice_secure_store');
+                    localStorage.removeItem('sasson_practice_settings');
+                    localStorage.removeItem('practice_suite_session_id');
+                    localStorage.removeItem('practice_suite_passkey_enabled');
+                    localStorage.removeItem('practice_suite_credential_id');
+
+                    // Reset variables
+                    dataStore = { clients: [], expenses: [], categories: [] };
+                    practiceSettings = null;
+
+                    showAlert("Data Cleared", "All local application data has been successfully wiped. The page will now reload.", () => {
+                        window.location.reload();
+                    });
+                }, 
+                true // Is destructive action (red button)
+            );
+        }
         
         function triggerFullReset() {
             signOutGoogle(false);
@@ -3088,6 +3129,7 @@
                 overlay.dataset.mode = 'auth';
                 document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
                 document.getElementById('passkey-modal-desc').innerText = "Verify your identity with Touch ID, Face ID, or your security key to unlock PracticeSuite.";
+                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
                 document.getElementById('btn-skip-passkey').style.display = 'none';
                 overlay.style.display = 'flex';
                 updatePasskeyStatusUI(true);
