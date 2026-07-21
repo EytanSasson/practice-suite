@@ -32,19 +32,20 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         
-        body { background-color: var(--bg-app); color: var(--text-main); margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; }
-        .app-root { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+        body { background-color: var(--bg-app); color: var(--text-main); margin: 0; padding: 0; height: 100dvh; width: 100vw; overflow: hidden; }
+        .app-root { display: flex; height: 100dvh; width: 100vw; overflow: hidden; }
 
         .sidebar { width: 260px; background-color: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; padding: 24px 16px; flex-shrink: 0; }
         .brand { color: #ffffff; margin-bottom: 32px; padding-left: 8px; display: flex; align-items: center; }
-        .brand svg { width: 200px; max-width: 100%; height: auto; display: block; }
+        .brand svg { width: 200px; height: auto; }
         
         .nav-container { flex-grow: 1; }
         .nav-link { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem; margin-bottom: 4px; transition: all 0.2s; }
         .nav-link:hover { background-color: var(--sidebar-hover); color: #ffffff; }
         .nav-link.active { background-color: var(--accent); color: #ffffff; }
 
-        .main-frame { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        /* min-height: 0 is crucial for flex column scrolling on mobile */
+        .main-frame { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         .top-bar { min-height: 70px; background-color: #ffffff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; flex-shrink: 0; flex-wrap: wrap; gap: 12px; }
         .content-box { padding: 32px; overflow-y: auto; flex-grow: 1; }
 
@@ -130,9 +131,9 @@
         }
         .custom-modal-overlay.active .custom-modal-card { transform: scale(1); }
 
-        #passkey-lock-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1005; padding: 16px; }
-        #onboarding-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
-        #login-gate-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 16px; }
+        #passkey-lock-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1005; padding: 16px; }
+        #onboarding-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+        #login-gate-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 16px; }
         
         .splash-fade { animation: splashIn 1.5s ease forwards; }
         @keyframes splashIn {
@@ -207,17 +208,16 @@
         
         @media (max-width: 768px) {
             .app-root { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; padding: 12px 16px; }
-            .brand { margin-bottom: 0; padding-left: 0; }
-            .brand svg { max-width: 150px; }
-            .sidebar-top-row { display: flex; align-items: center; justify-content: space-between; padding-bottom: 4px; }
+            .sidebar { width: 100%; height: auto; padding: 12px 16px; flex-shrink: 0; }
+            .brand { margin-bottom: 0; }
+            .sidebar-top-row { display: flex; align-items: center; justify-content: space-between; }
             .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: var(--sidebar-hover); border-radius: 8px; cursor: pointer; flex-shrink: 0; }
             .mobile-nav-toggle svg { width: 22px; height: 22px; stroke: #fff; }
             .nav-container { display: none; flex-direction: column; margin-top: 12px; }
             .nav-container.nav-open { display: flex; }
             .nav-link { margin-bottom: 4px; white-space: normal; }
-            .top-bar { padding: 12px 16px; flex-wrap: wrap; }
-            .content-box { padding: 16px; }
+            .top-bar { padding: 12px 16px; }
+            .content-box { padding: 16px; padding-bottom: 60px; } /* Ensures bottom content isn't blocked by mobile swipe bars */
             .split-pane { grid-template-columns: 1fr; }
             .form-layout { grid-template-columns: 1fr; }
             .form-group.full-width { grid-column: span 1; }
@@ -340,28 +340,19 @@
                     <input type="date" id="edit-dob" class="control date-picker-ui">
                 </div>
                 <div class="form-group">
-                    <label>Gender</label>
-                    <select id="edit-gender" class="control">
-                        <option value="Not Provided">Select...</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other / Prefer not to say</option>
-                    </select>
+                    <label>Occupation</label>
+                    <input type="text" id="edit-occupation" class="control">
                 </div>
             </div>
             <div class="form-layout">
                 <div class="form-group">
-                    <label>Occupation</label>
-                    <input type="text" id="edit-occupation" class="control">
-                </div>
-                <div class="form-group">
                     <label>Hourly Rate</label>
                     <input type="number" id="edit-rate" class="control" min="0">
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Commencement Date</label>
-                <input type="date" id="edit-start" class="control date-picker-ui">
+                <div class="form-group">
+                    <label>Commencement Date</label>
+                    <input type="date" id="edit-start" class="control date-picker-ui">
+                </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
                 <button class="btn btn-secondary" onclick="closeEditClientModal()">Cancel</button>
@@ -410,7 +401,7 @@
 
     <!-- PASSKEY LOCK SCREEN OVERLAY -->
     <div id="passkey-lock-overlay">
-        <div class="onboarding-card splash-fade" style="text-align: center; max-width: 400px;">
+        <div class="onboarding-card splash-fade" style="text-align: center; max-width: 400px; padding: 32px 20px;">
             <div style="margin-bottom: 16px; color: var(--accent);">
                 <svg style="width: 48px; height: 48px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
             </div>
@@ -455,12 +446,6 @@
         <div class="onboarding-card">
             <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">Setup Your Practice</h2>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">Welcome to your Practice Management Suite. Please configure your initial workspace settings to get started.</p>
-            
-            <div class="form-group">
-                <label>Country Context</label>
-                <select id="ob-country" class="control" onchange="autoUpdateSettingsFromCountry('ob')"></select>
-            </div>
-            
             <div class="form-group">
                 <label>Practice Name</label>
                 <input type="text" id="ob-practice-name" class="control" placeholder="E.g., Practice Suite" value="Practice Suite">
@@ -487,10 +472,9 @@
                     <label>Default Currency Profile</label>
                     <select id="ob-currency" class="control">
                         <option value="£">£ (GBP - British Pound)</option>
-                        <option value="$">$ (USD/CAD/AUD - Dollar)</option>
+                        <option value="$">$ (USD - US Dollar)</option>
                         <option value="€">€ (EUR - Euro)</option>
                         <option value="₪">₪ (ILS - Israeli Shekel)</option>
-                        <option value="R">R (ZAR - South African Rand)</option>
                     </select>
                 </div>
             </div>
@@ -565,7 +549,6 @@
                 <div class="nav-link" id="link-appointments" onclick="navigate('appointments')">Calendar & Booking</div>
                 <div class="nav-link" id="link-expenses" onclick="navigate('expenses')">Expenses</div>
                 <div class="nav-link" id="link-settings" onclick="navigate('settings')">Settings & Data</div>
-                <div class="nav-link" id="link-account" onclick="navigate('account')">Account & Security</div>
             </div>
         </div>
 
@@ -930,10 +913,6 @@
                                     <p id="profile-dob" style="font-size: 0.95rem; font-weight: 500;"></p>
                                 </div>
                                 <div class="form-group">
-                                    <label>Gender</label>
-                                    <p id="profile-gender" style="font-size: 0.95rem; font-weight: 500;"></p>
-                                </div>
-                                <div class="form-group">
                                     <label>Occupation</label>
                                     <p id="profile-occupation" style="font-size: 0.95rem; font-weight: 500;"></p>
                                 </div>
@@ -1045,30 +1024,20 @@
                                 <input type="date" id="new-dob" class="control date-picker-ui">
                             </div>
                             <div class="form-group">
-                                <label>Gender</label>
-                                <select id="new-gender" class="control">
-                                    <option value="Not Provided">Select...</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other / Prefer not to say</option>
-                                </select>
+                                <label>Occupation (Optional)</label>
+                                <input type="text" id="new-occupation" class="control" placeholder="E.g., Teacher, Accountant">
                             </div>
                         </div>
 
                         <div class="form-layout">
                             <div class="form-group">
-                                <label>Occupation (Optional)</label>
-                                <input type="text" id="new-occupation" class="control" placeholder="E.g., Teacher, Accountant">
-                            </div>
-                            <div class="form-group">
                                 <label>Agreed Hourly Rate</label>
                                 <input type="number" id="new-rate" class="control" value="60" min="0">
                             </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Therapy Commencement Date</label>
-                            <input type="date" id="new-start" class="control date-picker-ui">
+                            <div class="form-group">
+                                <label>Therapy Commencement Date</label>
+                                <input type="date" id="new-start" class="control date-picker-ui">
+                            </div>
                         </div>
                         
                         <div style="display: flex; gap: 12px; margin-top: 12px;">
@@ -1081,12 +1050,6 @@
                 <div id="view-settings" class="section-view">
                     <div class="panel" style="max-width: 600px;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Practice Setup Configurations</h3>
-                        
-                        <div class="form-group">
-                            <label>Country Context</label>
-                            <select id="set-country" class="control" onchange="autoUpdateSettingsFromCountry('set')"></select>
-                        </div>
-
                         <div class="form-group">
                             <label>Practice Name</label>
                             <input type="text" id="set-practice-name" class="control">
@@ -1113,10 +1076,9 @@
                                 <label>Default Currency Profile</label>
                                 <select id="set-currency" class="control">
                                     <option value="£">£ (GBP - British Pound)</option>
-                                    <option value="$">$ (USD/CAD/AUD - Dollar)</option>
+                                    <option value="$">$ (USD - US Dollar)</option>
                                     <option value="€">€ (EUR - Euro)</option>
                                     <option value="₪">₪ (ILS - Israeli Shekel)</option>
-                                    <option value="R">R (ZAR - South African Rand)</option>
                                 </select>
                             </div>
                         </div>
@@ -1144,6 +1106,33 @@
                             </div>
                         </div>
                         <button class="btn" style="margin-bottom: 24px;" onclick="savePracticeSettings()">Update Core Settings</button>
+                    </div>
+
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Drive Sync</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                            Your data syncs automatically to your own Google Drive once connected. Nobody but you can access that file.
+                        </p>
+                        <div id="google-status" style="font-size: 0.9rem; margin-bottom: 4px; font-weight: 600;">⚪ Not connected</div>
+                        <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
+                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="saveToGoogleDrive()">Save to Google Drive Now</button>
+                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="loadFromGoogleDrive()">Load Latest from Google Drive</button>
+                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="signOutGoogle()">Disconnect Google Account</button>
+                        </div>
+                    </div>
+
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid var(--accent);">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Hardware Passkey Security (WebAuthn)</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                            Lock your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows Hello).
+                        </p>
+                        <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 12px; font-weight: 600;">⚪ Passkey not configured on this device</div>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn" style="flex: 1; justify-content: center;" onclick="registerPasskey()">Register This Device</button>
+                            <button class="btn btn-danger" style="flex: 1; justify-content: center;" onclick="removePasskey()">Disable Passkey</button>
+                        </div>
                     </div>
 
                     <div class="panel" style="max-width: 600px;">
@@ -1178,52 +1167,30 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div id="view-account" class="section-view">
-                    <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Drive Sync</h3>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                            Your data syncs automatically to your own Google Drive once connected. Nobody but you can access that file.
-                        </p>
-                        <div id="google-status" style="font-size: 0.9rem; margin-bottom: 4px; font-weight: 600;">⚪ Not connected</div>
-                        <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <button class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
-                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="saveToGoogleDrive()">Save to Google Drive Now</button>
-                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="loadFromGoogleDrive()">Load Latest from Google Drive</button>
-                        </div>
-                    </div>
-
-                    <div class="panel" style="max-width: 600px; border: 1.5px solid var(--accent);">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Hardware Passkey Security (WebAuthn)</h3>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                            Lock your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows Hello).
-                        </p>
-                        <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 12px; font-weight: 600;">⚪ Passkey not configured on this device</div>
-                        <div style="display: flex; gap: 12px;">
-                            <button class="btn" style="flex: 1; justify-content: center;" onclick="registerPasskey()">Register This Device</button>
-                            <button class="btn btn-danger" style="flex: 1; justify-content: center;" onclick="removePasskey()">Disable Passkey</button>
-                        </div>
-                    </div>
 
                     <div class="panel" style="max-width: 600px; border-color: var(--danger);">
                         <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Log Out Session</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-                            This clears your active session to protect your client data and securely disconnects your Google connection.
+                            This clears your active session to protect your client data.
                         </p>
-                        <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="triggerFullReset()">Log Out of PracticeSuite</button>
+                        <button class="btn btn-danger" onclick="triggerFullReset()">Log Out of PracticeSuite</button>
                     </div>
+
+                    <!-- RESTORED WIPE DATA PANEL -->
+                    <div class="panel" style="max-width: 600px; border-color: var(--danger);">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Danger Zone: Wipe Device Data</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+                            This will permanently delete all client records, notes, and settings from this browser. Make sure you have exported a backup first!
+                        </p>
+                        <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="wipeAllData()">Delete All Local Data</button>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div> <!-- /app-root -->
 
     <script>
-        const allCountries = [
-            "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Democratic Republic of the Congo","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine State","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States of America","Uruguay","Uzbekistan","Vanuatu","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
-        ];
-
         function toLocalISODateString(dateObj) {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -1279,35 +1246,6 @@
         
         let editingSessionClientId = null;
         let editingSessionIndex = null;
-
-        function initCountryDropdowns() {
-            const obSelect = document.getElementById('ob-country');
-            const setSelect = document.getElementById('set-country');
-            if (obSelect && setSelect) {
-                allCountries.forEach(c => {
-                    obSelect.add(new Option(c, c));
-                    setSelect.add(new Option(c, c));
-                });
-            }
-        }
-
-        function autoUpdateSettingsFromCountry(prefix) {
-            const c = document.getElementById(prefix + '-country').value;
-            const curEl = document.getElementById(prefix + '-currency');
-            const timeEl = document.getElementById(prefix + '-time-format');
-            
-            if (["United States of America", "Canada", "Australia", "New Zealand"].includes(c)) {
-                curEl.value = '$'; timeEl.value = '12h';
-            } else if (c === "Israel") {
-                curEl.value = '₪'; timeEl.value = '24h';
-            } else if (["France", "Germany", "Italy", "Spain", "Netherlands", "Ireland", "Belgium", "Austria", "Greece", "Portugal", "Finland"].includes(c)) {
-                curEl.value = '€'; timeEl.value = '24h';
-            } else if (c === "United Kingdom") {
-                curEl.value = '£'; timeEl.value = '24h';
-            } else if (c === "South Africa") {
-                curEl.value = 'R'; timeEl.value = '24h';
-            }
-        }
 
         function getCurrency() {
             return (practiceSettings && practiceSettings.currency) ? practiceSettings.currency : '£';
@@ -1514,7 +1452,7 @@
                         dataStore = parsed; 
                         persist(); 
                         if (!practiceSettings) {
-                            practiceSettings = { practiceName: "Imported Practice", country: "United Kingdom", defaultRate: 60, defaultOfficeCost: 10, timeFormat: '24h', reportingPeriodStartMonth: 4, reportingPeriodStartDay: 6, currency: '£' };
+                            practiceSettings = { practiceName: "Imported Practice", defaultRate: 60, defaultOfficeCost: 10, timeFormat: '24h', reportingPeriodStartMonth: 4, reportingPeriodStartDay: 6, currency: '£' };
                             localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
                         }
                         showApp();
@@ -1633,7 +1571,7 @@
             if (link) link.classList.add('active');
             closeMobileNav();
 
-            const titles = { 'dashboard': 'Dashboard', 'clients': 'Client Directory', 'expenses': 'Expenses', 'appointments': 'Calendar & Booking', 'settings': 'Practice Settings', 'account': 'Account & Security', 'profile': 'Case File Workspace', 'onboard': 'Client Intake' };
+            const titles = { 'dashboard': 'Dashboard', 'clients': 'Client Directory', 'expenses': 'Expenses', 'appointments': 'Calendar & Booking', 'settings': 'Settings', 'profile': 'Case File Workspace', 'onboard': 'Client Intake' };
             const titleEl = document.getElementById('view-title');
             if (titleEl) titleEl.innerText = titles[viewId] || 'Workspace';
 
@@ -1686,24 +1624,13 @@
             document.getElementById('app-root').style.display = 'none';
             document.getElementById('onboarding-overlay').style.display = 'flex';
             
-            const lang = navigator.language || 'en-GB';
-            let defaultCountry = "United Kingdom";
-            let defaultCurr = "£";
-            let defaultTime = "24h";
-
-            if (lang.includes('US')) { defaultCountry = "United States of America"; defaultCurr = "$"; defaultTime = "12h"; }
-            else if (lang.includes('CA')) { defaultCountry = "Canada"; defaultCurr = "$"; defaultTime = "12h"; }
-            else if (lang.includes('AU')) { defaultCountry = "Australia"; defaultCurr = "$"; defaultTime = "12h"; }
-            else if (lang.includes('IL') || lang.includes('he')) { defaultCountry = "Israel"; defaultCurr = "₪"; defaultTime = "24h"; }
-            
-            document.getElementById('ob-country').value = defaultCountry;
-            document.getElementById('ob-currency').value = defaultCurr;
-            document.getElementById('ob-time-format').value = defaultTime;
+            const localCur = Intl.NumberFormat().resolvedOptions().currency || 'GBP';
+            const curMap = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'ILS': '₪' };
+            document.getElementById('ob-currency').value = curMap[localCur] || '£';
         }
 
         function completeOnboarding() {
             const name = document.getElementById('ob-practice-name').value.trim();
-            const country = document.getElementById('ob-country').value;
             const rate = parseFloat(document.getElementById('ob-default-rate').value) || 60;
             const roomCost = parseFloat(document.getElementById('ob-default-office-cost').value) || 10;
             const timeFormat = document.getElementById('ob-time-format').value || '24h';
@@ -1713,16 +1640,7 @@
 
             if (!name) return showAlert('Configuration Needed', 'Practice Name is required.');
 
-            practiceSettings = { 
-                practiceName: name, 
-                country: country,
-                defaultRate: rate, 
-                defaultOfficeCost: roomCost, 
-                timeFormat: timeFormat, 
-                currency: currency, 
-                reportingPeriodStartMonth: reportingMonth, 
-                reportingPeriodStartDay: reportingDay 
-            };
+            practiceSettings = { practiceName: name, defaultRate: rate, defaultOfficeCost: roomCost, timeFormat: timeFormat, currency: currency, reportingPeriodStartMonth: reportingMonth, reportingPeriodStartDay: reportingDay };
             localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
             if (dataStore.categories.length === 0) {
                 dataStore.categories = ['Rent', 'Supervision', 'Training & CPD', 'Travel', 'Insurance', 'Membership Fees', 'Other'];
@@ -1738,7 +1656,6 @@
                 document.title = practiceSettings.practiceName || "Practice Suite";
                 const fields = {
                     'set-practice-name': practiceSettings.practiceName,
-                    'set-country': practiceSettings.country || 'United Kingdom',
                     'set-default-rate': practiceSettings.defaultRate,
                     'set-default-office-cost': practiceSettings.defaultOfficeCost,
                     'set-time-format': practiceSettings.timeFormat || '24h',
@@ -1766,7 +1683,6 @@
 
             practiceSettings = {
                 practiceName: name,
-                country: document.getElementById('set-country').value,
                 defaultRate: parseFloat(document.getElementById('set-default-rate').value) || 60,
                 defaultOfficeCost: parseFloat(document.getElementById('set-default-office-cost').value) || 10,
                 timeFormat: document.getElementById('set-time-format').value || '24h',
@@ -1807,7 +1723,6 @@
             document.getElementById('edit-phone').value = client.phone !== 'Not Provided' ? client.phone : '';
             document.getElementById('edit-email').value = client.email !== 'Not Provided' ? client.email : '';
             setInputVal('edit-dob', client.dob !== 'Not Provided' ? client.dob : '');
-            document.getElementById('edit-gender').value = client.gender || 'Not Provided';
             document.getElementById('edit-occupation').value = client.occupation !== 'Not Provided' ? client.occupation : '';
             document.getElementById('edit-rate').value = client.rate;
             setInputVal('edit-start', client.startDate);
@@ -1831,7 +1746,6 @@
             client.phone = phone;
             client.email = document.getElementById('edit-email').value.trim() || 'Not Provided';
             client.dob = document.getElementById('edit-dob').value || 'Not Provided';
-            client.gender = document.getElementById('edit-gender').value || 'Not Provided';
             client.occupation = document.getElementById('edit-occupation').value.trim() || 'Not Provided';
             client.rate = parseFloat(document.getElementById('edit-rate').value) || 0;
             client.startDate = document.getElementById('edit-start').value;
@@ -1894,7 +1808,6 @@
             document.getElementById('new-phone').value = '';
             document.getElementById('new-email').value = '';
             setInputVal('new-dob', '');
-            document.getElementById('new-gender').value = 'Not Provided';
             document.getElementById('new-occupation').value = '';
             document.getElementById('new-rate').value = practiceSettings ? practiceSettings.defaultRate : 60;
             navigate('onboard');
@@ -1911,7 +1824,6 @@
                 phone: phone,
                 email: document.getElementById('new-email').value.trim() || 'Not Provided',
                 dob: document.getElementById('new-dob').value || 'Not Provided',
-                gender: document.getElementById('new-gender').value || 'Not Provided',
                 occupation: document.getElementById('new-occupation').value.trim() || 'Not Provided',
                 rate: parseFloat(document.getElementById('new-rate').value) || 60,
                 startDate: document.getElementById('new-start').value,
@@ -2016,20 +1928,8 @@
             document.getElementById('profile-start').innerText = formatDateToUK(client.startDate);
             document.getElementById('profile-phone').innerText = client.phone || 'Not Provided';
             document.getElementById('profile-email').innerText = client.email || 'Not Provided';
-            document.getElementById('profile-gender').innerText = client.gender || 'Not Provided';
+            document.getElementById('profile-dob').innerText = formatDateToUK(client.dob);
             document.getElementById('profile-occupation').innerText = client.occupation || 'Not Provided';
-
-            let ageStr = '';
-            if (client.dob && client.dob !== 'Not Provided') {
-                const dobDate = new Date(client.dob);
-                if (!isNaN(dobDate)) {
-                    const ageDifMs = Date.now() - dobDate.getTime();
-                    const ageDate = new Date(ageDifMs);
-                    const calcAge = Math.abs(ageDate.getUTCFullYear() - 1970);
-                    ageStr = ` (Age: ${calcAge})`;
-                }
-            }
-            document.getElementById('profile-dob').innerText = formatDateToUK(client.dob) + ageStr;
 
             setInputVal('session-date', toLocalISODateString(new Date()));
             document.getElementById('session-notes').value = '';
@@ -3060,8 +2960,16 @@
             showLoginGate('You have securely logged out of your session. Your data remains safe on this device and in Google Drive.');
         }
 
+        function wipeAllData() {
+            showConfirm("WIPE ALL DATA", "Are you absolutely sure? This will permanently delete all clients, sessions, settings, and expenses from this specific device.", () => {
+                localStorage.removeItem('sasson_practice_secure_store');
+                localStorage.removeItem('sasson_practice_settings');
+                localStorage.removeItem('practice_suite_passkey_enabled');
+                window.location.reload();
+            }, true);
+        }
+
         window.onload = function() {
-            initCountryDropdowns();
             populateCategoryDropdown();
             selectedDashboardYear = new Date().getFullYear();
             
