@@ -2784,13 +2784,14 @@
         function isWebAuthnSupported() {
             return window.PublicKeyCredential !== undefined;
         }
-
+        
         async function registerPasskey() {
             if (!isWebAuthnSupported()) {
                 return showAlert("Not Supported", "Your browser or device does not support WebAuthn Passkeys.");
             }
 
             try {
+                // Generate a cryptographically secure random challenge
                 const challenge = new Uint8Array(32);
                 window.crypto.getRandomValues(challenge);
 
@@ -2815,8 +2816,13 @@
                     attestation: "none"
                 };
 
-                const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
+                // Isolate the credential request from extension context pollution
+                const credential = await window.navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
                 
+                if (!credential) {
+                    throw new Error("Credential creation returned empty.");
+                }
+
                 localStorage.setItem('practice_suite_passkey_enabled', 'true');
                 localStorage.setItem('practice_suite_credential_id', btoa(String.fromCharCode(...new Uint8Array(credential.rawId))));
 
@@ -2824,7 +2830,12 @@
                 showAlert("Success", "Hardware passkey registered successfully! This device is now secured.");
             } catch (err) {
                 console.error("Passkey registration error:", err);
-                showAlert("Registration Failed", err.message || "Passkey creation was canceled or failed.");
+                // If it's a DOMException abort, the user canceled it
+                if (err.name === 'NotAllowedError') {
+                    showAlert("Cancelled", "Biometric registration was canceled or blocked by the environment.");
+                } else {
+                    showAlert("Registration Failed", err.message || "Passkey creation failed due to an extension or browser block.");
+                }
             }
         }
 
