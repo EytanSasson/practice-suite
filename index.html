@@ -9,6 +9,7 @@
     <!-- Flatpickr for custom Date/Time formats -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -37,7 +38,7 @@
 
         .sidebar { width: 260px; background-color: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; padding: 24px 16px; flex-shrink: 0; }
         .brand { color: #ffffff; margin-bottom: 32px; padding-left: 8px; display: flex; align-items: center; }
-        .brand svg { width: 180px; height: auto; }
+        .brand svg { width: 200px; height: auto; }
         
         .nav-container { flex-grow: 1; }
         .nav-link { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem; margin-bottom: 4px; transition: all 0.2s; }
@@ -76,6 +77,22 @@
         
         .control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; outline: none; background-color: #f8fafc; }
         .control:focus { border-color: var(--accent); background-color: #ffffff; }
+        .control.flatpickr-input:read-only { background-color: #ffffff; cursor: pointer; }
+
+        .date-picker-ui {
+            background-image: url("data:image/svg+xml,%3Csvg fill='%2364748b' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 18px;
+            padding-right: 36px !important;
+        }
+        .time-picker-ui {
+            background-image: url("data:image/svg+xml,%3Csvg fill='%2364748b' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 18px;
+            padding-right: 36px !important;
+        }
 
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { padding: 12px 16px; background-color: #f8fafc; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 0.85rem; }
@@ -96,8 +113,11 @@
         .timeline-box { margin-top: 16px; }
         .timeline-card { border-left: 3px solid var(--accent); padding-left: 16px; margin-bottom: 24px; position: relative; }
         .timeline-meta { display: flex; gap: 12px; align-items: center; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; justify-content: space-between; flex-wrap: wrap; }
-        
-        /* Note Expansion Logic */
+        .invoice-embed { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 12px; font-size: 0.85rem; }
+        .invoice-row { display: flex; justify-content: space-between; padding: 4px 0; }
+        .invoice-total { border-top: 1px solid var(--border); font-weight: 700; padding-top: 6px; margin-top: 6px; color: var(--success); }
+
+        /* Expandable Notes */
         .note-content { max-height: 4.5em; overflow: hidden; position: relative; transition: max-height 0.3s ease; }
         .note-content.expanded { max-height: 2000px; }
 
@@ -115,7 +135,9 @@
         }
         .custom-modal-overlay.active .custom-modal-card { transform: scale(1); }
 
-        #login-gate-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sidebar-bg); display: flex; align-items: center; justify-content: center; z-index: 1001; padding: 16px; }
+        #onboarding-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+        #login-gate-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 16px; }
+        
         .splash-fade { animation: splashIn 1.5s ease forwards; }
         @keyframes splashIn {
             0% { opacity: 0; transform: translateY(20px); }
@@ -125,19 +147,98 @@
         .onboarding-card { background: #ffffff; border-radius: 16px; max-width: 500px; width: 100%; padding: 40px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.95rem; font-style: italic; }
 
+        .calendar-container { display: grid; grid-template-columns: 100%; gap: 16px; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .calendar-month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .calendar-day-label { font-weight: 600; font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-bottom: 8px; }
+        .calendar-cell {
+            border: 1px solid var(--border); border-radius: 8px; background: var(--panel-bg);
+            padding: 4px; display: flex; flex-direction: column; cursor: pointer;
+            transition: all 0.2s; min-height: 80px; overflow-y: auto; overflow-x: hidden;
+        }
+        .calendar-cell:hover { background-color: #f8fafc; border-color: var(--accent); }
+        .calendar-cell.inactive { opacity: 0.4; }
+        .calendar-cell.today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); background: #f0f7ff; }
+        .calendar-cell.selected { border-color: var(--accent); background: #eff6ff; }
+        .calendar-cell-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .calendar-day-num { font-size: 0.85rem; font-weight: 600; }
+        
+        .calendar-apt-label {
+            font-size: 0.65rem; padding: 3px 4px; border-radius: 4px; margin-bottom: 4px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #ffffff;
+        }
+        .apt-label-office { background-color: var(--success); }
+        .apt-label-online { background-color: var(--accent); }
+        .apt-label-more { font-size: 0.65rem; color: var(--text-muted); text-align: center; font-weight: 600; }
+
+        .appointment-strip {
+            background: #f8fafc; border-left: 3px solid var(--accent); padding: 12px;
+            border-radius: 6px; margin-bottom: 8px; border: 1px solid var(--border); border-left-width: 3px;
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;
+        }
+        .appointment-strip-details { flex: 1; min-width: 150px; }
+        .appointment-strip-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .appointment-strip.completed { border-left-color: var(--success); opacity: 0.7; }
+        .appointment-strip.cancelled { border-left-color: var(--danger); text-decoration: line-through; opacity: 0.5; }
+
+        #upcoming-appointments-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        #upcoming-appointments-list::-webkit-scrollbar { width: 6px; }
+        #upcoming-appointments-list::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 4px; }
+
+        .chart-container { height: 280px; width: 100%; margin-top: 24px; }
+        .chart-bar { transition: fill 0.2s; }
+        .chart-bar:hover { opacity: 0.85; }
+        #print-isolated-target { display: none; }
+        
+        .flatpickr-calendar { z-index: 10000 !important; font-family: 'Inter', sans-serif; border-radius: 14px !important; box-shadow: 0 10px 30px -8px rgba(15, 23, 42, 0.35) !important; overflow: hidden; border: none !important; }
+        .flatpickr-calendar.hasTime .flatpickr-time { border-top: 1px solid #e5e7eb !important; }
+        .flatpickr-time { height: 56px !important; }
+        .flatpickr-time input { font-size: 1.15rem !important; font-weight: 600 !important; color: #1e293b !important; }
+        .flatpickr-time .numInputWrapper { transition: background-color 0.15s; border-radius: 8px; }
+        .flatpickr-time .numInputWrapper:hover { background: #eff6ff !important; }
+        .flatpickr-time .flatpickr-am-pm { font-weight: 700 !important; border-radius: 8px; }
+        .flatpickr-time .flatpickr-am-pm:hover { background: #eff6ff !important; color: var(--accent) !important; }
+        .flatpickr-time .arrowUp:after { border-bottom-color: var(--accent) !important; }
+        .flatpickr-time .arrowDown:after { border-top-color: var(--accent) !important; }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover { background: var(--accent) !important; border-color: var(--accent) !important; }
+        .flatpickr-day:hover { background: #eff6ff !important; }
+        .flatpickr-months .flatpickr-month, .flatpickr-current-month, .flatpickr-monthDropdown-months { color: #1e293b !important; }
+        .flatpickr-weekdays, span.flatpickr-weekday { background: #f8fafc !important; color: #64748b !important; font-weight: 600 !important; }
+        
         @media (max-width: 768px) {
             .app-root { flex-direction: column; }
             .sidebar { width: 100%; height: auto; padding: 12px 16px; }
+            .brand { margin-bottom: 0; }
+            .sidebar-top-row { display: flex; align-items: center; justify-content: space-between; }
+            .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: var(--sidebar-hover); border-radius: 8px; cursor: pointer; flex-shrink: 0; }
+            .mobile-nav-toggle svg { width: 22px; height: 22px; stroke: #fff; }
+            .nav-container { display: none; flex-direction: column; margin-top: 12px; }
+            .nav-container.nav-open { display: flex; }
+            .nav-link { margin-bottom: 4px; white-space: normal; }
+            .top-bar { padding: 12px 16px; }
+            .content-box { padding: 16px; }
             .split-pane { grid-template-columns: 1fr; }
             .form-layout { grid-template-columns: 1fr; }
+            .form-group.full-width { grid-column: span 1; }
+            .calendar-cell { min-height: 60px; }
+            .flatpickr-calendar { width: 94vw !important; max-width: 340px; }
+            .flatpickr-time { height: 64px !important; }
+            .flatpickr-time input { font-size: 1.3rem !important; }
         }
-        
-        #print-isolated-target { display: none; }
+        @media (min-width: 769px) {
+            .mobile-nav-toggle { display: none; }
+        }
+
         @media print {
             body * { visibility: hidden; }
             #print-isolated-target, #print-isolated-target * { visibility: visible; }
             #print-isolated-target { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 0; background: white; color: black; page-break-inside: avoid; }
             .btn, select, textarea, input, .sidebar, .top-bar { display: none !important; }
+            @page { size: portrait; margin: 15mm; }
         }
     </style>
 </head>
@@ -145,7 +246,6 @@
 
     <div id="print-isolated-target"></div>
 
-    <!-- Modals -->
     <div id="custom-alert-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
             <h3 id="alert-title" style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700;">Notice</h3>
@@ -167,6 +267,18 @@
         </div>
     </div>
 
+    <div id="custom-prompt-modal" class="custom-modal-overlay">
+        <div class="custom-modal-card">
+            <h3 id="prompt-title" style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700;">Input</h3>
+            <p id="prompt-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px; line-height: 1.4;"></p>
+            <input type="text" id="prompt-input" class="control" style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closePrompt(false)">Cancel</button>
+                <button id="prompt-confirm-btn" class="btn" onclick="closePrompt(true)">Submit</button>
+            </div>
+        </div>
+    </div>
+
     <!-- IDLE TIMEOUT MODAL -->
     <div id="timeout-modal" class="custom-modal-overlay">
         <div class="custom-modal-card" style="text-align: center;">
@@ -176,7 +288,89 @@
         </div>
     </div>
 
-    <!-- LOGIN GATE WITH SPLASH -->
+    <div id="edit-client-modal" class="custom-modal-overlay">
+        <div class="custom-modal-card">
+            <h3 style="margin-bottom: 16px; font-size: 1.15rem; font-weight: 700;">Edit Client Profile</h3>
+            <div class="form-group">
+                <label>Full Client Name *</label>
+                <input type="text" id="edit-name" class="control">
+            </div>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="edit-phone" class="control">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="edit-email" class="control">
+                </div>
+            </div>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" id="edit-dob" class="control date-picker-ui">
+                </div>
+                <div class="form-group">
+                    <label>Occupation</label>
+                    <input type="text" id="edit-occupation" class="control">
+                </div>
+            </div>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label>Hourly Rate</label>
+                    <input type="number" id="edit-rate" class="control" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Commencement Date</label>
+                    <input type="date" id="edit-start" class="control date-picker-ui">
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeEditClientModal()">Cancel</button>
+                <button class="btn" onclick="saveClientEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-session-modal" class="custom-modal-overlay">
+        <div class="custom-modal-card">
+            <h3 style="margin-bottom: 16px; font-size: 1.15rem; font-weight: 700;">Edit Session Log</h3>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label>Session Date</label>
+                    <input type="date" id="edit-session-date" class="control date-picker-ui">
+                </div>
+                <div class="form-group">
+                    <label>Session Time</label>
+                    <input type="time" id="edit-session-time" class="control time-picker-ui">
+                </div>
+                <div class="form-group">
+                    <label>Location Profile</label>
+                    <select id="edit-session-location" class="control">
+                        <option value="Online">Online Session</option>
+                        <option value="Office">Office Session</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="edit-session-payment" class="control">
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cash">Cash</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label>Clinical & Follow-up Notes</label>
+                    <textarea id="edit-session-notes" class="control" rows="5"></textarea>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="closeEditSessionModal()">Cancel</button>
+                <button class="btn" onclick="saveSessionEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN GATE -->
     <div id="login-gate-overlay">
         <div class="onboarding-card splash-fade" style="text-align: center;">
             <div style="display: flex; justify-content: center; margin-bottom: 20px;">
@@ -195,13 +389,90 @@
                   <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748b" letter-spacing="0.5">Secure Client Management</text>
                 </svg>
             </div>
-            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5;">Sign in with Google to access your secure practice data.</p>
+            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5;">Sign in with Google to access your practice data.</p>
             <button class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background-color: #fff; border-color: #cbd5e1; color: #334155;" onclick="gateGoogleSignIn()">
                 <svg style="width: 18px; height: 18px; margin-right: 8px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 Sign in with Google
             </button>
             <div style="margin-top: 20px;">
-                <a href="#" onclick="continueOffline(); return false;" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: underline;">Continue offline (local data only)</a>
+                <a href="#" onclick="continueOffline(); return false;" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: underline;">Continue offline (local data on this device only)</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ONBOARDING MODAL -->
+    <div id="onboarding-overlay">
+        <div class="onboarding-card">
+            <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">Setup Your Practice</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">Welcome to your Practice Management Suite. Please configure your initial workspace settings to get started.</p>
+            <div class="form-group">
+                <label>Practice Name</label>
+                <input type="text" id="ob-practice-name" class="control" placeholder="E.g., Practice Suite" value="Practice Suite">
+            </div>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label>Default Hourly Rate</label>
+                    <input type="number" id="ob-default-rate" class="control" value="60">
+                </div>
+                <div class="form-group">
+                    <label>Default Office Cost (/hr)</label>
+                    <input type="number" id="ob-default-office-cost" class="control" value="10">
+                </div>
+            </div>
+            <div class="form-layout">
+                <div class="form-group">
+                    <label>Time Display Format</label>
+                    <select id="ob-time-format" class="control">
+                        <option value="24h" selected>24-hour (E.g. 14:30)</option>
+                        <option value="12h">12-hour (E.g. 2:30 pm)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Default Currency Profile</label>
+                    <select id="ob-currency" class="control">
+                        <option value="£">£ (GBP - British Pound)</option>
+                        <option value="$">$ (USD - US Dollar)</option>
+                        <option value="€">€ (EUR - Euro)</option>
+                        <option value="₪">₪ (ILS - Israeli Shekel)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-layout" style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
+                <div class="form-group">
+                    <label>Reporting Start Month</label>
+                    <select id="ob-reporting-month" class="control">
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4" selected>April (UK Tax Year)</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Start Day</label>
+                    <input type="number" id="ob-reporting-day" class="control" value="6" min="1" max="31">
+                </div>
+            </div>
+            <button class="btn" style="width: 100%; margin-top: 12px; justify-content: center; padding: 12px;" onclick="completeOnboarding()">Initialize Practice Portal</button>
+            
+            <div style="margin-top: 24px; display: flex; align-items: center; gap: 12px;">
+                <div style="flex: 1; height: 1px; background-color: var(--border);"></div>
+                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">OR</span>
+                <div style="flex: 1; height: 1px; background-color: var(--border);"></div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <input type="file" id="ob-import-file" style="display: none;" accept=".json" onchange="importDatabaseFromOnboarding(event)">
+                <button class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px;" onclick="document.getElementById('ob-import-file').click()">
+                    Restore from Local Backup (.json)
+                </button>
             </div>
         </div>
     </div>
@@ -226,7 +497,11 @@
                       <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11" font-weight="500" fill="#94a3b8" letter-spacing="0.5">Secure Client Management</text>
                     </svg>
                 </div>
+                <div class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleMobileNav()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </div>
             </div>
+            <div id="sidebar-google-badge" onclick="initGoogleAuth()" style="display: none; cursor: pointer; font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; margin: 0 16px 12px 16px; text-align: center; font-weight: 600;"></div>
             <div class="nav-container" id="nav-container">
                 <div class="nav-link active" id="link-dashboard" onclick="navigate('dashboard')">Dashboard</div>
                 <div class="nav-link" id="link-clients" onclick="navigate('clients')">All Clients</div>
@@ -243,9 +518,42 @@
             </div>
 
             <div class="content-box">
-                <!-- Dashboard, Clients, Appointments omitted for brevity (unchanged structure besides JS hooks) -->
+                
                 <!-- SECTION: HOME DASHBOARD OVERVIEW -->
                 <div id="view-dashboard" class="section-view active-view">
+
+                    <!-- Next Appointment Banner -->
+                    <div id="dash-next-apt-container" style="display: none; margin-bottom: 24px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h4 style="font-size: 0.8rem; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">Next Scheduled Session</h4>
+                            <div id="dash-next-apt-details" style="font-size: 1.1rem; color: #1e3a8a; font-weight: 600;">Client @ Time</div>
+                        </div>
+                        <button class="btn btn-sm" style="background-color: #1e40af;" onclick="navigate('appointments')">Go to Calendar</button>
+                    </div>
+
+                    <!-- Monthly Analytics -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Monthly Performance</h3>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <select id="dash-month-val" class="control" style="width: 130px; height: 38px; padding: 4px 8px; margin-bottom: 0;" onchange="calculateMonthly()">
+                                <option value="0">January</option>
+                                <option value="1">February</option>
+                                <option value="2">March</option>
+                                <option value="3">April</option>
+                                <option value="4">May</option>
+                                <option value="5">June</option>
+                                <option value="6">July</option>
+                                <option value="7">August</option>
+                                <option value="8">September</option>
+                                <option value="9">October</option>
+                                <option value="10">November</option>
+                                <option value="11">December</option>
+                            </select>
+                            <select id="dash-month-year-val" class="control" style="width: 90px; height: 38px; padding: 4px 8px; margin-bottom: 0;" onchange="calculateMonthly()">
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="grid-metrics" style="margin-bottom: 32px;">
                         <div class="panel metric-card">
                             <h4>Monthly Gross</h4>
@@ -255,47 +563,197 @@
                             <h4>Monthly Net Profit</h4>
                             <p id="dash-monthly-net" style="color: var(--success);">0.00</p>
                         </div>
+                        <div class="panel metric-card">
+                            <h4>Tax Provision (Set Aside)</h4>
+                            <p id="dash-monthly-tax" style="color: var(--warning);">0.00</p>
+                        </div>
+                        <div class="panel metric-card">
+                            <h4>Sessions Held</h4>
+                            <p id="dash-monthly-sessions">0</p>
+                        </div>
                     </div>
+
+                    <!-- Yearly Practice Analytics -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Yearly Practice Analytics</h3>
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; margin-bottom: 0;">Reporting Period Year:</label>
+                                <select id="dash-year-select" class="control" style="width: 110px; height: 38px; padding: 4px 8px; margin-bottom: 0;" onchange="changeDashboardYear(this.value)"></select>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="dash-period-display" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); background: #f1f5f9; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; white-space: nowrap;">
+                                    Loading period...
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-metrics">
+                        <div class="panel metric-card">
+                            <h4>Gross Practice Revenue</h4>
+                            <p id="dash-total-gross" style="color: var(--accent);">0.00</p>
+                        </div>
+                        <div class="panel metric-card">
+                            <h4>Total Practice Expenses</h4>
+                            <p id="dash-total-overhead" style="color: var(--danger);">0.00</p>
+                        </div>
+                        <div class="panel metric-card">
+                            <h4>Est. HMRC Tax Liability</h4>
+                            <p id="dash-total-tax" style="color: var(--warning);">0.00</p>
+                            <span id="dash-tax-rate" style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 4px;">0.0% effective rate</span>
+                        </div>
+                        <div class="panel metric-card">
+                            <h4>True Net (Post-Tax)</h4>
+                            <p id="dash-total-net" style="color: var(--success);">0.00</p>
+                        </div>
+                    </div>
+
                     <div class="panel">
-                        <div class="tab-bar">
+                        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 16px;">Gross Income by Payment Method</h3>
+                        <div class="grid-metrics" id="payment-method-breakdown" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 0;"></div>
+                    </div>
+
+                    <div class="panel">
+                        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 8px;" id="yearly-graph-title">Yearly Revenue Bar Chart</h3>
+                        <div id="yearly-chart-box" style="margin-top: 16px;"></div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="tab-bar" style="margin-bottom: 20px;">
                             <div class="tab active" id="dash-tab-active" onclick="switchDashboardTab('Active')">Active Caseload</div>
-                            <div class="tab" id="dash-tab-closed" onclick="switchDashboardTab('Closed')">Closed History</div>
+                            <div class="tab" id="dash-tab-closed" onclick="switchDashboardTab('Closed')">Closed Case History</div>
                         </div>
                         <div style="overflow-x: auto;">
                             <table id="dash-data-table">
                                 <thead>
-                                    <tr><th>Client Name</th><th>Start Date</th><th>Rate / Hr</th><th>Last Session</th><th>Net Yield</th></tr>
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Start Date</th>
+                                        <th>Rate / Hr</th>
+                                        <th>Last Session</th>
+                                        <th>Net Yield</th>
+                                    </tr>
                                 </thead>
                                 <tbody id="dashboard-table"></tbody>
+                            </table>
+                            <div id="dash-empty-state" class="empty-state" style="display: none;">
+                                No client records match this category.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: ALL CLIENTS DIRECTORY -->
+                <div id="view-clients" class="section-view">
+                    <div class="panel">
+                        <div class="tab-bar">
+                            <div class="tab active" id="dir-tab-all" onclick="switchDirectoryTab('All')">All Records</div>
+                            <div class="tab" id="dir-tab-active" onclick="switchDirectoryTab('Active')">Active Only</div>
+                            <div class="tab" id="dir-tab-closed" onclick="switchDirectoryTab('Closed')">Closed Only</div>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Client Name</th>
+                                        <th>Start Date</th>
+                                        <th>Hourly Rate</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="directory-table"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- PROFILE VIEW -->
-                <div id="view-profile" class="section-view">
+                <div id="view-appointments" class="section-view">
                     <div class="split-pane">
                         <div>
                             <div class="panel">
-                                <button class="btn btn-secondary btn-sm" style="margin-bottom: 16px;" onclick="navigate('clients')">&larr; Directory</button>
-                                <h2 id="profile-client-name" style="font-size: 1.4rem; margin-bottom: 6px;">Client</h2>
-                                <div id="profile-status-badge-container" style="margin-bottom: 20px;"></div>
-                                <div class="form-group"><label>Base Rate</label><p id="profile-rate" style="font-size: 1.1rem; font-weight: 600;"></p></div>
-                                <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
-                                <div id="profile-case-action-container"></div>
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Schedule New Appointment</h3>
+                                
+                                <div class="form-group">
+                                    <label>Select Client *</label>
+                                    <select id="apt-client" class="control" style="height: 42px;"></select>
+                                </div>
+
+                                <div class="form-layout">
+                                    <div class="form-group">
+                                        <label>Appointment Date *</label>
+                                        <input type="date" id="apt-date" class="control date-picker-ui">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Start Time *</label>
+                                        <input type="time" id="apt-time" class="control time-picker-ui">
+                                    </div>
+                                </div>
+
+                                <div class="form-layout">
+                                    <div class="form-group">
+                                        <label>Repeat Pattern</label>
+                                        <select id="apt-repeat" class="control" onchange="toggleRepeatUntil()">
+                                            <option value="none">Does not repeat</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="monthly">Monthly</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" id="repeat-until-group" style="display: none;">
+                                        <label>Repeat Until Date *</label>
+                                        <input type="date" id="apt-repeat-until" class="control date-picker-ui">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Session Format *</label>
+                                    <select id="apt-location" class="control">
+                                        <option value="Online">Online Session</option>
+                                        <option value="Office">Office Session</option>
+                                    </select>
+                                </div>
+
+                                <button class="btn" style="width: 100%; margin-top: 12px;" onclick="submitAppointment()">Schedule Appointment</button>
+                            </div>
+
+                            <div class="panel">
+                                <h3 id="agenda-date-title" style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Selected Day's Agenda</h3>
+                                <div id="daily-agenda-container"></div>
                             </div>
                         </div>
 
                         <div>
                             <div class="panel">
-                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Session History</h3>
-                                <div id="timeline-container" class="timeline-box"></div>
+                                <div class="calendar-header">
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(-1)">&lt; Prev</button>
+                                        <h3 id="calendar-month-year" style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0; white-space: nowrap;">Month Year</h3>
+                                        <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(1)">Next &gt;</button>
+                                    </div>
+                                    <button class="btn btn-secondary btn-sm" onclick="setCalendarToToday()">Today</button>
+                                </div>
+
+                                <div class="calendar-month-grid" id="calendar-days-header">
+                                    <div class="calendar-day-label">Mon</div>
+                                    <div class="calendar-day-label">Tue</div>
+                                    <div class="calendar-day-label">Wed</div>
+                                    <div class="calendar-day-label">Thu</div>
+                                    <div class="calendar-day-label">Fri</div>
+                                    <div class="calendar-day-label">Sat</div>
+                                    <div class="calendar-day-label">Sun</div>
+                                </div>
+                                <div class="calendar-month-grid" id="calendar-grid-body" style="margin-top: 4px;"></div>
+                            </div>
+
+                            <div class="panel">
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Upcoming Scheduled Sessions</h3>
+                                <div id="upcoming-appointments-list"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- EXPENSES VIEW -->
                 <div id="view-expenses" class="section-view">
                     <div class="split-pane">
                         <div>
@@ -304,19 +762,18 @@
                                 <div class="form-layout">
                                     <div class="form-group">
                                         <label>Expense Date</label>
-                                        <input type="date" id="exp-date" class="control">
+                                        <input type="date" id="exp-date" class="control date-picker-ui">
                                     </div>
                                     <div class="form-group">
                                         <label>Amount *</label>
-                                        <input type="number" id="exp-amount" class="control" value="0.00" step="0.01">
+                                        <input type="number" id="exp-amount" class="control" value="0.00" step="0.01" min="0">
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label>Description / Vendor *</label>
-                                    <input type="text" id="exp-description" class="control">
+                                    <input type="text" id="exp-description" class="control" placeholder="E.g., Therapy Room Hire, Web Hosting">
                                 </div>
                                 
-                                <!-- REPEAT EXPENSE FEATURE -->
                                 <div class="form-layout">
                                     <div class="form-group">
                                         <label>Repeat Pattern</label>
@@ -328,72 +785,1860 @@
                                     </div>
                                     <div class="form-group" id="exp-repeat-until-group" style="display: none;">
                                         <label>Repeat Until Date *</label>
-                                        <input type="date" id="exp-repeat-until" class="control">
+                                        <input type="date" id="exp-repeat-until" class="control date-picker-ui">
                                     </div>
                                 </div>
 
-                                <div class="form-group" style="margin-top: 20px;">
+                                <div class="form-group" style="margin-top: 20px; margin-bottom: 20px;">
                                     <label>Expense Category *</label>
-                                    <select id="exp-category" class="control"></select>
+                                    <div style="display: flex; gap: 12px; align-items: center;">
+                                        <select id="exp-category" class="control" style="flex: 1; min-width: 0; height: 42px;"></select>
+                                        <button type="button" class="btn btn-secondary" onclick="triggerAddCategoryModal()" style="white-space: nowrap; height: 42px; padding: 0 16px;">+ Create Category</button>
+                                    </div>
                                 </div>
-                                <button class="btn btn-danger" style="width: 100%; margin-top: 12px;" onclick="submitExpense()">Commit Expense</button>
+                                <div class="form-group">
+                                    <label>Receipt Document (Optional PDF / Image)</label>
+                                    <input type="file" id="exp-receipt-file" class="control" accept="image/*,application/pdf">
+                                </div>
+                                <button class="btn btn-danger" style="width: 100%; margin-top: 12px;" onclick="submitExpense()">Commit Expense Record</button>
                             </div>
                         </div>
+
                         <div>
                             <div class="panel">
-                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Expense Ledger</h3>
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Practice Expense Ledger</h3>
+                                <div class="form-layout" style="align-items: flex-end; margin-bottom: 20px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label>Start Date</label>
+                                        <input type="date" id="exp-filter-start" class="control date-picker-ui" onchange="renderExpenses()">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label>End Date</label>
+                                        <input type="date" id="exp-filter-end" class="control date-picker-ui" onchange="renderExpenses()">
+                                    </div>
+                                    <div class="form-group full-width" style="margin-bottom: 0; display: flex; gap: 8px;">
+                                        <button class="btn btn-secondary" onclick="clearExpenseFilters()" style="flex: 1; justify-content: center;">Reset Filters</button>
+                                        <button class="btn" onclick="printExpenseReport()" style="flex: 1.5; justify-content: center;">Export Report (PDF)</button>
+                                    </div>
+                                </div>
                                 <div style="overflow-x: auto;">
                                     <table>
-                                        <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Action</th></tr></thead>
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Description</th>
+                                                <th>Category</th>
+                                                <th>Amount</th>
+                                                <th>Receipt</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
                                         <tbody id="expense-table-body"></tbody>
                                     </table>
+                                    <div id="expense-empty-state" class="empty-state" style="display: none;">
+                                        No practice expenses recorded matching the criteria.
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- SETTINGS VIEW -->
+                <div id="view-profile" class="section-view">
+                    <div class="split-pane">
+                        
+                        <div>
+                            <div class="panel" style="max-height: 85vh; overflow-y: auto;">
+                                <button class="btn btn-secondary btn-sm" style="margin-bottom: 16px; display: inline-flex;" onclick="navigate('clients')">
+                                    &larr; Back to Directory
+                                </button>
+
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <h2 id="profile-client-name" style="font-size: 1.4rem; margin-bottom: 6px; word-break: break-all;">Client Name</h2>
+                                    <button class="btn btn-secondary btn-sm" onclick="openEditClientModal()" style="padding: 4px 8px; font-size: 0.75rem;">Edit Profile</button>
+                                </div>
+                                <div id="profile-status-badge-container" style="margin-bottom: 20px;"></div>
+                                
+                                <div class="form-group">
+                                    <label>Phone Number</label>
+                                    <p id="profile-phone" style="font-size: 0.95rem; font-weight: 500; word-break: break-all;"></p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Email Address</label>
+                                    <p id="profile-email" style="font-size: 0.95rem; font-weight: 500; word-break: break-all;"></p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Date of Birth</label>
+                                    <p id="profile-dob" style="font-size: 0.95rem; font-weight: 500;"></p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Occupation</label>
+                                    <p id="profile-occupation" style="font-size: 0.95rem; font-weight: 500;"></p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Base Rate</label>
+                                    <p id="profile-rate" style="font-size: 1.1rem; font-weight: 600;"></p>
+                                </div>
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <p id="profile-start" style="font-size: 0.95rem; font-weight: 500; color: var(--text-muted);"></p>
+                                </div>
+                                <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
+                                <div class="form-group">
+                                    <label>Net Profit Generated</label>
+                                    <p id="profile-net-profit" style="font-size: 1.4rem; font-weight: 700; color: var(--success);">0.00</p>
+                                </div>
+                                <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
+                                
+                                <div class="form-group">
+                                    <label>Signed Service Contract (PDF)</label>
+                                    <div id="contract-status-container" style="margin-top: 8px;"></div>
+                                </div>
+                                <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
+                                
+                                <div id="profile-case-action-container"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="panel" id="client-upcoming-sessions-panel" style="background-color: #f8fafc;">
+                                <h3 style="font-size: 1.05rem; margin-bottom: 12px; font-weight: 600;">Upcoming Scheduled Session</h3>
+                                <div id="client-upcoming-list"></div>
+                            </div>
+
+                            <div class="panel" id="session-logger-panel">
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Record New Session Log</h3>
+                                <div class="form-layout">
+                                    <div class="form-group">
+                                        <label>Session Date</label>
+                                        <input type="date" id="session-date" class="control date-picker-ui">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Session Time (Optional)</label>
+                                        <input type="time" id="session-time" class="control time-picker-ui">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Location Profile</label>
+                                        <select id="session-location" class="control">
+                                            <option value="Online">Online Session</option>
+                                            <option value="Office">Office Session (Applies Configured Default Cost)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Payment Method</label>
+                                        <select id="session-payment" class="control">
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                            <option value="Cash">Cash</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label>Clinical & Follow-up Notes</label>
+                                        <textarea id="session-notes" class="control" rows="5" placeholder="Document progress details, themes discussed, and objective benchmarks..."></textarea>
+                                    </div>
+                                </div>
+                                <button class="btn" onclick="submitSession()">Commit Session Log</button>
+                            </div>
+                            
+                            <div class="panel" id="closed-case-notice" style="display: none; border-left: 4px solid var(--charcoal); background-color: #f8fafc;">
+                                <h3 style="color: var(--charcoal); font-size: 1rem; font-weight: 700; margin-bottom: 6px;">Case Closed / Read-Only Mode</h3>
+                                <p style="font-size: 0.9rem; color: var(--text-muted);">Reopen this case file using the sidebar action button to record new sessions or compile financial billing logs.</p>
+                                <div id="closed-case-reason-box" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border);">
+                                    <strong style="font-size: 0.85rem; color: var(--charcoal); display: block; margin-bottom: 4px;">Reason for Closure:</strong>
+                                    <p id="closed-case-reason-text" style="font-size: 0.9rem; color: var(--text-main); font-style: italic; line-height: 1.4;"></p>
+                                </div>
+                            </div>
+
+                            <div class="panel">
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Session History Timeline</h3>
+                                <div id="timeline-container" class="timeline-box"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="view-onboard" class="section-view">
+                    <div class="panel" style="max-width: 600px; margin: 0 auto;">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 600;">Onboard New Client Record</h3>
+                        
+                        <div class="form-group">
+                            <label>Full Client Name *</label>
+                            <input type="text" id="new-name" class="control" placeholder="E.g., Jane Smith">
+                        </div>
+                        
+                        <div class="form-layout">
+                            <div class="form-group">
+                                <label>Phone Number *</label>
+                                <input type="tel" id="new-phone" class="control" placeholder="E.g., 07123 456789">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address (Optional)</label>
+                                <input type="email" id="new-email" class="control" placeholder="E.g., jane@example.com">
+                            </div>
+                        </div>
+
+                        <div class="form-layout">
+                            <div class="form-group">
+                                <label>Date of Birth (Optional)</label>
+                                <input type="date" id="new-dob" class="control date-picker-ui">
+                            </div>
+                            <div class="form-group">
+                                <label>Occupation (Optional)</label>
+                                <input type="text" id="new-occupation" class="control" placeholder="E.g., Teacher, Accountant">
+                            </div>
+                        </div>
+
+                        <div class="form-layout">
+                            <div class="form-group">
+                                <label>Agreed Hourly Rate</label>
+                                <input type="number" id="new-rate" class="control" value="60" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Therapy Commencement Date</label>
+                                <input type="date" id="new-start" class="control date-picker-ui">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 12px; margin-top: 12px;">
+                            <button class="btn" onclick="saveClientProfile()">Create & Open Profile</button>
+                            <button class="btn btn-secondary" onclick="navigate('dashboard')">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="view-settings" class="section-view">
                     <div class="panel" style="max-width: 600px;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 20px; font-weight: 700;">Practice Setup Configurations</h3>
+                        <h3 style="font-size: 1.15rem; margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Practice Setup Configurations</h3>
                         <div class="form-group">
-                            <label>Default Currency Profile</label>
-                            <select id="set-currency" class="control">
-                                <option value="£">£ (GBP - British Pound)</option>
-                                <option value="$">$ (USD - US Dollar)</option>
-                                <option value="€">€ (EUR - Euro)</option>
-                                <option value="₪">₪ (ILS - Israeli Shekel)</option>
-                            </select>
+                            <label>Practice Name</label>
+                            <input type="text" id="set-practice-name" class="control">
+                        </div>
+                        <div class="form-layout">
+                            <div class="form-group">
+                                <label>Default Hourly Rate</label>
+                                <input type="number" id="set-default-rate" class="control">
+                            </div>
+                            <div class="form-group">
+                                <label>Default Office Cost (/hr)</label>
+                                <input type="number" id="set-default-office-cost" class="control">
+                            </div>
+                        </div>
+                        <div class="form-layout">
+                            <div class="form-group">
+                                <label>Time Display Format</label>
+                                <select id="set-time-format" class="control">
+                                    <option value="24h">24-hour (E.g. 14:30)</option>
+                                    <option value="12h">12-hour (E.g. 2:30 pm)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Default Currency Profile</label>
+                                <select id="set-currency" class="control">
+                                    <option value="£">£ (GBP - British Pound)</option>
+                                    <option value="$">$ (USD - US Dollar)</option>
+                                    <option value="€">€ (EUR - Euro)</option>
+                                    <option value="₪">₪ (ILS - Israeli Shekel)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-layout" style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
+                            <div class="form-group">
+                                <label>Reporting Period Start Month</label>
+                                <select id="set-reporting-month" class="control">
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April (UK Tax Year)</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Reporting Period Start Day</label>
+                                <input type="number" id="set-reporting-day" class="control" min="1" max="31">
+                            </div>
                         </div>
                         <button class="btn" style="margin-bottom: 24px;" onclick="savePracticeSettings()">Update Core Settings</button>
                     </div>
 
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Drive Sync</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                            Your data syncs automatically to your own Google Drive once connected. Nobody but you can access that file.
+                        </p>
+                        <div id="google-status" style="font-size: 0.9rem; margin-bottom: 4px; font-weight: 600;">⚪ Not connected</div>
+                        <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <button class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="initGoogleAuth()">Connect Google Account</button>
+                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="saveToGoogleDrive()">Save to Google Drive Now</button>
+                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="loadFromGoogleDrive()">Load Latest from Google Drive</button>
+                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="signOutGoogle()">Disconnect Google Account</button>
+                        </div>
+                    </div>
+
+                    <div class="panel" style="max-width: 600px;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Backup & Data Synchronization</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+                            Because this software operates entirely locally inside your browser, download a data backup file periodically. We recommend downloading the complete ZIP backup archive.
+                        </p>
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <div><button class="btn" style="width: 100%; justify-content: center;" onclick="exportDatabase()">Download CRM Database Backup (.json)</button></div>
+                            <div><button class="btn btn-charcoal" style="width: 100%; justify-content: center; background-color: #0f172a;" onclick="exportAllAsZip()">Download Complete ZIP Document Archive (.zip)</button></div>
+                            <hr style="border:0; border-top: 1px solid var(--border);">
+                            <div>
+                                <label style="margin-bottom: 8px; font-weight: 600; display: block;">Restore Database from Backup File</label>
+                                <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importDatabase(event)">
+                                <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="document.getElementById('import-file').click()">Select & Import Backup (.json)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid #2563eb;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid var(--border); padding-bottom: 8px;">UK HMRC Self-Assessment Tax Exporter</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                            Compile and download a ready-to-file tax archive for any selected reporting period.
+                        </p>
+                        <div class="form-layout" style="align-items: flex-end; margin-bottom: 8px; gap: 12px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label style="font-weight: 600;">Choose Target Reporting Period</label>
+                                <select id="tax-year-select" class="control" style="height: 42px; background-color: #ffffff;"></select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <button class="btn" style="width: 100%; height: 42px; background-color: #1e3a8a; justify-content: center;" onclick="exportTaxYearArchive()">Export Tax Year ZIP</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="panel" style="max-width: 600px; border-color: var(--danger);">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger);">Log Out Session</h3>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Log Out Session</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
                             This clears your active session to protect your client data.
                         </p>
-                        <!-- MODIFIED RESET BUTTON -->
                         <button class="btn btn-danger" onclick="triggerFullReset()">Log Out of PracticeSuite</button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </div> <!-- /app-root -->
 
     <script>
-        let practiceSettings = JSON.parse(localStorage.getItem('sasson_practice_settings'));
-        let dataStore = JSON.parse(localStorage.getItem('sasson_practice_secure_store')) || { clients: [], expenses: [], categories: [], appointments: [] };
+        function toLocalISODateString(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
         
-        let idleLogoutTimer = null;
-        let timeoutWarningTimer = null;
-        let countdownInterval = null;
-        let googleAccessToken = null;
+        function calculateUKTax(profit) {
+            if (profit <= 0) return 0;
+            let personalAllowance = 12570;
+            if (profit > 100000) {
+                personalAllowance -= (profit - 100000) / 2;
+                if (personalAllowance < 0) personalAllowance = 0;
+            }
+            let taxableIncome = Math.max(0, profit - personalAllowance);
+            let incomeTax = 0;
+            if (taxableIncome > 0) {
+                let basic = Math.min(taxableIncome, 37700);
+                incomeTax += basic * 0.20;
+                if (taxableIncome > 37700) {
+                    let higher = Math.min(taxableIncome - 37700, 125140 - 37700);
+                    incomeTax += higher * 0.40;
+                    if (taxableIncome > 125140) {
+                        incomeTax += (taxableIncome - 125140) * 0.45;
+                    }
+                }
+            }
+            let niClass4 = 0;
+            if (profit > 12570) {
+                let niBasic = Math.min(profit - 12570, 50270 - 12570);
+                niClass4 += niBasic * 0.06;
+                if (profit > 50270) {
+                    niClass4 += (profit - 50270) * 0.02;
+                }
+            }
+            return incomeTax + niClass4;
+        }
+
+        let practiceSettings = JSON.parse(localStorage.getItem('sasson_practice_settings'));
+        let dataStore = JSON.parse(localStorage.getItem('sasson_practice_secure_store')) || { clients: [], expenses: [], categories: [] };
+        let fpInstances = []; 
+        let globalEffectiveTaxRate = 0;
+        
+        if (!dataStore.categories) dataStore.categories = [];
+        if (!dataStore.expenses) dataStore.expenses = [];
+        if (!dataStore.appointments) dataStore.appointments = [];
+        
+        let activeProfileId = null;
+        let currentDashboardFilter = 'Active'; 
+        let currentDirectoryFilter = 'All'; 
+        let selectedDashboardYear = new Date().getFullYear();
+        let cachedSessionTime = null; 
+        
+        let editingSessionClientId = null;
+        let editingSessionIndex = null;
 
         function getCurrency() {
             return (practiceSettings && practiceSettings.currency) ? practiceSettings.currency : '£';
         }
+
+        function setInputVal(id, val) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (el._flatpickr) {
+                el._flatpickr.setDate(val);
+            } else {
+                el.value = val;
+            }
+        }
+
+        function initPickers() {
+            if (fpInstances.length > 0) {
+                fpInstances.forEach(fp => fp.destroy());
+                fpInstances = [];
+            }
+            const is24h = !practiceSettings || practiceSettings.timeFormat !== '12h';
+            const dateInputs = document.querySelectorAll('input[type="date"]');
+            dateInputs.forEach(el => {
+                const fp = flatpickr(el, { altInput: true, altFormat: "d/m/Y", dateFormat: "Y-m-d", disableMobile: true });
+                fpInstances.push(fp);
+            });
+            const timeInputs = document.querySelectorAll('input[type="time"]');
+            timeInputs.forEach(el => {
+                const fp = flatpickr(el, { enableTime: true, noCalendar: true, altInput: true, altFormat: is24h ? "H:i" : "h:i K", dateFormat: "H:i", time_24hr: is24h, disableMobile: false });
+                fpInstances.push(fp);
+            });
+        }
+
+        function formatDateToUK(dateStr) {
+            if (!dateStr || dateStr === 'Not Provided' || dateStr.includes('No sessions')) return dateStr;
+            const parts = dateStr.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return dateStr;
+        }
+
+        function formatTimeBySetting(timeStr) {
+            if (!timeStr) return '';
+            const is12h = practiceSettings && practiceSettings.timeFormat === '12h';
+            if (!is12h) return timeStr;
+            const parts = timeStr.split(':');
+            if (parts.length < 2) return timeStr;
+            let hours = parseInt(parts[0], 10);
+            const minutes = parts[1];
+            if (isNaN(hours)) return timeStr;
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12; 
+            return `${hours}:${minutes} ${ampm}`;
+        }
+
+        // --- UI TOGGLES ---
+        window.toggleNotes = function(btn) {
+            const content = btn.previousElementSibling;
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                btn.innerText = 'Show full notes';
+            } else {
+                content.classList.add('expanded');
+                btn.innerText = 'Hide notes';
+            }
+        };
+
+        const DB_NAME = 'SassonPracticeCRM_Docs';
+        const STORE_CONTRACTS = 'contracts';
+        const STORE_RECEIPTS = 'receipts';
+
+        let alertCallback = null;
+        function showAlert(title, message, onOk = null) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            alertCallback = onOk;
+            document.getElementById('custom-alert-modal').classList.add('active');
+        }
+        function closeAlert() {
+            document.getElementById('custom-alert-modal').classList.remove('active');
+            const callback = alertCallback;
+            alertCallback = null;
+            if (callback) callback();
+        }
+
+        let confirmCallback = null;
+        function showConfirm(title, message, onConfirm = null, isDestructive = false) {
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-message').innerText = message;
+            confirmCallback = onConfirm;
+            const btn = document.getElementById('confirm-action-btn');
+            if (isDestructive) {
+                btn.className = 'btn btn-danger';
+                btn.innerText = 'Confirm Action';
+            } else {
+                btn.className = 'btn';
+                btn.innerText = 'Confirm';
+            }
+            document.getElementById('custom-confirm-modal').classList.add('active');
+        }
+        function closeConfirm(confirmed) {
+            document.getElementById('custom-confirm-modal').classList.remove('active');
+            const callback = confirmCallback;
+            confirmCallback = null;
+            if (confirmed && callback) callback();
+        }
+
+        let promptCallback = null;
+        function showPrompt(title, message, onPrompt, placeholder = "Input") {
+            document.getElementById('prompt-title').innerText = title;
+            document.getElementById('prompt-message').innerText = message;
+            const input = document.getElementById('prompt-input');
+            input.value = '';
+            input.placeholder = placeholder;
+            promptCallback = onPrompt;
+            document.getElementById('custom-prompt-modal').classList.add('active');
+            setTimeout(() => input.focus(), 150);
+        }
+        function closePrompt(confirmed) {
+            document.getElementById('custom-prompt-modal').classList.remove('active');
+            const value = document.getElementById('prompt-input').value.trim();
+            const callback = promptCallback;
+            promptCallback = null;
+            if (confirmed && callback) callback(value);
+        }
+
+        function importDatabaseFromOnboarding(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.clients)) {
+                        dataStore = parsed; 
+                        persist(); 
+                        if (!practiceSettings) {
+                            practiceSettings = { practiceName: "Imported Practice", defaultRate: 60, defaultOfficeCost: 10, timeFormat: '24h', reportingPeriodStartMonth: 4, reportingPeriodStartDay: 6, currency: '£' };
+                            localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
+                        }
+                        showApp();
+                        showAlert('Import Completed', 'Database loaded successfully.');
+                    } else {
+                        showAlert('Error', 'Invalid file format. Could not find client data.');
+                    }
+                } catch(err) { showAlert('Error', 'Invalid JSON file.'); }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function triggerAddCategoryModal() {
+            showPrompt("New Expense Category", "Enter a unique category name for tracking practice overheads (e.g. Rent, Supervision):", function(val) {
+                if (!val) return;
+                const normalized = val.trim();
+                if (dataStore.categories.some(cat => cat.toLowerCase() === normalized.toLowerCase())) {
+                    return showAlert("Duplicate", `The category "${normalized}" already exists.`);
+                }
+                dataStore.categories.push(normalized);
+                persist();
+                populateCategoryDropdown(normalized);
+            }, "E.g., Travel, Rent");
+        }
+
+        function populateCategoryDropdown(selectValue = "") {
+            const dropdown = document.getElementById('exp-category');
+            if (!dropdown) return;
+            dropdown.innerHTML = '';
+            if (dataStore.categories.length === 0) {
+                dropdown.innerHTML = '<option value="" disabled selected>-- No Categories --</option>';
+                return;
+            }
+            dataStore.categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.innerText = cat;
+                if (cat === selectValue) opt.selected = true;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        function getDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 2);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_CONTRACTS)) db.createObjectStore(STORE_CONTRACTS, { keyPath: 'clientId' });
+                    if (!db.objectStoreNames.contains(STORE_RECEIPTS)) db.createObjectStore(STORE_RECEIPTS, { keyPath: 'expenseId' });
+                };
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function storeDocBlob(storeName, key, file) {
+            const db = await getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const record = { fileName: file.name, fileType: file.type, fileBlob: file, uploadedAt: toLocalISODateString(new Date()) };
+                if (storeName === STORE_CONTRACTS) record.clientId = key; else record.expenseId = key;
+                const request = store.put(record);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function getDocBlob(storeName, key) {
+            const db = await getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.get(key);
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function deleteDocBlob(storeName, key) {
+            const db = await getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        function persist() {
+            localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
+            if (typeof window.persistToCloud === 'function') {
+                window.persistToCloud();
+            }
+            calculateAndRender();
+        }
+
+        function toggleMobileNav() {
+            const nav = document.getElementById('nav-container');
+            if (nav) nav.classList.toggle('nav-open');
+        }
+
+        function closeMobileNav() {
+            const nav = document.getElementById('nav-container');
+            if (nav) nav.classList.remove('nav-open');
+        }
+
+        function navigate(viewId, targetClientId = null) {
+            document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active-view'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const activeSection = document.getElementById(`view-${viewId}`);
+            if (activeSection) activeSection.classList.add('active-view');
+            const link = document.getElementById(`link-${viewId}`);
+            if (link) link.classList.add('active');
+            closeMobileNav();
+
+            const titles = { 'dashboard': 'Dashboard', 'clients': 'Client Directory', 'expenses': 'Expenses', 'appointments': 'Calendar & Booking', 'settings': 'Settings', 'profile': 'Case File Workspace', 'onboard': 'Client Intake' };
+            const titleEl = document.getElementById('view-title');
+            if (titleEl) titleEl.innerText = titles[viewId] || 'Workspace';
+
+            if (viewId === 'profile' && targetClientId) {
+                activeProfileId = targetClientId;
+                renderClientProfile();
+            }
+            if (viewId === 'appointments') renderAppointmentsPage();
+        }
+
+        function switchDashboardTab(status) {
+            currentDashboardFilter = status;
+            document.getElementById('dash-tab-active').classList.toggle('active', status === 'Active');
+            document.getElementById('dash-tab-closed').classList.toggle('active', status === 'Closed');
+            calculateAndRender();
+        }
+
+        function switchDirectoryTab(filter) {
+            currentDirectoryFilter = filter;
+            document.getElementById('dir-tab-all').classList.toggle('active', filter === 'All');
+            document.getElementById('dir-tab-active').classList.toggle('active', filter === 'Active');
+            document.getElementById('dir-tab-closed').classList.toggle('active', filter === 'Closed');
+            calculateAndRender();
+        }
+
+        function showLoginGate(message) {
+            document.getElementById('app-root').style.display = 'none';
+            document.getElementById('onboarding-overlay').style.display = 'none';
+            const gate = document.getElementById('login-gate-overlay');
+            gate.style.display = 'flex';
+            const msgEl = document.getElementById('login-gate-message');
+            if (msgEl && message) msgEl.textContent = message;
+        }
+
+        function showApp() {
+            document.getElementById('login-gate-overlay').style.display = 'none';
+            document.getElementById('onboarding-overlay').style.display = 'none';
+            document.getElementById('app-root').style.display = 'flex';
+            applySettingsBranding();
+            initPickers();
+            calculateAndRender();
+            resetIdleLogoutTimer();
+        }
+
+        function showCreateProfileForm() {
+            document.getElementById('login-gate-overlay').style.display = 'none';
+            document.getElementById('app-root').style.display = 'none';
+            document.getElementById('onboarding-overlay').style.display = 'flex';
+            
+            // Set local currency hint on first load
+            const localCur = Intl.NumberFormat().resolvedOptions().currency || 'GBP';
+            const curMap = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'ILS': '₪' };
+            document.getElementById('ob-currency').value = curMap[localCur] || '£';
+        }
+
+        function completeOnboarding() {
+            const name = document.getElementById('ob-practice-name').value.trim();
+            const rate = parseFloat(document.getElementById('ob-default-rate').value) || 60;
+            const roomCost = parseFloat(document.getElementById('ob-default-office-cost').value) || 10;
+            const timeFormat = document.getElementById('ob-time-format').value || '24h';
+            const currency = document.getElementById('ob-currency').value || '£';
+            const reportingMonth = parseInt(document.getElementById('ob-reporting-month').value) || 4;
+            const reportingDay = parseInt(document.getElementById('ob-reporting-day').value) || 6;
+
+            if (!name) return showAlert('Configuration Needed', 'Practice Name is required.');
+
+            practiceSettings = { practiceName: name, defaultRate: rate, defaultOfficeCost: roomCost, timeFormat: timeFormat, currency: currency, reportingPeriodStartMonth: reportingMonth, reportingPeriodStartDay: reportingDay };
+            localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
+            if (dataStore.categories.length === 0) {
+                dataStore.categories = ['Rent', 'Supervision', 'Training & CPD', 'Travel', 'Insurance', 'Membership Fees', 'Other'];
+                localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
+                populateCategoryDropdown();
+            }
+            showApp();
+            if (googleAccessToken) saveToGoogleDrive(true);
+        }
+
+        function applySettingsBranding() {
+            if (practiceSettings) {
+                document.title = practiceSettings.practiceName || "Practice Suite";
+                const fields = {
+                    'set-practice-name': practiceSettings.practiceName,
+                    'set-default-rate': practiceSettings.defaultRate,
+                    'set-default-office-cost': practiceSettings.defaultOfficeCost,
+                    'set-time-format': practiceSettings.timeFormat || '24h',
+                    'set-currency': practiceSettings.currency || '£',
+                    'set-reporting-month': practiceSettings.reportingPeriodStartMonth || 4,
+                    'set-reporting-day': practiceSettings.reportingPeriodStartDay || 6
+                };
+
+                for (let id in fields) {
+                    const el = document.getElementById(id);
+                    if (el) el.value = fields[id];
+                }
+
+                const graphTitle = document.getElementById('yearly-graph-title');
+                if (graphTitle) {
+                    const dates = getReportingPeriodDates(selectedDashboardYear);
+                    graphTitle.innerText = `Revenue Breakdown (${dates.start} to ${dates.end})`;
+                }
+            }
+        }
+
+        function savePracticeSettings() {
+            const name = document.getElementById('set-practice-name').value.trim();
+            if (!name) return showAlert('Validation Error', 'Practice Name is required.');
+
+            practiceSettings = {
+                practiceName: name,
+                defaultRate: parseFloat(document.getElementById('set-default-rate').value) || 60,
+                defaultOfficeCost: parseFloat(document.getElementById('set-default-office-cost').value) || 10,
+                timeFormat: document.getElementById('set-time-format').value || '24h',
+                currency: document.getElementById('set-currency').value || '£',
+                reportingPeriodStartMonth: parseInt(document.getElementById('set-reporting-month').value) || 4,
+                reportingPeriodStartDay: parseInt(document.getElementById('set-reporting-day').value) || 6
+            };
+
+            localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
+            applySettingsBranding();
+            initPickers(); 
+            calculateAndRender();
+            if (activeProfileId) renderClientProfile();
+            showAlert('Setup Updated', 'Settings saved successfully.');
+        }
+
+        function getReportingPeriodDates(year) {
+            const startMonth = practiceSettings ? (parseInt(practiceSettings.reportingPeriodStartMonth) || 4) : 4;
+            const startDay = practiceSettings ? (parseInt(practiceSettings.reportingPeriodStartDay) || 6) : 6;
+            
+            const pad = n => String(n).padStart(2, '0');
+            const startDateStr = `${year}-${pad(startMonth)}-${pad(startDay)}`;
+            
+            const startDateObj = new Date(year, startMonth - 1, startDay);
+            const endDateObj = new Date(startDateObj);
+            endDateObj.setFullYear(startDateObj.getFullYear() + 1);
+            endDateObj.setDate(startDateObj.getDate() - 1);
+            
+            const endDateStr = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
+            return { start: startDateStr, end: endDateStr };
+        }
+
+        function openEditClientModal() {
+            const client = dataStore.clients.find(c => c.id === activeProfileId);
+            if (!client) return;
+            
+            document.getElementById('edit-name').value = client.name;
+            document.getElementById('edit-phone').value = client.phone !== 'Not Provided' ? client.phone : '';
+            document.getElementById('edit-email').value = client.email !== 'Not Provided' ? client.email : '';
+            setInputVal('edit-dob', client.dob !== 'Not Provided' ? client.dob : '');
+            document.getElementById('edit-occupation').value = client.occupation !== 'Not Provided' ? client.occupation : '';
+            document.getElementById('edit-rate').value = client.rate;
+            setInputVal('edit-start', client.startDate);
+
+            document.getElementById('edit-client-modal').classList.add('active');
+        }
+
+        function closeEditClientModal() {
+            document.getElementById('edit-client-modal').classList.remove('active');
+        }
+
+        function saveClientEdit() {
+            const client = dataStore.clients.find(c => c.id === activeProfileId);
+            if (!client) return;
+            const name = document.getElementById('edit-name').value.trim();
+            const phone = document.getElementById('edit-phone').value.trim();
+            if (!name) return showAlert('Error', 'Client name is required.');
+            if (!phone) return showAlert('Error', 'Phone number is required.');
+
+            client.name = name;
+            client.phone = phone;
+            client.email = document.getElementById('edit-email').value.trim() || 'Not Provided';
+            client.dob = document.getElementById('edit-dob').value || 'Not Provided';
+            client.occupation = document.getElementById('edit-occupation').value.trim() || 'Not Provided';
+            client.rate = parseFloat(document.getElementById('edit-rate').value) || 0;
+            client.startDate = document.getElementById('edit-start').value;
+
+            persist();
+            renderClientProfile();
+            closeEditClientModal();
+            showAlert('Success', 'Client profile updated successfully.');
+        }
+
+        function openEditSessionModal(clientId, index) {
+            editingSessionClientId = clientId;
+            editingSessionIndex = index;
+            const client = dataStore.clients.find(c => c.id === clientId);
+            const session = client.sessions[index];
+
+            setInputVal('edit-session-date', session.date);
+            setInputVal('edit-session-time', session.time || '');
+            document.getElementById('edit-session-location').value = session.location;
+            document.getElementById('edit-session-payment').value = session.paymentMethod || 'Bank Transfer';
+            document.getElementById('edit-session-notes').value = session.notes;
+
+            document.getElementById('edit-session-modal').classList.add('active');
+        }
+
+        function closeEditSessionModal() {
+            document.getElementById('edit-session-modal').classList.remove('active');
+            editingSessionClientId = null;
+            editingSessionIndex = null;
+        }
+
+        function saveSessionEdit() {
+            const date = document.getElementById('edit-session-date').value;
+            const time = document.getElementById('edit-session-time').value;
+            const loc = document.getElementById('edit-session-location').value;
+            const payment = document.getElementById('edit-session-payment').value;
+            const notes = document.getElementById('edit-session-notes').value.trim();
+
+            if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
+
+            const client = dataStore.clients.find(c => c.id === editingSessionClientId);
+            if (client && client.sessions[editingSessionIndex]) {
+                const s = client.sessions[editingSessionIndex];
+                s.date = date;
+                s.time = time || null;
+                s.location = loc;
+                s.paymentMethod = payment;
+                s.notes = notes;
+                s.roomCost = loc === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0;
+                
+                persist();
+                renderClientProfile();
+                closeEditSessionModal();
+            }
+        }
+
+        function openOnboarding() {
+            setInputVal('new-start', toLocalISODateString(new Date()));
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-phone').value = '';
+            document.getElementById('new-email').value = '';
+            setInputVal('new-dob', '');
+            document.getElementById('new-occupation').value = '';
+            document.getElementById('new-rate').value = practiceSettings ? practiceSettings.defaultRate : 60;
+            navigate('onboard');
+        }
+
+        function saveClientProfile() {
+            const name = document.getElementById('new-name').value.trim();
+            const phone = document.getElementById('new-phone').value.trim();
+            if (!name || !phone) return showAlert('Incomplete', 'Name and Phone number are required.');
+
+            const clientRecord = {
+                id: 'c_' + Date.now(),
+                name: name,
+                phone: phone,
+                email: document.getElementById('new-email').value.trim() || 'Not Provided',
+                dob: document.getElementById('new-dob').value || 'Not Provided',
+                occupation: document.getElementById('new-occupation').value.trim() || 'Not Provided',
+                rate: parseFloat(document.getElementById('new-rate').value) || 60,
+                startDate: document.getElementById('new-start').value,
+                status: 'Active', 
+                closedReason: '',
+                sessions: []
+            };
+
+            dataStore.clients.push(clientRecord);
+            persist();
+            navigate('profile', clientRecord.id);
+        }
+
+        function toggleCaseStatus() {
+            const client = dataStore.clients.find(c => c.id === activeProfileId);
+            if (!client) return;
+            if (!client.status) client.status = 'Active';
+
+            if (client.status === 'Active') {
+                showPrompt("Archive File", `Provide a reason for closing ${client.name}'s file:`, function(reason) {
+                    client.status = 'Closed';
+                    client.closedReason = reason.trim() || 'No reason provided';
+                    persist();
+                    renderClientProfile();
+                }, "Reason...", "Close File");
+            } else {
+                client.status = 'Active';
+                client.closedReason = ''; 
+                persist();
+                renderClientProfile();
+            }
+        }
+
+        async function renderContractSection(clientId) {
+            const container = document.getElementById('contract-status-container');
+            if (!container) return;
+            container.innerHTML = '<p style="font-size: 0.85rem; color: var(--text-muted);">Loading files...</p>';
+            try {
+                const contract = await getDocBlob(STORE_CONTRACTS, clientId);
+                if (contract) {
+                    container.innerHTML = `
+                        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                            <span style="font-size: 0.85rem; font-weight: 500; word-break: break-all;">${contract.fileName}</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="viewDoc('${STORE_CONTRACTS}', '${clientId}')">View</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteDoc('${STORE_CONTRACTS}', '${clientId}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <label class="btn btn-secondary btn-sm" style="cursor: pointer; justify-content: center; text-align: center; border-style: dashed;">
+                            <input type="file" accept="application/pdf" style="display: none;" onchange="handleDocUpload(event, '${STORE_CONTRACTS}', '${clientId}')">
+                            + Upload Signed PDF
+                        </label>
+                    `;
+                }
+            } catch (err) {
+                container.innerHTML = `<p style="color: var(--danger);">Failed to load.</p>`;
+            }
+        }
+
+        async function handleDocUpload(event, storeName, key) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                await storeDocBlob(storeName, key, file);
+                if (storeName === STORE_CONTRACTS) renderContractSection(key); else renderExpenses();
+            } catch (err) {
+                showAlert('Database Error', 'Could not save document locally: ' + err.message);
+            }
+        }
+
+        async function viewDoc(storeName, key) {
+            try {
+                const doc = await getDocBlob(storeName, key);
+                if (doc && doc.fileBlob) {
+                    const newWindow = window.open(URL.createObjectURL(doc.fileBlob));
+                    if (!newWindow) showAlert('Pop-ups Blocked', 'Please permit pop-ups.');
+                } else showAlert('Missing', 'File not found in database.');
+            } catch (err) { showAlert('Error', err.message); }
+        }
+
+        async function deleteDoc(storeName, key) {
+            showConfirm("Delete", "Permanently delete this file?", async function() {
+                try {
+                    await deleteDocBlob(storeName, key);
+                    if (storeName === STORE_CONTRACTS) renderContractSection(key); else renderExpenses();
+                } catch (err) { showAlert('Error', err.message); }
+            }, true);
+        }
+
+        function renderClientProfile() {
+            const client = dataStore.clients.find(c => c.id === activeProfileId);
+            if (!client) return;
+            const cur = getCurrency();
+
+            if (!client.status) client.status = 'Active';
+
+            document.getElementById('profile-client-name').innerText = client.name;
+            document.getElementById('profile-rate').innerText = `${cur}${client.rate.toFixed(2)} / hr`;
+            document.getElementById('profile-start').innerText = formatDateToUK(client.startDate);
+            document.getElementById('profile-phone').innerText = client.phone || 'Not Provided';
+            document.getElementById('profile-email').innerText = client.email || 'Not Provided';
+            document.getElementById('profile-dob').innerText = formatDateToUK(client.dob);
+            document.getElementById('profile-occupation').innerText = client.occupation || 'Not Provided';
+
+            setInputVal('session-date', toLocalISODateString(new Date()));
+            document.getElementById('session-notes').value = '';
+            document.getElementById('session-payment').value = 'Bank Transfer';
+            
+            if (cachedSessionTime) {
+                setInputVal('session-time', cachedSessionTime);
+                cachedSessionTime = null; 
+            } else {
+                setInputVal('session-time', '');
+            }
+
+            const badgeContainer = document.getElementById('profile-status-badge-container');
+            const actionContainer = document.getElementById('profile-case-action-container');
+            
+            if (client.status === 'Active') {
+                badgeContainer.innerHTML = `<span class="badge badge-active">Active</span>`;
+                actionContainer.innerHTML = `<button class="btn btn-danger" style="width:100%; margin-top:8px;" onclick="toggleCaseStatus()">Close Case File</button>`;
+                document.getElementById('session-logger-panel').style.display = 'block';
+                document.getElementById('closed-case-notice').style.display = 'none';
+            } else {
+                badgeContainer.innerHTML = `<span class="badge badge-closed">Closed</span>`;
+                actionContainer.innerHTML = `<button class="btn btn-charcoal" style="width:100%; margin-top:8px;" onclick="toggleCaseStatus()">Reopen Case File</button>`;
+                document.getElementById('session-logger-panel').style.display = 'none';
+                document.getElementById('closed-case-notice').style.display = 'block';
+                document.getElementById('closed-case-reason-text').innerText = client.closedReason || 'No reason provided';
+            }
+
+            let totalGross = 0; let totalDeductions = 0;
+            client.sessions.forEach(s => {
+                totalGross += client.rate;
+                if (s.location === 'Office') totalDeductions += (s.roomCost !== undefined ? s.roomCost : (practiceSettings ? practiceSettings.defaultOfficeCost : 10));
+            });
+            document.getElementById('profile-net-profit').innerText = `${cur}${(totalGross - totalDeductions).toFixed(2)}`;
+
+            renderContractSection(client.id);
+
+            const upcomingContainer = document.getElementById('client-upcoming-list');
+            upcomingContainer.innerHTML = '';
+            const todayStr = toLocalISODateString(new Date());
+            const clientUpcomingApts = (dataStore.appointments || [])
+                .filter(a => a.clientId === client.id && a.date >= todayStr && a.status === 'Scheduled')
+                .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
+            if (clientUpcomingApts.length === 0) {
+                upcomingContainer.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted); font-style:italic;">No upcoming scheduled session.</p>`;
+            } else {
+                const apt = clientUpcomingApts[0];
+                const strip = document.createElement('div');
+                strip.className = 'appointment-strip';
+                strip.innerHTML = `
+                    <div class="appointment-strip-details">
+                        <strong style="color: var(--accent);">${formatDateToUK(apt.date)} @ ${formatTimeBySetting(apt.time)}</strong><br>
+                        <span style="font-size:0.85rem; color: var(--text-muted);">${apt.location}</span>
+                    </div>
+                    <div class="appointment-strip-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log</button>
+                        <button class="btn btn-danger btn-sm" onclick="cancelAppointment('${apt.id}')">Cancel</button>
+                    </div>
+                `;
+                upcomingContainer.appendChild(strip);
+            }
+
+            const container = document.getElementById('timeline-container');
+            container.innerHTML = '';
+            if (client.sessions.length === 0) {
+                container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted); font-style:italic;">No history.</p>`;
+                return;
+            }
+
+            [...client.sessions].reverse().forEach((session, index) => {
+                const actualIndex = client.sessions.length - 1 - index;
+                const card = document.createElement('div');
+                card.className = 'timeline-card';
+                const badgeClass = session.location === 'Office' ? 'badge-office' : 'badge-online';
+                
+                let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-main); margin-left: 8px;">@ ${formatTimeBySetting(session.time)}</span>` : '';
+                let paymentHtml = session.paymentMethod ? `<span style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Paid via: ${session.paymentMethod}</span>` : '';
+
+                card.innerHTML = `
+                    <div class="timeline-meta">
+                        <div style="display:flex; align-items:center;">
+                            <span style="font-weight:700; color:var(--text-main);">${formatDateToUK(session.date)}</span>
+                            ${timeHtml}
+                            ${paymentHtml}
+                        </div>
+                        <div style="display:flex; gap: 8px; align-items: center;">
+                            <span class="badge ${badgeClass}">${session.location}</span>
+                            <button class="btn btn-secondary btn-sm" onclick="openEditSessionModal('${client.id}', ${actualIndex})">Edit</button>
+                            <button class="btn btn-secondary btn-sm" onclick="printInvoice('${client.id}', ${actualIndex})">Print Invoice</button>
+                        </div>
+                    </div>
+                    <div style="font-size:0.95rem; line-height:1.5; color:#334155; margin-bottom:12px;">
+                        <div class="note-content" style="white-space:pre-wrap;">${session.notes}</div>
+                        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="toggleNotes(this)">Show full notes</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function submitSession() {
+            const date = document.getElementById('session-date').value;
+            const time = document.getElementById('session-time').value;
+            const location = document.getElementById('session-location').value;
+            const paymentMethod = document.getElementById('session-payment').value;
+            const notes = document.getElementById('session-notes').value.trim();
+
+            if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
+
+            const client = dataStore.clients.find(c => c.id === activeProfileId);
+            if (client) {
+                if (client.status === 'Closed') return showAlert('Archived', 'Cannot add sessions to a closed file.');
+
+                client.sessions.push({ 
+                    date: date, 
+                    time: time || null,
+                    location: location, 
+                    paymentMethod: paymentMethod,
+                    notes: notes,
+                    invoiceId: Date.now().toString().slice(-6),
+                    roomCost: location === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0
+                });
+                
+                if (location === 'Office') {
+                    const roomCost = practiceSettings ? practiceSettings.defaultOfficeCost : 10;
+                    if (!dataStore.categories.some(c => c.toLowerCase() === 'room hire')) {
+                        dataStore.categories.push('Room Hire');
+                        populateCategoryDropdown();
+                    }
+                    dataStore.expenses.push({
+                        id: 'exp_' + Date.now() + Math.random().toString().slice(2,6),
+                        date: date,
+                        description: `Room Hire - ${client.name}`,
+                        amount: roomCost,
+                        category: 'Room Hire',
+                        hasReceipt: false
+                    });
+                }
+                
+                cachedSessionTime = null;
+                persist();
+                renderClientProfile();
+            }
+        }
+
+        // --- EXPENSES WITH REPEAT LOGIC ---
+        function toggleExpRepeatUntil() {
+            const repeatVal = document.getElementById('exp-repeat').value;
+            const group = document.getElementById('exp-repeat-until-group');
+            group.style.display = repeatVal === 'none' ? 'none' : 'block';
+        }
+
+        function submitExpense() {
+            const date = document.getElementById('exp-date').value;
+            const desc = document.getElementById('exp-description').value.trim();
+            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
+            const category = document.getElementById('exp-category').value;
+            const receiptFileInput = document.getElementById('exp-receipt-file');
+            
+            const repeat = document.getElementById('exp-repeat').value;
+            const repeatUntil = document.getElementById('exp-repeat-until').value;
+
+            if (!date || !desc || amount <= 0 || !category) return showAlert('Error', 'Please fill all required fields.');
+
+            let [y, m, d] = date.split('-').map(Number);
+            let currentDateObj = new Date(y, m - 1, d);
+            let endDateObj = currentDateObj;
+
+            if (repeat !== 'none' && repeatUntil) {
+                let [ey, em, ed] = repeatUntil.split('-').map(Number);
+                endDateObj = new Date(ey, em - 1, ed);
+            }
+            
+            if (repeat !== 'none' && !repeatUntil) return showAlert('Missing End Date', 'Please provide a repeat until date.');
+            if (endDateObj < currentDateObj) return showAlert('Invalid Date', 'End date must be after the start date.');
+
+            let addedCount = 0;
+            let firstExpenseId = null;
+
+            while (currentDateObj <= endDateObj) {
+                const dateString = toLocalISODateString(currentDateObj);
+                const expenseId = 'exp_' + Date.now() + Math.random().toString().slice(2,6);
+                if (addedCount === 0) firstExpenseId = expenseId;
+                
+                dataStore.expenses.push({ 
+                    id: expenseId, 
+                    date: dateString, 
+                    description: desc, 
+                    amount: amount, 
+                    category: category, 
+                    hasReceipt: receiptFileInput.files.length > 0 && addedCount === 0 // only attach file to first expense
+                });
+                
+                addedCount++;
+                if (repeat === 'weekly') currentDateObj.setDate(currentDateObj.getDate() + 7);
+                else if (repeat === 'monthly') currentDateObj.setMonth(currentDateObj.getMonth() + 1);
+                else break;
+            }
+
+            if (receiptFileInput.files.length > 0 && firstExpenseId) {
+                storeDocBlob(STORE_RECEIPTS, firstExpenseId, receiptFileInput.files[0]).finally(() => { persist(); clearExpenseForm(); });
+            } else {
+                persist(); clearExpenseForm();
+            }
+        }
+
+        function clearExpenseForm() {
+            setInputVal('exp-date', toLocalISODateString(new Date()));
+            document.getElementById('exp-description').value = '';
+            document.getElementById('exp-amount').value = '0.00';
+            setInputVal('exp-repeat-until', '');
+            document.getElementById('exp-repeat').value = 'none';
+            toggleExpRepeatUntil();
+            const fileInput = document.getElementById('exp-receipt-file');
+            if (fileInput) fileInput.value = '';
+            renderExpenses();
+        }
+
+        function clearExpenseFilters() {
+            setInputVal('exp-filter-start', '');
+            setInputVal('exp-filter-end', '');
+            renderExpenses();
+        }
+
+        function getFilteredExpenses() {
+            const start = document.getElementById('exp-filter-start').value;
+            const end = document.getElementById('exp-filter-end').value;
+            return dataStore.expenses.filter(e => (!start || e.date >= start) && (!end || e.date <= end));
+        }
+
+        async function renderExpenses() {
+            const list = document.getElementById('expense-table-body');
+            const emptyState = document.getElementById('expense-empty-state');
+            const cur = getCurrency();
+            if (!list) return;
+            list.innerHTML = '';
+            const filtered = getFilteredExpenses();
+            
+            if (filtered.length === 0) {
+                emptyState.style.display = 'block'; return;
+            } else emptyState.style.display = 'none';
+
+            [...filtered].sort((a,b) => b.date.localeCompare(a.date)).forEach(exp => {
+                const tr = document.createElement('tr');
+                const receiptUi = exp.hasReceipt ? `<button class="btn btn-secondary btn-sm" onclick="viewDoc('${STORE_RECEIPTS}', '${exp.id}')">View</button>` : 'None';
+                tr.innerHTML = `
+                    <td><strong>${formatDateToUK(exp.date)}</strong></td>
+                    <td>${exp.description}</td>
+                    <td><span class="badge badge-closed">${exp.category}</span></td>
+                    <td style="color: var(--danger); font-weight: 600;">-${cur}${exp.amount.toFixed(2)}</td>
+                    <td>${receiptUi}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteExpense('${exp.id}')">Del</button></td>
+                `;
+                list.appendChild(tr);
+            });
+        }
+
+        function deleteExpense(id) {
+            showConfirm("Delete", "Delete this expense permanently?", () => {
+                dataStore.expenses = dataStore.expenses.filter(e => e.id !== id);
+                deleteDocBlob(STORE_RECEIPTS, id).finally(persist);
+            }, true);
+        }
+
+        function printInvoice(clientId, sessionIndex) {
+            const client = dataStore.clients.find(c => c.id === clientId);
+            const session = client.sessions[sessionIndex];
+            const cur = getCurrency();
+            const originalTitle = document.title;
+            const sanitizedName = client.name.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+            document.title = `${sanitizedName}_INV-${session.invoiceId}`;
+
+            let paymentLine = session.paymentMethod ? `<p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569;">Payment Method: ${session.paymentMethod}</p>` : '';
+
+            const printContainer = document.getElementById('print-isolated-target');
+            printContainer.innerHTML = `
+                <div style="font-family: 'Inter', sans-serif; padding: 24px; color: #000; background: #fff; max-width: 680px; margin: 0 auto; box-sizing: border-box; page-break-inside: avoid;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px;">
+                        <div>
+                            <h1 style="margin: 0; font-size: 1.6rem; font-weight:700; color: #0f172a;">Practice Suite</h1>
+                            <p style="color: #475569; font-size: 0.9rem; margin-top: 4px;">Professional Therapy Services</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3 style="margin: 0; font-size: 1.05rem; color: #0f172a;">INVOICE: #INV-${session.invoiceId}</h3>
+                            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569;">Date: ${formatDateToUK(session.date)}</p>
+                            ${paymentLine}
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h4 style="margin: 0 0 4px 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600;">Billed To:</h4>
+                            <p style="font-size: 1rem; font-weight: 600; margin: 0; color: #0f172a;">${client.name}</p>
+                            ${client.email && client.email !== 'Not Provided' ? `<p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569;">${client.email}</p>` : ''}
+                        </div>
+                        <div style="text-align: right;">
+                            <h4 style="margin: 0 0 4px 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600;">Status:</h4>
+                            <span style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; text-transform: uppercase;">Paid in Full</span>
+                        </div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+                        <thead>
+                            <tr>
+                                <th style="border-bottom: 2px solid #cbd5e1; padding: 12px 0; text-align: left; color: #0f172a; font-weight:700; font-size: 0.85rem;">Description of Service</th>
+                                <th style="border-bottom: 2px solid #cbd5e1; padding: 12px 0; text-align: right; color: #0f172a; font-weight:700; font-size: 0.85rem;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 14px 0; border-bottom: 1px solid #e2e8f0; color: #334155; font-size: 0.9rem;">Professional Therapeutic Consultation</td>
+                                <td style="padding: 14px 0; border-bottom: 1px solid #e2e8f0; text-align: right; color: #0f172a; font-weight: 600; font-size: 0.9rem;">${cur}${client.rate.toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+                        <div style="width: 260px; border-top: 2px solid #0f172a; padding-top: 12px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; color: #0f172a;">
+                                <span>Total Paid:</span>
+                                <span>${cur}${client.rate.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            window.print();
+            setTimeout(() => { printContainer.innerHTML = ''; document.title = originalTitle; }, 500);
+        }
+
+        function printExpenseReport() {
+            window.print();
+        }
+
+        function drawYearlyGraph(monthlyRevenue) {
+            const container = document.getElementById('yearly-chart-box');
+            if (!container) return; 
+            const cur = getCurrency();
+            container.innerHTML = '';
+            
+            const maxVal = Math.max(...monthlyRevenue, 100); 
+            const minVal = Math.min(...monthlyRevenue, 0); 
+            const range = maxVal - minVal;
+            
+            let svgContent = `<svg viewBox="0 0 800 240" class="chart-container" style="display: block;">`;
+            
+            for (let i = 0; i <= 4; i++) {
+                const value = maxVal - (i * (range / 4));
+                const y = 30 + ((maxVal - value) / range) * 160;
+                svgContent += `<line x1="50" y1="${y}" x2="780" y2="${y}" stroke="var(--border)" stroke-dasharray="4,4" />
+                               <text x="10" y="${y + 4}" font-size="11" fill="var(--text-muted)">${cur}${value.toFixed(0)}</text>`;
+            }
+            
+            const zeroY = 30 + ((maxVal - 0) / range) * 160;
+            if (minVal < 0) svgContent += `<line x1="50" y1="${zeroY}" x2="780" y2="${zeroY}" stroke="var(--charcoal)" stroke-width="1.5" />`;
+
+            const reportingStartMonth = practiceSettings ? (parseInt(practiceSettings.reportingPeriodStartMonth) || 4) : 4;
+            const allMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            
+            monthlyRevenue.forEach((revenue, idx) => {
+                const x = 65 + idx * 60; 
+                if (revenue >= 0) {
+                    const barHeight = (revenue / range) * 160;
+                    const y = zeroY - barHeight;
+                    svgContent += `<rect class="chart-bar" x="${x}" y="${y}" width="40" height="${Math.max(barHeight, 2)}" fill="var(--accent)" rx="2" />`;
+                } else {
+                    const barHeight = (Math.abs(revenue) / range) * 160;
+                    const y = zeroY;
+                    svgContent += `<rect class="chart-bar" x="${x}" y="${y}" width="40" height="${barHeight}" fill="var(--danger)" rx="2" />`;
+                }
+                const monthIndex = (reportingStartMonth - 1 + idx) % 12;
+                svgContent += `<text x="${x + 8}" y="215" font-size="11" fill="var(--text-muted)">${allMonths[monthIndex]}</text>`;
+            });
+            
+            svgContent += `</svg>`;
+            container.innerHTML = svgContent;
+        }
+
+        function populateYearSelector() {
+            const select = document.getElementById('dash-year-select');
+            const monthYearSelect = document.getElementById('dash-month-year-val');
+            
+            const years = new Set(); years.add(new Date().getFullYear());
+            dataStore.clients.forEach(c => {
+                if (c.startDate) years.add(new Date(c.startDate).getFullYear());
+                c.sessions.forEach(s => { if (s.date) years.add(new Date(s.date).getFullYear()); });
+            });
+            if (dataStore.expenses) dataStore.expenses.forEach(e => { if (e.date) years.add(new Date(e.date).getFullYear()); });
+            
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            
+            if (select) {
+                select.innerHTML = '';
+                sortedYears.forEach(yr => {
+                    const opt = document.createElement('option');
+                    opt.value = yr; opt.innerText = yr;
+                    if (yr === selectedDashboardYear) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            }
+            
+            if (monthYearSelect) {
+                const currentVal = parseInt(monthYearSelect.value) || new Date().getFullYear();
+                monthYearSelect.innerHTML = '';
+                sortedYears.forEach(yr => {
+                    const opt = document.createElement('option');
+                    opt.value = yr; opt.innerText = yr;
+                    if (yr === currentVal) opt.selected = true;
+                    monthYearSelect.appendChild(opt);
+                });
+            }
+            
+            const taxSelect = document.getElementById('tax-year-select');
+            if (taxSelect) {
+                taxSelect.innerHTML = '';
+                sortedYears.forEach(yr => {
+                    const period = getReportingPeriodDates(yr);
+                    const opt = document.createElement('option');
+                    opt.value = yr; opt.innerText = `Year starting ${formatDateToUK(period.start)}`;
+                    taxSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function calculateMonthly() {
+            const monthEl = document.getElementById('dash-month-val');
+            const yearEl = document.getElementById('dash-month-year-val');
+            const cur = getCurrency();
+            if (!monthEl || !yearEl) return;
+
+            const targetMonth = parseInt(monthEl.value);
+            const targetYear = parseInt(yearEl.value) || new Date().getFullYear();
+
+            let monthlyGross = 0; let monthlyRoomCost = 0; let monthlySessionsCount = 0;
+
+            dataStore.clients.forEach(client => {
+                client.sessions.forEach(s => {
+                    if (!s.date) return;
+                    const d = new Date(s.date);
+                    if (d.getFullYear() === targetYear && d.getMonth() === targetMonth) {
+                        monthlyGross += client.rate;
+                        monthlySessionsCount++;
+                        const sessionRoomCost = s.location === 'Office' ? (s.roomCost !== undefined ? s.roomCost : (practiceSettings ? practiceSettings.defaultOfficeCost : 10)) : 0;
+                        monthlyRoomCost += sessionRoomCost;
+                    }
+                });
+            });
+
+            let monthlyGeneralExpenses = 0;
+            dataStore.expenses.forEach(e => {
+                if (!e.date) return;
+                const d = new Date(e.date);
+                if (d.getFullYear() === targetYear && d.getMonth() === targetMonth) {
+                    monthlyGeneralExpenses += e.amount;
+                }
+            });
+
+            const monthlyTotalOverhead = monthlyRoomCost + monthlyGeneralExpenses;
+            const monthlyNet = monthlyGross - monthlyTotalOverhead;
+            const monthlyTaxProvision = monthlyNet > 0 ? (monthlyNet * globalEffectiveTaxRate) : 0;
+
+            const dashGrossEl = document.getElementById('dash-monthly-gross');
+            const dashNetEl = document.getElementById('dash-monthly-net');
+            const dashTaxEl = document.getElementById('dash-monthly-tax');
+            const dashSessionsEl = document.getElementById('dash-monthly-sessions');
+            if (dashGrossEl) dashGrossEl.innerText = `${cur}${monthlyGross.toFixed(2)}`;
+            if (dashNetEl) dashNetEl.innerText = `${cur}${monthlyNet.toFixed(2)}`;
+            if (dashTaxEl) dashTaxEl.innerText = `${cur}${monthlyTaxProvision.toFixed(2)}`;
+            if (dashSessionsEl) dashSessionsEl.innerText = monthlySessionsCount;
+        }
+
+        function changeDashboardYear(year) {
+            selectedDashboardYear = parseInt(year) || new Date().getFullYear();
+            applySettingsBranding(); calculateAndRender();
+        }
+
+        function calculateAndRender() {
+            const dashTable = document.getElementById('dashboard-table');
+            const dirTable = document.getElementById('directory-table');
+            const cur = getCurrency();
+            if (dashTable) dashTable.innerHTML = '';
+            if (dirTable) dirTable.innerHTML = '';
+
+            let grandTotalGross = 0; let grandRoomCost = 0; let activeCount = 0;
+            const reportPeriod = getReportingPeriodDates(selectedDashboardYear);
+            
+            const periodDisplay = document.getElementById('dash-period-display');
+            if (periodDisplay) periodDisplay.innerText = `${formatDateToUK(reportPeriod.start)} to ${formatDateToUK(reportPeriod.end)}`;
+
+            const isWithinRange = (ds) => ds >= reportPeriod.start && ds <= reportPeriod.end;
+            const monthlyBuckets = Array(12).fill(0);
+            
+            const sObj = new Date(reportPeriod.start);
+            const baseYear = sObj.getFullYear(); const baseMonth = sObj.getMonth();
+
+            let paymentBreakdown = {}; 
+
+            const getBucketIndex = (ds) => {
+                const d = new Date(ds);
+                const totalMonths = (d.getFullYear() - baseYear) * 12 + (d.getMonth() - baseMonth);
+                return (totalMonths >= 0 && totalMonths < 12) ? totalMonths : -1;
+            };
+
+            let shownDashboardCount = 0;
+            [...dataStore.clients].sort((a,b) => a.name.localeCompare(b.name)).forEach(client => {
+                if (!client.status) client.status = 'Active';
+                const yearSessions = client.sessions.filter(s => isWithinRange(s.date));
+                let gross = yearSessions.length * client.rate;
+                let clientRoomCost = 0;
+                
+                client.sessions.forEach(s => {
+                    if (isWithinRange(s.date)) {
+                        const sessionRoomCost = s.location === 'Office' ? (s.roomCost !== undefined ? s.roomCost : (practiceSettings ? practiceSettings.defaultOfficeCost : 10)) : 0;
+                        clientRoomCost += sessionRoomCost;
+                        const bucketIdx = getBucketIndex(s.date);
+                        if (bucketIdx !== -1) monthlyBuckets[bucketIdx] += (client.rate - sessionRoomCost);
+                        
+                        let pm = s.paymentMethod || 'Bank Transfer';
+                        paymentBreakdown[pm] = (paymentBreakdown[pm] || 0) + client.rate;
+                    }
+                });
+
+                grandTotalGross += gross; grandRoomCost += clientRoomCost;
+                if (client.status === 'Active') activeCount++;
+                let lastSessionDate = client.sessions.length > 0 ? client.sessions[client.sessions.length - 1].date : 'No sessions';
+
+                if (client.status === currentDashboardFilter && dashTable) {
+                    shownDashboardCount++;
+                    const row = document.createElement('tr');
+                    row.className = 'clickable'; row.onclick = () => navigate('profile', client.id);
+                    row.innerHTML = `<td><strong>${client.name}</strong></td><td>${formatDateToUK(client.startDate)}</td><td>${cur}${client.rate.toFixed(2)}</td><td>${formatDateToUK(lastSessionDate)}</td><td style="color:var(--success); font-weight:600;">${cur}${(gross - clientRoomCost).toFixed(2)}</td>`;
+                    dashTable.appendChild(row);
+                }
+                
+                if (dirTable && (currentDirectoryFilter === 'All' || currentDirectoryFilter === client.status)) {
+                    const dRow = document.createElement('tr');
+                    dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
+                    dRow.innerHTML = `<td><strong>${client.name}</strong></td><td>${formatDateToUK(client.startDate)}</td><td>${cur}${client.rate.toFixed(2)}</td><td>${client.phone}</td><td><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${client.status}</span></td>`;
+                    dirTable.appendChild(dRow);
+                }
+            });
+
+            if (document.getElementById('dash-empty-state')) document.getElementById('dash-empty-state').style.display = shownDashboardCount === 0 ? 'block' : 'none';
+            if (document.getElementById('dash-data-table')) document.getElementById('dash-data-table').style.display = shownDashboardCount === 0 ? 'none' : 'table';
+
+            const totalGeneralExpenses = (dataStore.expenses || []).filter(e => isWithinRange(e.date)).reduce((s, e) => s + e.amount, 0);
+            const totalOverhead = grandRoomCost + totalGeneralExpenses;
+            
+            dataStore.expenses.forEach(e => {
+                if (isWithinRange(e.date)) {
+                    const bucketIdx = getBucketIndex(e.date);
+                    if (bucketIdx !== -1) monthlyBuckets[bucketIdx] -= e.amount;
+                }
+            });
+
+            const totalNet = grandTotalGross - totalOverhead;
+            const estimatedTax = calculateUKTax(totalNet);
+            globalEffectiveTaxRate = totalNet > 0 ? (estimatedTax / totalNet) : 0;
+            const effectiveRateDisplay = (globalEffectiveTaxRate * 100).toFixed(1);
+
+            if (document.getElementById('dash-active-count')) document.getElementById('dash-active-count').innerText = activeCount;
+            if (document.getElementById('dash-total-gross')) document.getElementById('dash-total-gross').innerText = `${cur}${grandTotalGross.toFixed(2)}`;
+            if (document.getElementById('dash-total-overhead')) document.getElementById('dash-total-overhead').innerText = `${cur}${totalOverhead.toFixed(2)}`;
+            if (document.getElementById('dash-total-tax')) document.getElementById('dash-total-tax').innerText = `${cur}${estimatedTax.toFixed(2)}`;
+            if (document.getElementById('dash-tax-rate')) document.getElementById('dash-tax-rate').innerText = `${effectiveRateDisplay}% effective rate`;
+            if (document.getElementById('dash-total-net')) document.getElementById('dash-total-net').innerText = `${cur}${(totalNet - estimatedTax).toFixed(2)}`;
+
+            const pmContainer = document.getElementById('payment-method-breakdown');
+            if (pmContainer) {
+                pmContainer.innerHTML = '';
+                const sortedMethods = Object.entries(paymentBreakdown).sort((a,b) => b[1] - a[1]);
+                if (sortedMethods.length === 0) {
+                    pmContainer.innerHTML = `<p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic; padding: 12px 0;">No income recorded in this period.</p>`;
+                } else {
+                    sortedMethods.forEach(([method, amount]) => {
+                        pmContainer.innerHTML += `
+                            <div class="panel metric-card" style="padding: 16px; margin-bottom: 0;">
+                                <h4>${method}</h4>
+                                <p style="font-size: 1.4rem; color: var(--text-main);">${cur}${amount.toFixed(2)}</p>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            drawYearlyGraph(monthlyBuckets);
+            populateYearSelector();
+            calculateMonthly(); 
+            renderExpenses();
+            updateDashboardNextAppointment();
+        }
+
+        function updateDashboardNextAppointment() {
+            const container = document.getElementById('dash-next-apt-container');
+            const details = document.getElementById('dash-next-apt-details');
+            if (!container || !details) return;
+
+            const todayStr = toLocalISODateString(new Date());
+            const futureApts = (dataStore.appointments || [])
+                .filter(a => a.status === 'Scheduled' && a.date >= todayStr)
+                .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
+            if (futureApts.length > 0) {
+                const next = futureApts[0];
+                details.innerHTML = `<strong>${next.clientName}</strong> &bull; ${formatDateToUK(next.date)} @ ${formatTimeBySetting(next.time)}`;
+                container.style.display = 'flex';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        function generateGoogleCalendarLink(apt) {
+            const datePart = apt.date.replace(/-/g, '');
+            const timePart = apt.time.replace(/:/g, '') + '00';
+            const startStr = `${datePart}T${timePart}`;
+            
+            const d = new Date(`${apt.date}T${apt.time}`);
+            d.setHours(d.getHours() + 1);
+            const endDPart = d.toISOString().split('T')[0].replace(/-/g, '');
+            const endTPart = d.toTimeString().split(' ')[0].replace(/:/g, '');
+            const endStr = `${endDPart}T${endTPart}`;
+            
+            const text = encodeURIComponent(`Therapy Session - ${apt.clientName}`);
+            const details = encodeURIComponent(`Format/Location: ${apt.location}`);
+            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${startStr}/${endStr}&details=${details}`;
+        }
+
+        async function exportAllAsZip() {
+            showAlert("Notice", "Export functionality is enabled in the full module.");
+        }
+        function exportTaxYearArchive() {
+             showAlert("Notice", "Tax export functionality is enabled in the full module.");
+        }
+        
+        // --- GOOGLE DRIVE SYNC & AUTHENTICATION ---
+        const GOOGLE_CLIENT_ID = '346455482629-sj1et964qmepqe9m2sj6kme86bceu9bb.apps.googleusercontent.com';
+        let googleTokenClient = null;
+        let driveFileId = null; 
+        let driveAutoSyncTimer = null;
+        let googleAccessToken = null;
+        const DRIVE_FILE_NAME = 'sasson_practice_suite_backup.json';
+        
+        // Idle Logout Timers
+        let idleLogoutTimer = null;
+        let timeoutWarningTimer = null;
+        let countdownInterval = null;
+
+        function updateGoogleStatus(connected) {
+            const el = document.getElementById('google-status');
+            if (!el) return;
+            el.textContent = connected ? '✅ Connected to Google Drive' : '⚪ Not connected';
+            el.style.color = connected ? 'var(--success)' : 'var(--text-muted)';
+        }
+
+        function setSyncIndicator(text, color) {
+            const el = document.getElementById('google-sync-indicator');
+            if (!el) return;
+            el.textContent = text;
+            el.style.color = color || 'var(--text-muted)';
+        }
+
+        function gateGoogleSignIn() {
+            if (typeof google === 'undefined' || !google.accounts) {
+                alert('Google sign-in script has not loaded. Check your internet connection and reload the page.');
+                return;
+            }
+            googleTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                callback: (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        googleAccessToken = tokenResponse.access_token;
+                        driveFileId = null;
+                        proceedPastLogin();
+                    }
+                },
+            });
+            googleTokenClient.requestAccessToken();
+        }
+
+        function initGoogleAuth() {
+            gateGoogleSignIn();
+        }
+
+        function attemptSilentReconnect() {
+            const previouslyConnected = localStorage.getItem('sasson_google_previously_connected') === 'true';
+            if (!previouslyConnected || typeof google === 'undefined' || !google.accounts) {
+                showLoginGate();
+                return;
+            }
+            googleTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                callback: (tokenResponse) => {
+                    if (tokenResponse && tokenResponse.access_token) {
+                        googleAccessToken = tokenResponse.access_token;
+                        driveFileId = null;
+                        proceedPastLogin();
+                    } else {
+                        showLoginGate();
+                    }
+                },
+                error_callback: () => { showLoginGate(); },
+            });
+            googleTokenClient.requestAccessToken({ prompt: '' });
+            setTimeout(() => {
+                if (!googleAccessToken) showLoginGate();
+            }, 2500);
+        }
+
+        async function proceedPastLogin() {
+            updateGoogleStatus(true);
+            localStorage.setItem('sasson_google_previously_connected', 'true');
+            await findExistingDriveFile();
+            if (driveFileId) {
+                try {
+                    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
+                        headers: { 'Authorization': 'Bearer ' + googleAccessToken }
+                    });
+                    const parsed = await res.json();
+                    await loadDriveDataIntoApp(parsed);
+                    showApp();
+                } catch (err) {
+                    console.error(err);
+                    if (practiceSettings) { showApp(); } else { showCreateProfileForm(); }
+                }
+            } else {
+                showCreateProfileForm();
+            }
+        }
+
+        async function findExistingDriveFile() {
+            if (driveFileId) return; 
+            try {
+                const res = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=name%3D'${DRIVE_FILE_NAME}'+and+trashed%3Dfalse&fields=files(id,name)`,
+                    { headers: { 'Authorization': 'Bearer ' + googleAccessToken } }
+                );
+                const data = await res.json();
+                if (data.files && data.files.length > 0) {
+                    driveFileId = data.files[0].id;
+                }
+            } catch (err) { console.error('Drive lookup failed:', err); }
+        }
+
+        async function loadDriveDataIntoApp(parsed) {
+            dataStore = parsed.dataStore || parsed;
+            if (parsed.practiceSettings) {
+                practiceSettings = parsed.practiceSettings;
+                localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
+            }
+            localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
+        }
+
+        function continueOffline() {
+            if (practiceSettings) {
+                showApp();
+            } else {
+                showCreateProfileForm();
+            }
+        }
+
+        function scheduleAutoDriveSync() {
+            if (!googleAccessToken) return;
+            setSyncIndicator('Change detected — syncing shortly…');
+            clearTimeout(driveAutoSyncTimer);
+            driveAutoSyncTimer = setTimeout(() => saveToGoogleDrive(true), 1500);
+        }
+
+        async function saveToGoogleDrive(silent) {
+            if (!googleAccessToken) {
+                if (!silent) alert('Please click "Connect Google Account" first.');
+                return;
+            }
+            setSyncIndicator('Syncing to Drive…');
+            const fileContent = JSON.stringify({ dataStore: dataStore, practiceSettings: practiceSettings }, null, 2);
+            try {
+                if (!driveFileId) await findExistingDriveFile();
+                if (driveFileId) {
+                    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': 'Bearer ' + googleAccessToken, 'Content-Type': 'application/json' },
+                        body: fileContent
+                    });
+                    if (!res.ok) throw new Error('Update failed');
+                } else {
+                    const boundary = 'sasson_boundary_' + Date.now();
+                    const metadata = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
+                    const multipartBody =
+                        `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+                        `--${boundary}\r\nContent-Type: application/json\r\n\r\n${fileContent}\r\n` +
+                        `--${boundary}--`;
+                    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + googleAccessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
+                        body: multipartBody
+                    });
+                    const result = await res.json();
+                    driveFileId = result.id;
+                }
+                const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                setSyncIndicator(`✓ Synced at ${timeStr}`, 'var(--success)');
+                if (!silent) alert('Saved to Drive');
+            } catch (err) {
+                setSyncIndicator('⚠ Sync failed', 'var(--warning)');
+            }
+        }
+
+        async function loadFromGoogleDrive() {
+            if (!googleAccessToken) return alert('Please connect Google Account first.');
+            if (!driveFileId) await findExistingDriveFile();
+            if (!driveFileId) return alert('No Backup Found on Drive.');
+            try {
+                const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
+                    headers: { 'Authorization': 'Bearer ' + googleAccessToken }
+                });
+                const parsed = await res.json();
+                await loadDriveDataIntoApp(parsed);
+                alert('Data loaded from Google Drive.');
+                window.location.reload(); 
+            } catch (err) {
+                alert('Failed to load from Google Drive.');
+            }
+        }
+        
+        function signOutGoogle(silent) {
+            if (googleAccessToken && typeof google !== 'undefined' && google.accounts) {
+                google.accounts.oauth2.revoke(googleAccessToken, () => {});
+            }
+            googleAccessToken = null;
+            driveFileId = null;
+            clearTimeout(idleLogoutTimer);
+            clearTimeout(timeoutWarningTimer);
+            clearInterval(countdownInterval);
+            updateGoogleStatus(false);
+            setSyncIndicator('');
+            if (!silent) {
+                localStorage.removeItem('sasson_google_previously_connected');
+                showAlert('Disconnected', 'Your Google account has been disconnected from this browser. Local data is unaffected.');
+                showLoginGate();
+            }
+        }
+
+        // Hook auto-sync into your existing persist method
+        window.persistToCloud = function() { scheduleAutoDriveSync(); };
 
         // --- IDLE TIMEOUT LOGIC ---
         function resetIdleLogoutTimer() {
@@ -438,157 +2683,324 @@
         ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(evt => {
             document.addEventListener(evt, () => { if (googleAccessToken) resetIdleLogoutTimer(); }, { passive: true });
         });
+
+        function exportDatabase() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataStore, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", `practice_backup.json`); dlAnchorElem.click();
+        }
+        function importDatabase(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.clients)) {
+                        dataStore = parsed; persist(); showAlert('Import Completed', 'Database loaded successfully.'); navigate('dashboard');
+                    } else {
+                        showAlert('Error', 'Invalid file format. Could not find client data.');
+                    }
+                } catch(err) { showAlert('Error', 'Invalid JSON file.'); }
+                event.target.value = ''; 
+            };
+            reader.readAsText(file);
+        }
         
-        // --- EXPANDABLE NOTES TOGGLE ---
-        window.toggleNotes = function(btn) {
-            const content = btn.previousElementSibling;
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                btn.innerText = 'Show full notes';
-            } else {
-                content.classList.add('expanded');
-                btn.innerText = 'Hide notes';
-            }
-        };
+        function triggerFullReset() {
+            signOutGoogle(false);
+            showLoginGate('You have securely logged out of your session. Your data remains safe on this device and in Google Drive.');
+        }
 
-        function renderClientProfile() {
-            const client = dataStore.clients.find(c => c.id === activeProfileId);
-            if (!client) return;
-            const cur = getCurrency();
+        window.onload = function() {
+            populateCategoryDropdown();
+            selectedDashboardYear = new Date().getFullYear();
+            
+            const monthEl = document.getElementById('dash-month-val');
+            if (monthEl) monthEl.value = new Date().getMonth();
+            
+            updateGoogleStatus(false);
+            attemptSilentReconnect();
+        }
 
-            document.getElementById('profile-client-name').innerText = client.name;
-            document.getElementById('profile-rate').innerText = `${cur}${client.rate.toFixed(2)} / hr`;
-            
-            const container = document.getElementById('timeline-container');
-            container.innerHTML = '';
-            
-            [...client.sessions].reverse().forEach((session, index) => {
-                const card = document.createElement('div');
-                card.className = 'timeline-card';
-                
-                // Add the note expansion wrapper logic here
-                card.innerHTML = `
-                    <div class="timeline-meta">
-                        <span style="font-weight:700; color:var(--text-main);">${session.date}</span>
-                    </div>
-                    <div style="font-size:0.95rem; line-height:1.5; color:#334155; margin-bottom:12px;">
-                        <div class="note-content" style="white-space:pre-wrap;">${session.notes}</div>
-                        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="toggleNotes(this)">Show full notes</button>
-                    </div>
-                `;
-                container.appendChild(card);
+        let currentCalDate = new Date();
+        let selectedCalDateStr = toLocalISODateString(new Date());
+
+        function renderAppointmentsPage() {
+            populateAptClientDropdown();
+            renderCalendar();
+            renderDailyAgenda();
+            renderUpcomingAppointments();
+        }
+
+        function populateAptClientDropdown() {
+            const dropdown = document.getElementById('apt-client');
+            if (!dropdown) return;
+            dropdown.innerHTML = '<option value="" disabled selected>-- Select Client --</option>';
+            const activeClients = dataStore.clients.filter(c => c.status === 'Active');
+            activeClients.sort((a,b) => a.name.localeCompare(b.name)).forEach(client => {
+                const opt = document.createElement('option');
+                opt.value = client.id; opt.innerText = client.name; dropdown.appendChild(opt);
             });
         }
 
-        // --- REPEATING EXPENSE LOGIC ---
-        function toggleExpRepeatUntil() {
-            const repeatVal = document.getElementById('exp-repeat').value;
-            const group = document.getElementById('exp-repeat-until-group');
+        function toggleRepeatUntil() {
+            const repeatVal = document.getElementById('apt-repeat').value;
+            const group = document.getElementById('repeat-until-group');
             group.style.display = repeatVal === 'none' ? 'none' : 'block';
         }
 
-        function submitExpense() {
-            const date = document.getElementById('exp-date').value;
-            const desc = document.getElementById('exp-description').value.trim();
-            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
-            const category = document.getElementById('exp-category').value;
+        function submitAppointment() {
+            const clientId = document.getElementById('apt-client').value;
+            const date = document.getElementById('apt-date').value;
+            const time = document.getElementById('apt-time').value;
+            const location = document.getElementById('apt-location').value;
+            const repeat = document.getElementById('apt-repeat').value;
+            const repeatUntil = document.getElementById('apt-repeat-until').value;
+
+            if (!clientId) return showAlert('Missing Selection', 'Please select a client.');
+            if (!date) return showAlert('Missing Date', 'Please select an appointment date.');
+            if (!time) return showAlert('Missing Time', 'Please select a session time.');
+
+            const client = dataStore.clients.find(c => c.id === clientId);
             
-            const repeat = document.getElementById('exp-repeat').value;
-            const repeatUntil = document.getElementById('exp-repeat-until').value;
-
-            if (!date || !desc || amount <= 0 || !category) return alert('Please fill all required fields.');
-
             let [y, m, d] = date.split('-').map(Number);
             let currentDateObj = new Date(y, m - 1, d);
+            
             let endDateObj = currentDateObj;
-
             if (repeat !== 'none' && repeatUntil) {
                 let [ey, em, ed] = repeatUntil.split('-').map(Number);
                 endDateObj = new Date(ey, em - 1, ed);
             }
+            
+            if (repeat !== 'none' && !repeatUntil) return showAlert('Missing End Date', 'Please provide a repeat until date.');
+            if (endDateObj < currentDateObj) return showAlert('Invalid Date', 'End date must be after the start date.');
+
+            let addedCount = 0;
+            const firstApt = { id: 'apt_' + Date.now(), clientId, clientName: client.name, date, time, location, status: 'Scheduled' };
 
             while (currentDateObj <= endDateObj) {
-                const dateString = `${currentDateObj.getFullYear()}-${String(currentDateObj.getMonth()+1).padStart(2,'0')}-${String(currentDateObj.getDate()).padStart(2,'0')}`;
-                dataStore.expenses.push({ 
-                    id: 'exp_' + Date.now() + Math.random().toString().slice(2,6), 
-                    date: dateString, 
-                    description: desc, 
-                    amount: amount, 
-                    category: category 
+                const dateString = toLocalISODateString(currentDateObj);
+                dataStore.appointments.push({
+                    id: 'apt_' + Date.now() + Math.random().toString().slice(2,6),
+                    clientId: clientId,
+                    clientName: client.name,
+                    date: dateString,
+                    time: time,
+                    location: location,
+                    status: 'Scheduled'
                 });
+                addedCount++;
                 
                 if (repeat === 'weekly') currentDateObj.setDate(currentDateObj.getDate() + 7);
                 else if (repeat === 'monthly') currentDateObj.setMonth(currentDateObj.getMonth() + 1);
                 else break;
             }
 
-            persist(); 
-            renderExpenses();
+            persist();
+            renderAppointmentsPage();
+
+            if (addedCount === 1) {
+                showConfirm("Google Calendar", `Appointment booked. Would you like to add this session to your Google Calendar?`, () => {
+                    window.open(generateGoogleCalendarLink(firstApt), '_blank');
+                });
+            } else {
+                showAlert('Success', `${addedCount} appointments scheduled successfully.`);
+            }
+
+            setInputVal('apt-date', '');
+            setInputVal('apt-time', '');
+            setInputVal('apt-repeat-until', '');
         }
 
-        function renderExpenses() {
-            const list = document.getElementById('expense-table-body');
-            const cur = getCurrency();
-            if (!list) return;
-            list.innerHTML = '';
+        function changeCalendarMonth(offset) {
+            currentCalDate.setMonth(currentCalDate.getMonth() + offset);
+            renderCalendar();
+        }
+
+        function setCalendarToToday() {
+            currentCalDate = new Date();
+            selectedCalDateStr = toLocalISODateString(currentCalDate);
+            renderCalendar(); renderDailyAgenda();
+        }
+
+        function selectCalendarDay(dateStr) {
+            selectedCalDateStr = dateStr;
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const targetDate = new Date(y, m - 1, d);
+            if (targetDate.getMonth() !== currentCalDate.getMonth() || targetDate.getFullYear() !== currentCalDate.getFullYear()) {
+                currentCalDate = new Date(targetDate); renderCalendar();
+            }
+            renderCalendar(); renderDailyAgenda();
+
+            const aptDateEl = document.getElementById('apt-date');
+            if (aptDateEl) {
+                if (aptDateEl._flatpickr) {
+                    aptDateEl._flatpickr.setDate(dateStr, true);
+                } else {
+                    aptDateEl.value = dateStr;
+                }
+            }
+        }
+
+        function renderCalendar() {
+            const gridBody = document.getElementById('calendar-grid-body');
+            if (!gridBody) return;
+            gridBody.innerHTML = '';
+            const monthYearHeader = document.getElementById('calendar-month-year');
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            if (monthYearHeader) monthYearHeader.innerText = `${months[currentCalDate.getMonth()]} ${currentCalDate.getFullYear()}`;
+
+            const year = currentCalDate.getFullYear(); const month = currentCalDate.getMonth();
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const startDayOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const prevMonthTotalDays = new Date(year, month, 0).getDate();
+            const todayStr = toLocalISODateString(new Date());
+
+            for (let i = startDayOffset - 1; i >= 0; i--) {
+                const d = prevMonthTotalDays - i;
+                createDayCell(d, toLocalISODateString(new Date(year, month - 1, d)), true, gridBody, todayStr);
+            }
+            for (let d = 1; d <= totalDays; d++) {
+                createDayCell(d, toLocalISODateString(new Date(year, month, d)), false, gridBody, todayStr);
+            }
+            const gridTotalCells = startDayOffset + totalDays;
+            const nextMonthPadding = gridTotalCells % 7 === 0 ? 0 : 7 - (gridTotalCells % 7);
+            for (let d = 1; d <= nextMonthPadding; d++) {
+                createDayCell(d, toLocalISODateString(new Date(year, month + 1, d)), true, gridBody, todayStr);
+            }
+        }
+
+        function createDayCell(dayNum, dateStr, isInactive, container, todayStr) {
+            const cell = document.createElement('div');
+            cell.className = 'calendar-cell';
+            if (isInactive) cell.classList.add('inactive');
+            if (dateStr === todayStr) cell.classList.add('today');
+            if (dateStr === selectedCalDateStr) cell.classList.add('selected');
+            cell.onclick = () => selectCalendarDay(dateStr);
+
+            const cellHeader = document.createElement('div');
+            cellHeader.className = 'calendar-cell-header';
+            cellHeader.innerHTML = `<span class="calendar-day-num">${dayNum}</span>`;
+            cell.appendChild(cellHeader);
+
+            const dayApts = (dataStore.appointments || [])
+                .filter(a => a.date === dateStr && a.status !== 'Cancelled')
+                .sort((a, b) => a.time.localeCompare(b.time));
+
+            if (dayApts.length > 0) {
+                const maxToShow = 3;
+                for (let i = 0; i < Math.min(dayApts.length, maxToShow); i++) {
+                    const apt = dayApts[i];
+                    const label = document.createElement('div');
+                    label.className = `calendar-apt-label ${apt.location === 'Office' ? 'apt-label-office' : 'apt-label-online'}`;
+                    label.innerText = `${formatTimeBySetting(apt.time)} ${apt.clientName}`;
+                    cell.appendChild(label);
+                }
+                if (dayApts.length > maxToShow) {
+                    const more = document.createElement('div');
+                    more.className = 'calendar-apt-label apt-label-more';
+                    more.innerText = `+${dayApts.length - maxToShow} more`;
+                    cell.appendChild(more);
+                }
+            }
+            container.appendChild(cell);
+        }
+
+        function renderDailyAgenda() {
+            const container = document.getElementById('daily-agenda-container');
+            if (!container) return;
+            container.innerHTML = '';
             
-            [...dataStore.expenses].sort((a,b) => b.date.localeCompare(a.date)).forEach(exp => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${exp.date}</strong></td>
-                    <td>${exp.description}</td>
-                    <td><span class="badge badge-closed">${exp.category}</span></td>
-                    <td style="color: var(--danger); font-weight: 600;">-${cur}${exp.amount.toFixed(2)}</td>
-                    <td><button class="btn btn-danger btn-sm">Del</button></td>
+            const [y, m, d] = selectedCalDateStr.split('-').map(Number);
+            const dateObj = new Date(y, m - 1, d);
+            const formatStr = isNaN(dateObj) ? selectedCalDateStr : dateObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+            document.getElementById('agenda-date-title').innerText = `Agenda for ${formatStr}`;
+
+            const dayApts = (dataStore.appointments || []).filter(a => a.date === selectedCalDateStr).sort((a, b) => a.time.localeCompare(b.time));
+
+            if (dayApts.length === 0) {
+                container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted); font-style:italic;">No appointments scheduled for this day.</p>`;
+                return;
+            }
+
+            dayApts.forEach(apt => {
+                const strip = document.createElement('div');
+                strip.className = `appointment-strip ${apt.status.toLowerCase()}`;
+                let actionsHtml = apt.status === 'Scheduled' ? 
+                    `<button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Complete</button>
+                     <button class="btn btn-danger btn-sm" onclick="cancelAppointment('${apt.id}')">Cancel</button>` : 
+                    `<span class="badge ${apt.status === 'Completed' ? 'badge-active' : 'badge-closed'}">${apt.status}</span>`;
+
+                strip.innerHTML = `
+                    <div class="appointment-strip-details">
+                        <strong style="font-size: 0.95rem;">${formatTimeBySetting(apt.time)}</strong>
+                        <span style="font-weight: 500; margin-left: 8px;">${apt.clientName}</span><br>
+                        <span style="font-size:0.75rem; color: var(--text-muted);">${apt.location}</span>
+                    </div>
+                    <div class="appointment-strip-actions">${actionsHtml}</div>
                 `;
-                list.appendChild(tr);
+                container.appendChild(strip);
             });
         }
 
-        // --- SAFE LOGOUT (REPLACING DESTRUCTIVE DB WIPE) ---
-        function triggerFullReset() {
-            signOutGoogle(false);
-            showLoginGate('You have securely logged out of your session. Your data remains safe.');
-        }
+        function renderUpcomingAppointments() {
+            const container = document.getElementById('upcoming-appointments-list');
+            if (!container) return;
+            container.innerHTML = '';
 
-        function persist() {
-            localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
-        }
+            const todayStr = toLocalISODateString(new Date());
+            
+            const upcoming = (dataStore.appointments || [])
+                .filter(a => a.date >= todayStr && a.status === 'Scheduled')
+                .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
 
-        function savePracticeSettings() {
-            practiceSettings = practiceSettings || {};
-            practiceSettings.currency = document.getElementById('set-currency').value;
-            localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
-            alert('Settings updated');
-            renderClientProfile();
-        }
-        
-        // Setup initial default currency on load based on browser
-        window.onload = function() {
-            if (!practiceSettings || !practiceSettings.currency) {
-                const localCur = Intl.NumberFormat().resolvedOptions().currency || 'GBP';
-                const curMap = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'ILS': '₪' };
-                document.getElementById('set-currency').value = curMap[localCur] || '£';
-            } else {
-                document.getElementById('set-currency').value = practiceSettings.currency;
+            if (upcoming.length === 0) {
+                container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted); font-style:italic;">No upcoming scheduled sessions.</p>`;
+                return;
             }
-        };
 
-        function showApp() {
-            document.getElementById('login-gate-overlay').style.display = 'none';
-            document.getElementById('app-root').style.display = 'flex';
-            resetIdleLogoutTimer();
+            upcoming.forEach(apt => {
+                const item = document.createElement('div');
+                item.className = 'appointment-strip';
+                item.innerHTML = `
+                    <div class="appointment-strip-details">
+                        <span style="font-weight: 600; color: var(--accent);">${formatDateToUK(apt.date)} @ ${formatTimeBySetting(apt.time)}</span><br>
+                        <strong style="margin-right: 8px;">${apt.clientName}</strong>
+                        <span style="font-size:0.75rem; color: var(--text-muted);">(${apt.location})</span>
+                    </div>
+                    <div class="appointment-strip-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
         }
 
-        function showLoginGate(msg) {
-            document.getElementById('app-root').style.display = 'none';
-            document.getElementById('login-gate-overlay').style.display = 'flex';
-            if (msg) document.getElementById('login-gate-message').innerText = msg;
+        function completeAppointmentFromCalendar(aptId) {
+            const apt = dataStore.appointments.find(a => a.id === aptId);
+            if (!apt) return;
+            apt.status = 'Completed';
+            persist();
+            cachedSessionTime = apt.time;
+            navigate('profile', apt.clientId);
+            setTimeout(() => {
+                setInputVal('session-date', apt.date);
+                setInputVal('session-location', apt.location);
+                const notesArea = document.getElementById('session-notes');
+                if (notesArea) {
+                    notesArea.placeholder = `Add clinical notes for the completed appointment on ${formatDateToUK(apt.date)} at ${formatTimeBySetting(apt.time)}...`;
+                    notesArea.focus();
+                }
+            }, 150);
         }
 
-        function signOutGoogle(silent) {
-            googleAccessToken = null;
-            if (!silent) showLoginGate();
+        function cancelAppointment(aptId) {
+            showConfirm("Cancel Appointment", "Are you sure you want to cancel this appointment?", function() {
+                const apt = dataStore.appointments.find(a => a.id === aptId);
+                if (apt) { apt.status = 'Cancelled'; persist(); renderAppointmentsPage(); }
+            });
         }
     </script>
 </body>
