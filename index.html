@@ -482,7 +482,7 @@
                         <option value="$">$ (USD - US Dollar)</option>
                         <option value="€">€ (EUR - Euro)</option>
                         <option value="₪">₪ (ILS - Israeli Shekel)</option>
-                        <option value="$">$ (CAD - Canadian Dollar)</option>
+                        <option value="C$">C$ (CAD - Canadian Dollar)</option>
                         <option value="A$">A$ (AUD - Australian Dollar)</option>
                         <option value="CHF">CHF (Swiss Franc)</option>
                         <option value="¥">¥ (JPY - Japanese Yen)</option>
@@ -1081,7 +1081,7 @@
                                     <option value="$">$ (USD - US Dollar)</option>
                                     <option value="€">€ (EUR - Euro)</option>
                                     <option value="₪">₪ (ILS - Israeli Shekel)</option>
-                                    <option value="$">$ (CAD - Canadian Dollar)</option>
+                                    <option value="C$">C$ (CAD - Canadian Dollar)</option>
                                     <option value="A$">A$ (AUD - Australian Dollar)</option>
                                     <option value="CHF">CHF (Swiss Franc)</option>
                                     <option value="¥">¥ (JPY - Japanese Yen)</option>
@@ -1616,7 +1616,7 @@
             document.getElementById('onboarding-overlay').style.display = 'flex';
             
             const localCur = Intl.NumberFormat().resolvedOptions().currency || 'GBP';
-            const curMap = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'ILS': '₪', 'CAD': '$', 'AUD': 'A$', 'CHF': 'CHF', 'JPY': '¥' };
+            const curMap = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'ILS': '₪', 'CAD': 'C$', 'AUD': 'A$', 'CHF': 'CHF', 'JPY': '¥' };
             document.getElementById('ob-currency').value = curMap[localCur] || '£';
         }
 
@@ -2841,7 +2841,6 @@
                         { alg: -257, type: "public-key" }  // RS256
                     ],
                     authenticatorSelection: {
-                        authenticatorAttachment: "platform",
                         userVerification: "required",
                         residentKey: "preferred"
                     },
@@ -3109,7 +3108,12 @@
             const monthEl = document.getElementById('dash-month-val');
             if (monthEl) monthEl.value = new Date().getMonth();
             
-            updateGoogleStatus(false);
+            // Optimistically set Google status if session ID exists
+            if (localStorage.getItem('practice_suite_session_id')) {
+                updateGoogleStatus(true, localStorage.getItem('practice_suite_google_email'));
+            } else {
+                updateGoogleStatus(false);
+            }
             
             const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
             const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
