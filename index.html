@@ -421,11 +421,11 @@
         </div>
     </div>
 
-    <!-- LOGIN GATE (OFFLINE OPTION PERMANENTLY REMOVED) -->
+    <!-- LOGIN GATE (OFFLINE OPTION REMOVED & LOGO PERFECTLY CENTERED) -->
     <div id="login-gate-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 16px;">
-        <div class="onboarding-card splash-fade" style="text-align: center;">
-            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="300" height="90">
+        <div class="onboarding-card splash-fade" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto;">
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="280" height="84" style="display: block; margin: 0 auto;">
                   <g transform="translate(20, 20)">
                     <polygon points="40,2 72,20 72,56 40,74 8,56 8,20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
                     <line x1="40" y1="20" x2="40" y2="56" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
@@ -440,7 +440,7 @@
                   <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748b" letter-spacing="0.5">Secure Client Management</text>
                 </svg>
             </div>
-            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5;">Sign in with Google to access your practice data.</p>
+            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; width: 100%;">Sign in with Google to access your practice data.</p>
             <button id="login-gate-google-btn" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background-color: #fff; border-color: #cbd5e1; color: #334155;" onclick="gateGoogleSignIn()">
                 <svg style="width: 18px; height: 18px; margin-right: 8px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 Sign in with Google
@@ -1048,35 +1048,37 @@
                     </div>
                 </div>
 
-                <!-- SECTION: CONFIGURATION & DATA -->
+                <!-- SECTION: CONFIGURATION & DATA (AUTO-SAVING) -->
                 <div id="view-config" class="section-view">
                     <div class="panel" style="max-width: 600px;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Practice Setup Configurations</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Changes are saved automatically as you edit.</p>
+                        
                         <div class="form-group">
                             <label>Practice Name</label>
-                            <input type="text" id="set-practice-name" class="control">
+                            <input type="text" id="set-practice-name" class="control" oninput="savePracticeSettings()">
                         </div>
                         <div class="form-layout">
                             <div class="form-group">
                                 <label>Default Hourly Rate</label>
-                                <input type="number" id="set-default-rate" class="control">
+                                <input type="number" id="set-default-rate" class="control" oninput="savePracticeSettings()">
                             </div>
                             <div class="form-group">
                                 <label>Default Office Cost (/hr)</label>
-                                <input type="number" id="set-default-office-cost" class="control">
+                                <input type="number" id="set-default-office-cost" class="control" oninput="savePracticeSettings()">
                             </div>
                         </div>
                         <div class="form-layout">
                             <div class="form-group">
                                 <label>Time Display Format</label>
-                                <select id="set-time-format" class="control">
+                                <select id="set-time-format" class="control" onchange="savePracticeSettings()">
                                     <option value="24h">24-hour (E.g. 14:30)</option>
                                     <option value="12h">12-hour (E.g. 2:30 pm)</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Default Currency Profile</label>
-                                <select id="set-currency" class="control">
+                                <select id="set-currency" class="control" onchange="savePracticeSettings()">
                                     <option value="£">£ (GBP - British Pound)</option>
                                     <option value="$">$ (USD - US Dollar)</option>
                                     <option value="€">€ (EUR - Euro)</option>
@@ -1091,7 +1093,7 @@
                         <div class="form-layout" style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
                             <div class="form-group">
                                 <label>Reporting Period Start Month</label>
-                                <select id="set-reporting-month" class="control">
+                                <select id="set-reporting-month" class="control" onchange="savePracticeSettings()">
                                     <option value="1">January</option>
                                     <option value="2">February</option>
                                     <option value="3">March</option>
@@ -1108,10 +1110,9 @@
                             </div>
                             <div class="form-group">
                                 <label>Reporting Period Start Day</label>
-                                <input type="number" id="set-reporting-day" class="control" min="1" max="31">
+                                <input type="number" id="set-reporting-day" class="control" min="1" max="31" oninput="savePracticeSettings()">
                             </div>
                         </div>
-                        <button class="btn" style="margin-bottom: 24px;" onclick="savePracticeSettings()">Update Core Settings</button>
                     </div>
 
                     <div class="panel" style="max-width: 600px;">
@@ -1683,7 +1684,7 @@
 
         function savePracticeSettings() {
             const name = document.getElementById('set-practice-name').value.trim();
-            if (!name) return showAlert('Validation Error', 'Practice Name is required.');
+            if (!name) return;
 
             practiceSettings = {
                 practiceName: name,
@@ -1699,8 +1700,6 @@
             applySettingsBranding();
             initPickers(); 
             calculateAndRender();
-            if (activeProfileId) renderClientProfile();
-            showAlert('Setup Updated', 'Settings saved successfully.');
         }
 
         function getReportingPeriodDates(year) {
@@ -2469,6 +2468,7 @@
                     const dRow = document.createElement('tr');
                     dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
                     dRow.innerHTML = `<td><strong>${client.name}</strong></td><td>${formatDateToUK(client.startDate)}</td><td>${cur}${client.rate.toFixed(2)}</td><td>${client.phone}</td><td><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${client.status}</span></td>`;
+                    dRow.innerHTML = `<td><strong>${client.name}</strong></td><td>${formatDateToUK(client.startDate)}</td><td>${cur}${client.rate.toFixed(2)}</td><td>${client.phone}</td><td><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${client.status}</span></td>`;
                     dirTable.appendChild(dRow);
                 }
             });
@@ -2915,6 +2915,12 @@
                 }
             } catch (err) {
                 console.error("Passkey auth error:", err);
+                // AUTO-FALLBACK: If the device doesn't have this hardware passkey (e.g. synced via Chrome from PC), 
+                // automatically disable passkey on this device so the mobile user is never locked out.
+                localStorage.setItem('practice_suite_passkey_enabled', 'false');
+                localStorage.removeItem('practice_suite_credential_id');
+                document.getElementById('passkey-lock-overlay').style.display = 'none';
+                showApp();
             }
         }
 
@@ -3108,7 +3114,7 @@
             const monthEl = document.getElementById('dash-month-val');
             if (monthEl) monthEl.value = new Date().getMonth();
             
-            // Optimistically set Google status if session ID exists
+            // Optimistically update Google status immediately if session ID exists
             if (localStorage.getItem('practice_suite_session_id')) {
                 updateGoogleStatus(true, localStorage.getItem('practice_suite_google_email'));
             } else {
