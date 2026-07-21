@@ -260,7 +260,7 @@
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;" id="passkey-modal-desc">Verify your identity with Touch ID, Face ID, or your security key to unlock PracticeSuite.</p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="handlePasskeyModalAction()" id="passkey-modal-action-btn">Unlock with Passkey</button>
-                <button id="btn-skip-passkey" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px; display: none;" onclick="skipPasskeyRegistration()">Set up later in Settings</button>
+                <button id="btn-skip-passkey" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px; display: none;" onclick="skipPasskeyRegistration()">Set up later in Account</button>
             </div>
         </div>
     </div>
@@ -548,7 +548,8 @@
                 <div class="nav-link" id="link-clients" onclick="navigate('clients')">All Clients</div>
                 <div class="nav-link" id="link-appointments" onclick="navigate('appointments')">Calendar & Booking</div>
                 <div class="nav-link" id="link-expenses" onclick="navigate('expenses')">Expenses</div>
-                <div class="nav-link" id="link-settings" onclick="navigate('settings')">Settings & Data</div>
+                <div class="nav-link" id="link-config" onclick="navigate('config')">Configuration & Data</div>
+                <div class="nav-link" id="link-account" onclick="navigate('account')">Account</div>
             </div>
         </div>
 
@@ -1047,7 +1048,8 @@
                     </div>
                 </div>
 
-                <div id="view-settings" class="section-view">
+                <!-- SECTION: CONFIGURATION & DATA -->
+                <div id="view-config" class="section-view">
                     <div class="panel" style="max-width: 600px;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Practice Setup Configurations</h3>
                         <div class="form-group">
@@ -1112,36 +1114,6 @@
                         <button class="btn" style="margin-bottom: 24px;" onclick="savePracticeSettings()">Update Core Settings</button>
                     </div>
 
-                    <!-- PASSKEY SETTINGS PANEL WITH TOGGLE SWITCH -->
-                    <div class="panel" style="max-width: 600px; border: 1.5px solid var(--accent);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
-                            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--accent); margin-bottom: 0;">Hardware Passkey Security</h3>
-                            <label class="switch">
-                                <input type="checkbox" id="passkey-toggle-checkbox" onchange="togglePasskeySetting(this)">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                            Protect your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows Hello). Toggle on to enable or register.
-                        </p>
-                        <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 0; font-weight: 600;">⚪ Passkey security disabled</div>
-                    </div>
-
-                    <!-- GOOGLE ACCOUNT PANEL -->
-                    <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
-                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #14532d; margin-bottom: 0;">Google Account</h3>
-                            <div id="google-status" style="font-size: 0.9rem; font-weight: 600;">⚪ Not connected</div>
-                        </div>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                            Your practice data syncs seamlessly and automatically to your connected Google Drive account in the background.
-                        </p>
-                        <div id="google-user-email" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 12px; font-weight: 600; display: none;"></div>
-                        <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
-                        
-                        <button id="google-connect-btn" class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
-                    </div>
-
                     <div class="panel" style="max-width: 600px;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Backup & Data Archive</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
@@ -1168,6 +1140,48 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- SECTION: ACCOUNT -->
+                <div id="view-account" class="section-view">
+                    <!-- GOOGLE ACCOUNT PANEL -->
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #14532d; margin-bottom: 0;">Google Account</h3>
+                            <div id="google-status" style="font-size: 0.9rem; font-weight: 600;">⚪ Not connected</div>
+                        </div>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                            Your practice data syncs seamlessly and automatically to your connected Google Drive account in the background.
+                        </p>
+                        <div id="google-user-email" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 12px; font-weight: 600; display: none;"></div>
+                        <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
+                        
+                        <button id="google-connect-btn" class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
+                    </div>
+
+                    <!-- PASSKEY SECURITY PANEL -->
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid var(--accent);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--accent); margin-bottom: 0;">Passkey Security</h3>
+                            <label class="switch">
+                                <input type="checkbox" id="passkey-toggle-checkbox" onchange="togglePasskeySetting(this)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                            Protect your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows Hello). Toggle on to enable or register.
+                        </p>
+                        <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 0; font-weight: 600;">⚪ Passkey security disabled</div>
+                    </div>
+
+                    <!-- LOG OUT SESSION -->
+                    <div class="panel" style="max-width: 600px; border-color: var(--danger);">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Log Out Session</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+                            This will disconnect your Google Account (if synced), lock the application, and require you to sign in again to access your practice data.
+                        </p>
+                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerFullReset()">Log Out & Disconnect</button>
+                    </div>
 
                     <!-- DANGER ZONE: CLEAR ALL DATA -->
                     <div class="panel" style="max-width: 600px; border: 1.5px solid var(--danger); background-color: #fef2f2;">
@@ -1177,16 +1191,8 @@
                         </p>
                         <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerClearAllUserData()">Clear All Data & Factory Reset</button>
                     </div>
-
-                    <!-- SINGLE DEFINITIVE LOGOUT BUTTON -->
-                    <div class="panel" style="max-width: 600px; border-color: var(--danger);">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Log Out Session</h3>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-                            This will disconnect your Google Account (if synced), lock the application, and require you to sign in again to access your practice data.
-                        </p>
-                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerFullReset()">Log Out & Disconnect</button>
-                    </div>
                 </div>
+
             </div>
         </div>
     </div> <!-- /app-root -->
@@ -1547,7 +1553,16 @@
             if (link) link.classList.add('active');
             closeMobileNav();
 
-            const titles = { 'dashboard': 'Dashboard', 'clients': 'Client Directory', 'expenses': 'Expenses', 'appointments': 'Calendar & Booking', 'settings': 'Settings', 'profile': 'Case File Workspace', 'onboard': 'Client Intake' };
+            const titles = { 
+                'dashboard': 'Dashboard', 
+                'clients': 'Client Directory', 
+                'expenses': 'Expenses', 
+                'appointments': 'Calendar & Booking', 
+                'config': 'Configuration & Data', 
+                'account': 'Account', 
+                'profile': 'Case File Workspace', 
+                'onboard': 'Client Intake' 
+            };
             const titleEl = document.getElementById('view-title');
             if (titleEl) titleEl.innerText = titles[viewId] || 'Workspace';
 
