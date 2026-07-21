@@ -275,10 +275,13 @@
         </div>
     </div>
 
-   <!-- NEW: VIEW SESSION NOTES MODAL -->
+    <!-- VIEW SESSION NOTES MODAL WITH NATIVE AI SUMMARIZATION -->
     <div id="view-note-modal" class="custom-modal-overlay">
         <div class="custom-modal-card" style="max-width: 900px; width: 95%;">
             <h3 style="margin-bottom: 16px; font-size: 1.25rem; font-weight: 700;">Session Notes</h3>
+            
+            <div id="view-note-summary" style="display: none; font-size: 0.95rem; line-height: 1.6; color: #4c1d95; background: #ede9fe; padding: 16px; border-radius: 8px; border: 1px solid #c4b5fd; margin-bottom: 16px; white-space: normal;"></div>
+
             <div id="view-note-content" style="
                 font-size: 0.95rem; 
                 line-height: 1.6; 
@@ -293,11 +296,17 @@
                 padding: 20px; 
                 border-radius: 8px; 
                 border: 1px solid var(--border);"></div>
-            <div style="display: flex; justify-content: flex-end;">
+                
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn" id="btn-ai-summarize" onclick="summarizeCurrentNote()" style="display: none; background-color: #8b5cf6; border: none; color: white;">
+                    <svg style="width: 16px; height: 16px; margin-right: 6px; vertical-align: text-bottom;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Summarize (On-Device AI)
+                </button>
                 <button class="btn btn-secondary" onclick="closeNoteModal()">Close</button>
             </div>
         </div>
     </div>
+
     <!-- IDLE TIMEOUT MODAL -->
     <div id="timeout-modal" class="custom-modal-overlay">
         <div class="custom-modal-card" style="text-align: center;">
@@ -1257,18 +1266,89 @@
             return `${hours}:${minutes} ${ampm}`;
         }
 
-        // --- SESSION NOTES MODAL ---
+        // --- SESSION NOTES MODAL & AI SUMMARIZATION ---
+        let currentViewedNoteText = "";
+
         function openNoteModal(clientId, sessionIndex) {
             const client = dataStore.clients.find(c => c.id === clientId);
             if (!client || !client.sessions[sessionIndex]) return;
-            const notes = client.sessions[sessionIndex].notes;
-            // innerText handles the line breaks safely without interpreting HTML
-            document.getElementById('view-note-content').innerText = notes;
+            
+            currentViewedNoteText = client.sessions[sessionIndex].notes;
+            document.getElementById('view-note-content').innerText = currentViewedNoteText;
+            
+            const summaryBox = document.getElementById('view-note-summary');
+            if (summaryBox) {
+                summaryBox.style.display = 'none';
+                summaryBox.innerHTML = '';
+            }
+            
+            const btn = document.getElementById('btn-ai-summarize');
+            if (btn) {
+                // Feature detection for Chrome's Built-in AI Summarizer
+                if ('Summarizer' in self || ('ai' in self && 'summarizer' in self.ai)) {
+                    btn.style.display = 'inline-flex';
+                    btn.disabled = false;
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+
             document.getElementById('view-note-modal').classList.add('active');
         }
 
         function closeNoteModal() {
             document.getElementById('view-note-modal').classList.remove('active');
+        }
+
+        async function summarizeCurrentNote() {
+            if (!currentViewedNoteText) return;
+            const summaryBox = document.getElementById('view-note-summary');
+            const btn = document.getElementById('btn-ai-summarize');
+            
+            // Re-check API capability dynamically 
+            let api = ('Summarizer' in self) ? self.Summarizer : (self.ai ? self.ai.summarizer : null);
+            if (!api) return;
+
+            summaryBox.style.display = 'block';
+            summaryBox.innerHTML = '<span style="color: #6d28d9;"><em>Securely analyzing notes on-device... (If this is the first time, Chrome may take a moment to prepare the AI model).</em></span>';
+            btn.disabled = true;
+
+            try {
+                const options = { type: 'key-points', format: 'plain-text', length: 'medium' };
+                let isAvailable = true;
+
+                // Handle old experimental syntax versus the modern Chrome 138+ standard
+                if (api.availability) {
+                    const avail = await api.availability(options);
+                    if (avail === 'no' || avail === 'unavailable') isAvailable = false;
+                } else if (api.capabilities) {
+                    const cap = await api.capabilities();
+                    if (cap && cap.available === 'no') isAvailable = false;
+                }
+
+                if (!isAvailable) {
+                    throw new Error("The built-in AI model is unavailable. Your device may not meet the hardware requirements, or the model hasn't downloaded yet.");
+                }
+
+                const summarizer = await api.create(options);
+                const summary = await summarizer.summarize(currentViewedNoteText);
+                
+                // Format basic Markdown bullet points or bolding into HTML
+                const formattedSummary = summary
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/^\* (.*)/gm, '<li style="margin-left: 20px;">$1</li>');
+                
+                const finalHtml = formattedSummary.includes('<li>') ? `<ul>${formattedSummary}</ul>` : formattedSummary.replace(/\n/g, '<br>');
+
+                summaryBox.innerHTML = `<strong style="color: #5b21b6; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px;">On-Device AI Summary:</strong><br><br>${finalHtml}`;
+                
+                if (summarizer.destroy) summarizer.destroy();
+
+            } catch (err) {
+                summaryBox.innerHTML = `<span style="color: var(--danger); font-weight: 600;">Error: ${err.message}</span>`;
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         const DB_NAME = 'SassonPracticeCRM_Docs';
@@ -1510,7 +1590,6 @@
             document.getElementById('app-root').style.display = 'none';
             document.getElementById('onboarding-overlay').style.display = 'flex';
             
-            // Set local currency hint on first load
             const localCur = Intl.NumberFormat().resolvedOptions().currency || 'GBP';
             const curMap = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'ILS': '₪' };
             document.getElementById('ob-currency').value = curMap[localCur] || '£';
