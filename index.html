@@ -440,7 +440,7 @@
                 </svg>
             </div>
             <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5;">Sign in with Google to access your practice data.</p>
-            <button class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background-color: #fff; border-color: #cbd5e1; color: #334155;" onclick="gateGoogleSignIn()">
+            <button id="login-gate-google-btn" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background-color: #fff; border-color: #cbd5e1; color: #334155;" onclick="gateGoogleSignIn()">
                 <svg style="width: 18px; height: 18px; margin-right: 8px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 Sign in with Google
             </button>
@@ -1134,17 +1134,17 @@
 
                     <!-- GOOGLE ACCOUNT PANEL -->
                     <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Account</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #14532d; margin-bottom: 0;">Google Account Sync</h3>
+                            <div id="google-status" style="font-size: 0.9rem; font-weight: 600;">⚪ Not connected</div>
+                        </div>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
                             Your practice data syncs seamlessly and automatically to your connected Google Drive account in the background.
                         </p>
-                        <div id="google-status" style="font-size: 0.95rem; margin-bottom: 8px; font-weight: 600;">⚪ Not connected</div>
-                        <div id="google-user-email" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 12px; font-weight: 500; display: none;"></div>
+                        <div id="google-user-email" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 12px; font-weight: 600; display: none;"></div>
                         <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
-                        <div style="display: flex; gap: 12px;">
-                            <button id="google-connect-btn" class="btn" style="flex: 1; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
-                            <button id="google-disconnect-btn" class="btn btn-secondary" style="flex: 1; justify-content: center; display: none;" onclick="signOutGoogle()">Disconnect Account</button>
-                        </div>
+                        
+                        <button id="google-connect-btn" class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
                     </div>
 
                     <div class="panel" style="max-width: 600px;">
@@ -1184,17 +1184,18 @@
                     <div class="panel" style="max-width: 600px; border: 1.5px solid var(--danger); background-color: #fef2f2;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid #fecaca; padding-bottom: 8px;">⚠️ Danger Zone: Clear All User Data</h3>
                         <p style="font-size: 0.9rem; color: #991b1b; margin-bottom: 16px; line-height: 1.5; font-weight: 500;">
-                            <strong>WARNING:</strong> This action is completely irreversible. Clicking this button will permanently erase all local data. If connected to Google Account, your cloud backup will also be erased. Make sure you have downloaded a local backup file first!
+                            <strong>WARNING:</strong> This action is completely irreversible. Clicking this button will permanently erase all local data. If connected to a Google Account, your cloud backup will also be erased. Make sure you have downloaded a local backup file first!
                         </p>
                         <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerClearAllUserData()">Clear All Data & Factory Reset</button>
                     </div>
 
+                    <!-- SINGLE DEFINITIVE LOGOUT BUTTON -->
                     <div class="panel" style="max-width: 600px; border-color: var(--danger);">
                         <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Log Out Session</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-                            This clears your active session to protect your client data.
+                            This will disconnect your Google Account (if synced), lock the application, and require you to sign in again to access your practice data.
                         </p>
-                        <button class="btn btn-danger" onclick="triggerFullReset()">Log Out of PracticeSuite</button>
+                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerFullReset()">Log Out & Disconnect</button>
                     </div>
                 </div>
             </div>
@@ -1658,8 +1659,9 @@
                 localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
                 populateCategoryDropdown();
             }
-            showApp();
+            
             if (localStorage.getItem('practice_suite_session_id')) saveToGoogleDrive(true);
+            checkPostLoginPasskeySetup();
         }
 
         function applySettingsBranding() {
@@ -2589,7 +2591,6 @@
             const el = document.getElementById('google-status');
             const emailEl = document.getElementById('google-user-email');
             const connectBtn = document.getElementById('google-connect-btn');
-            const disconnectBtn = document.getElementById('google-disconnect-btn');
 
             if (!el) return;
 
@@ -2612,14 +2613,12 @@
                 }
                 
                 if (connectBtn) connectBtn.style.display = 'none';
-                if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
             } else {
                 el.textContent = '⚪ Not connected';
                 el.style.color = 'var(--text-muted)';
                 if (emailEl) emailEl.style.display = 'none';
                 localStorage.removeItem('practice_suite_google_email');
                 if (connectBtn) connectBtn.style.display = 'inline-flex';
-                if (disconnectBtn) disconnectBtn.style.display = 'none';
             }
         }
 
@@ -2710,7 +2709,12 @@
                     });
                     const parsed = await res.json();
                     await loadDriveDataIntoApp(parsed);
-                    checkPostLoginPasskeySetup();
+                    
+                    if (practiceSettings) {
+                        checkPostLoginPasskeySetup();
+                    } else {
+                        showCreateProfileForm();
+                    }
                 } catch (err) {
                     console.error(err);
                     if (practiceSettings) { checkPostLoginPasskeySetup(); } else { showCreateProfileForm(); }
@@ -2743,6 +2747,9 @@
             if (parsed.practiceSettings) {
                 practiceSettings = parsed.practiceSettings;
                 localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
+            } else {
+                practiceSettings = null;
+                localStorage.removeItem('sasson_practice_settings');
             }
             localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
         }
