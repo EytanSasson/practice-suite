@@ -1132,18 +1132,18 @@
                         <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 0; font-weight: 600;">⚪ Passkey security disabled</div>
                     </div>
 
+                    <!-- GOOGLE DRIVE SYNC STATUS PANEL -->
                     <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Drive Sync</h3>
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Drive Account Sync</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                            Your data syncs automatically to your own Google Drive once connected. Nobody but you can access that file.
+                            Your practice data syncs seamlessly and automatically to your connected Google Drive account in the background.
                         </p>
-                        <div id="google-status" style="font-size: 0.9rem; margin-bottom: 4px; font-weight: 600;">⚪ Not connected</div>
+                        <div id="google-status" style="font-size: 0.95rem; margin-bottom: 8px; font-weight: 600;">⚪ Not connected</div>
+                        <div id="google-user-email" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 12px; font-weight: 500; display: none;"></div>
                         <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <button class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
-                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="saveToGoogleDrive()">Save to Google Drive Now</button>
-                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="loadFromGoogleDrive()">Load Latest from Google Drive</button>
-                            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="signOutGoogle()">Disconnect Google Account</button>
+                        <div style="display: flex; gap: 12px;">
+                            <button id="google-connect-btn" class="btn" style="flex: 1; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
+                            <button id="google-disconnect-btn" class="btn btn-secondary" style="flex: 1; justify-content: center; display: none;" onclick="signOutGoogle()">Disconnect Account</button>
                         </div>
                     </div>
 
@@ -2585,11 +2585,38 @@
         let timeoutWarningTimer = null;
         let countdownInterval = null;
 
-        function updateGoogleStatus(connected) {
+        function updateGoogleStatus(connected, userEmail = null) {
             const el = document.getElementById('google-status');
+            const emailEl = document.getElementById('google-user-email');
+            const connectBtn = document.getElementById('google-connect-btn');
+            const disconnectBtn = document.getElementById('google-disconnect-btn');
+
             if (!el) return;
-            el.textContent = connected ? '✅ Connected to Google Drive' : '⚪ Not connected';
-            el.style.color = connected ? 'var(--success)' : 'var(--text-muted)';
+
+            if (connected) {
+                el.textContent = '✅ Connected to Google Drive';
+                el.style.color = 'var(--success)';
+                if (userEmail) {
+                    emailEl.textContent = `Associated Account: ${userEmail}`;
+                    emailEl.style.display = 'block';
+                    localStorage.setItem('practice_suite_google_email', userEmail);
+                } else {
+                    const savedEmail = localStorage.getItem('practice_suite_google_email');
+                    if (savedEmail) {
+                        emailEl.textContent = `Associated Account: ${savedEmail}`;
+                        emailEl.style.display = 'block';
+                    }
+                }
+                if (connectBtn) connectBtn.style.display = 'none';
+                if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
+            } else {
+                el.textContent = '⚪ Not connected';
+                el.style.color = 'var(--text-muted)';
+                if (emailEl) emailEl.style.display = 'none';
+                localStorage.removeItem('practice_suite_google_email');
+                if (connectBtn) connectBtn.style.display = 'inline-flex';
+                if (disconnectBtn) disconnectBtn.style.display = 'none';
+            }
         }
 
         function setSyncIndicator(text, color) {
@@ -2653,8 +2680,22 @@
             return null;
         }
 
+        async function fetchGoogleUserInfo(token) {
+            try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    const info = await res.json();
+                    return info.email;
+                }
+            } catch (e) {}
+            return null;
+        }
+
         async function proceedPastLogin() {
-            updateGoogleStatus(true);
+            const userEmail = await fetchGoogleUserInfo(googleAccessToken);
+            updateGoogleStatus(true, userEmail);
             await findExistingDriveFile();
             if (driveFileId) {
                 try {
@@ -2710,20 +2751,15 @@
 
         function scheduleAutoDriveSync() {
             if (!googleAccessToken) return;
-            setSyncIndicator('Change detected — syncing shortly…');
+            setSyncIndicator('Auto-syncing to Drive…');
             clearTimeout(driveAutoSyncTimer);
-            driveAutoSyncTimer = setTimeout(() => saveToGoogleDrive(true), 1500);
+            driveAutoSyncTimer = setTimeout(() => saveToGoogleDriveSilently(), 1500);
         }
 
-        async function saveToGoogleDrive(silent) {
+        async function saveToGoogleDriveSilently() {
             googleAccessToken = await refreshAndGetToken();
-            if (!googleAccessToken) {
-                if (!silent) showAlert('Session Expired', 'Please securely sign in again.');
-                showLoginGate();
-                return;
-            }
+            if (!googleAccessToken) return;
 
-            setSyncIndicator('Syncing to Drive…');
             const fileContent = JSON.stringify({ dataStore: dataStore, practiceSettings: practiceSettings }, null, 2);
             try {
                 if (!driveFileId) await findExistingDriveFile();
@@ -2750,33 +2786,9 @@
                     driveFileId = result.id;
                 }
                 const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                setSyncIndicator(`✓ Synced at ${timeStr}`, 'var(--success)');
-                if (!silent) showAlert('Success', 'Data saved securely to Drive.');
+                setSyncIndicator(`✓ Synced automatically at ${timeStr}`, 'var(--success)');
             } catch (err) {
-                setSyncIndicator('⚠ Sync failed', 'var(--warning)');
-            }
-        }
-
-        async function loadFromGoogleDrive() {
-            googleAccessToken = await refreshAndGetToken();
-            if (!googleAccessToken) {
-                showAlert('Session Expired', 'Please securely sign in again.');
-                showLoginGate();
-                return;
-            }
-
-            if (!driveFileId) await findExistingDriveFile();
-            if (!driveFileId) return showAlert('Not Found', 'No Backup Found on Drive.');
-            try {
-                const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
-                    headers: { 'Authorization': 'Bearer ' + googleAccessToken }
-                });
-                const parsed = await res.json();
-                await loadDriveDataIntoApp(parsed);
-                showAlert('Success', 'Data loaded securely from Google Drive.');
-                window.location.reload(); 
-            } catch (err) {
-                showAlert('Error', 'Failed to load from Google Drive.');
+                setSyncIndicator('⚠ Auto-sync failed', 'var(--warning)');
             }
         }
         
@@ -2799,7 +2811,7 @@
             setSyncIndicator('');
 
             if (!silent) {
-                showAlert('Disconnected', 'Your session has been securely destroyed.');
+                showAlert('Disconnected', 'Your Google Drive account has been disconnected.');
                 showLoginGate();
             }
         }
@@ -2972,7 +2984,6 @@
             const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
             const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
 
-            // If passkey is turned off or not configured, prompt the user to enable/register it post-login
             if (!isPasskeyEnabled || !hasCredential) {
                 if (!isWebAuthnSupported()) {
                     showApp();
@@ -3086,26 +3097,20 @@
                 "DANGER: Clear All User Data", 
                 "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings from this device. This cannot be undone!", 
                 () => {
-                    // 1. Wipe all localStorage items immediately
                     localStorage.clear();
-
-                    // 2. Wipe IndexedDB and wait for it to finish before reloading
                     const dbReq = indexedDB.deleteDatabase(DB_NAME);
                     
                     dbReq.onsuccess = function() {
-                        window.location.href = window.location.pathname; // Hard reload without cache
+                        window.location.href = window.location.pathname;
                     };
-                    
                     dbReq.onerror = function() {
                         window.location.href = window.location.pathname;
                     };
-
                     dbReq.onblocked = function() {
-                        // Forces reload even if connection was open
                         window.location.href = window.location.pathname;
                     };
                 }, 
-                true // Destructive red confirmation button
+                true 
             );
         }
         
