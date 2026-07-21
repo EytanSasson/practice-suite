@@ -275,17 +275,29 @@
         </div>
     </div>
 
-    <!-- NEW: VIEW SESSION NOTES MODAL -->
+   <!-- NEW: VIEW SESSION NOTES MODAL -->
     <div id="view-note-modal" class="custom-modal-overlay">
-        <div class="custom-modal-card" style="max-width: 600px;">
-            <h3 style="margin-bottom: 16px; font-size: 1.15rem; font-weight: 700;">Session Notes</h3>
-            <div id="view-note-content" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; margin-bottom: 24px; max-height: 50vh; overflow-y: auto; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border);"></div>
+        <div class="custom-modal-card" style="max-width: 900px; width: 95%;">
+            <h3 style="margin-bottom: 16px; font-size: 1.25rem; font-weight: 700;">Session Notes</h3>
+            <div id="view-note-content" style="
+                font-size: 0.95rem; 
+                line-height: 1.6; 
+                color: var(--text-main); 
+                white-space: pre-wrap; 
+                word-break: break-word; 
+                overflow-x: hidden; 
+                overflow-y: auto; 
+                margin-bottom: 24px; 
+                max-height: 70vh; 
+                background: #f8fafc; 
+                padding: 20px; 
+                border-radius: 8px; 
+                border: 1px solid var(--border);"></div>
             <div style="display: flex; justify-content: flex-end;">
                 <button class="btn btn-secondary" onclick="closeNoteModal()">Close</button>
             </div>
         </div>
     </div>
-
     <!-- IDLE TIMEOUT MODAL -->
     <div id="timeout-modal" class="custom-modal-overlay">
         <div class="custom-modal-card" style="text-align: center;">
