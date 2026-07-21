@@ -417,7 +417,7 @@
         </div>
     </div>
 
-    <!-- LOGIN GATE (OFFLINE OPTION REMOVED) -->
+    <!-- LOGIN GATE (OFFLINE OPTION PERMANENTLY REMOVED) -->
     <div id="login-gate-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 16px;">
         <div class="onboarding-card splash-fade" style="text-align: center;">
             <div style="display: flex; justify-content: center; margin-bottom: 20px;">
@@ -478,10 +478,10 @@
                         <option value="$">$ (USD - US Dollar)</option>
                         <option value="€">€ (EUR - Euro)</option>
                         <option value="₪">₪ (ILS - Israeli Shekel)</option>
-                        <option value="CAD">CAD ($ - Canadian Dollar)</option>
-                        <option value="AUD">AUD ($ - Australian Dollar)</option>
-                        <option value="CHF">CHF (Fr - Swiss Franc)</option>
-                        <option value="JPY">JPY (¥ - Japanese Yen)</option>
+                        <option value="$">C$ (CAD - Canadian Dollar)</option>
+                        <option value="A$">A$ (AUD - Australian Dollar)</option>
+                        <option value="CHF">CHF (Swiss Franc)</option>
+                        <option value="¥">¥ (JPY - Japanese Yen)</option>
                     </select>
                 </div>
             </div>
@@ -1072,10 +1072,10 @@
                                     <option value="$">$ (USD - US Dollar)</option>
                                     <option value="€">€ (EUR - Euro)</option>
                                     <option value="₪">₪ (ILS - Israeli Shekel)</option>
-                                    <option value="CAD">CAD ($ - Canadian Dollar)</option>
-                                    <option value="AUD">AUD ($ - Australian Dollar)</option>
-                                    <option value="CHF">CHF (Fr - Swiss Franc)</option>
-                                    <option value="JPY">JPY (¥ - Japanese Yen)</option>
+                                    <option value="$">C$ (CAD - Canadian Dollar)</option>
+                                    <option value="A$">A$ (AUD - Australian Dollar)</option>
+                                    <option value="CHF">CHF (Swiss Franc)</option>
+                                    <option value="¥">¥ (JPY - Japanese Yen)</option>
                                 </select>
                             </div>
                         </div>
@@ -1594,7 +1594,7 @@
             document.getElementById('onboarding-overlay').style.display = 'flex';
             
             const localCur = Intl.NumberFormat().resolvedOptions().currency || 'GBP';
-            const curMap = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'ILS': '₪', 'CAD': 'CAD', 'AUD': 'AUD', 'CHF': 'CHF', 'JPY': 'JPY' };
+            const curMap = { 'GBP': '£', 'USD': '$', 'EUR': '€', 'ILS': '₪', 'CAD': '$', 'AUD': 'A$', 'CHF': 'CHF', 'JPY': '¥' };
             document.getElementById('ob-currency').value = curMap[localCur] || '£';
         }
 
