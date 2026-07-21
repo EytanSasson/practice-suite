@@ -422,9 +422,9 @@
     </div>
 
     <!-- LOGIN GATE (STACKED & PERFECTLY CENTERED LOGO) -->
-    <div id="login-gate-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1001; padding: 16px;">
-        <div class="onboarding-card splash-fade" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto;">
-            <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 20px;">
+    <div id="login-gate-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: flex; align-items: center; justify-content: center; z-index: 1001; padding: 16px;">
+        <div class="onboarding-card splash-fade" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; max-width: 420px; width: 100%;">
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 24px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 110" width="220" height="80" style="display: block; margin: 0 auto;">
                   <g transform="translate(114, 2)">
                     <polygon points="36,2 68,20 68,52 36,70 4,52 4,20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
@@ -439,7 +439,7 @@
                   <text x="150" y="94" font-family="'Inter', -apple-system, sans-serif" font-size="22" font-weight="700" fill="#0f172a" text-anchor="middle">PracticeSuite</text>
                 </svg>
             </div>
-            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; width: 100%;">Sign in with Google to access your practice data.</p>
+            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; width: 100%; text-align: center;">Sign in with Google to access your practice data.</p>
             <button id="login-gate-google-btn" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background-color: #fff; border-color: #cbd5e1; color: #334155;" onclick="gateGoogleSignIn()">
                 <svg style="width: 18px; height: 18px; margin-right: 8px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 Sign in with Google
@@ -520,18 +520,19 @@
         <div class="sidebar">
             <div class="brand-wrapper">
                 <div class="brand">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 110" width="160" height="58">
-                      <g transform="translate(114, 2)">
-                        <polygon points="36,2 68,20 68,52 36,70 4,52 4,20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
-                        <line x1="36" y1="20" x2="36" y2="52" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                        <line x1="18" y1="28" x2="54" y2="44" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                        <line x1="18" y1="44" x2="54" y2="28" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                        <circle cx="36" cy="20" r="4" fill="#1d4ed8"/>
-                        <circle cx="36" cy="52" r="4" fill="#1d4ed8"/>
-                        <circle cx="18" cy="28" r="4" fill="#1d4ed8"/>
-                        <circle cx="54" cy="44" r="4" fill="#1d4ed8"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="160" height="48">
+                      <g transform="translate(20, 20)">
+                        <polygon points="40,2 72,20 72,56 40,74 8,56 8,20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+                        <line x1="40" y1="20" x2="40" y2="56" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="20" y1="32" x2="60" y2="44" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="20" y1="44" x2="60" y2="32" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+                        <circle cx="40" cy="20" r="5" fill="#1d4ed8"/>
+                        <circle cx="40" cy="56" r="5" fill="#1d4ed8"/>
+                        <circle cx="20" cy="32" r="5" fill="#1d4ed8"/>
+                        <circle cx="60" cy="44" r="5" fill="#1d4ed8"/>
                       </g>
-                      <text x="150" y="94" font-family="'Inter', -apple-system, sans-serif" font-size="22" font-weight="700" fill="#ffffff" text-anchor="middle">PracticeSuite</text>
+                      <text x="115" y="56" font-family="'Inter', -apple-system, sans-serif" font-size="25" font-weight="700" fill="#ffffff">PracticeSuite</text>
+                      <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11" font-weight="500" fill="#94a3b8" letter-spacing="0.5">Secure Client Management</text>
                     </svg>
                 </div>
                 <div id="sidebar-practice-title" class="brand-practice-title">Practice Suite</div>
@@ -1046,11 +1047,11 @@
                     </div>
                 </div>
 
-                <!-- SECTION: CONFIGURATION & DATA (INSTANT AUTO-SAVING) -->
+                <!-- SECTION: CONFIGURATION & DATA (AUTO-SAVING & AUTO-SYNCING) -->
                 <div id="view-config" class="section-view">
                     <div class="panel" style="max-width: 600px;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Practice Setup Configurations</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Changes are saved automatically as you edit.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Changes are saved and synced automatically as you edit.</p>
                         
                         <div class="form-group">
                             <label>Practice Name</label>
@@ -1479,15 +1480,46 @@
 
         function getDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, 2);
+                const request = indexedDB.open(DB_NAME, 3);
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains(STORE_CONTRACTS)) db.createObjectStore(STORE_CONTRACTS, { keyPath: 'clientId' });
                     if (!db.objectStoreNames.contains(STORE_RECEIPTS)) db.createObjectStore(STORE_RECEIPTS, { keyPath: 'expenseId' });
+                    if (!db.objectStoreNames.contains('security')) db.createObjectStore('security', { keyPath: 'id' });
                 };
                 request.onsuccess = (e) => resolve(e.target.result);
                 request.onerror = (e) => reject(e.target.error);
             });
+        }
+
+        async function getLocalPasskeyConfig() {
+            try {
+                const db = await getDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction('security', 'readonly');
+                    const store = tx.objectStore('security');
+                    const req = store.get('passkey_config');
+                    req.onsuccess = (e) => resolve(e.target.result || { enabled: false, credentialId: null });
+                    req.onerror = () => resolve({ enabled: false, credentialId: null });
+                });
+            } catch (e) {
+                return { enabled: false, credentialId: null };
+            }
+        }
+
+        async function setLocalPasskeyConfig(enabled, credentialId) {
+            try {
+                const db = await getDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction('security', 'readwrite');
+                    const store = tx.objectStore('security');
+                    const req = store.put({ id: 'passkey_config', enabled, credentialId });
+                    req.onsuccess = () => resolve();
+                    req.onerror = (e) => reject(e.target.error);
+                });
+            } catch (e) {
+                console.error("Failed to save passkey config to IndexedDB", e);
+            }
         }
 
         async function storeDocBlob(storeName, key, file) {
@@ -1677,10 +1709,10 @@
                     graphTitle.innerText = `Revenue Breakdown (${dates.start} to ${dates.end})`;
                 }
             }
-            updatePasskeyStatusUI(localStorage.getItem('practice_suite_passkey_enabled') === 'true');
+            updatePasskeyStatusUI();
         }
 
-        function savePracticeSettings() {
+        async function savePracticeSettings() {
             const name = document.getElementById('set-practice-name').value.trim();
             if (!name) return;
 
@@ -2854,10 +2886,10 @@
                     throw new Error("Credential creation returned empty.");
                 }
 
-                localStorage.setItem('practice_suite_passkey_enabled', 'true');
-                localStorage.setItem('practice_suite_credential_id', btoa(String.fromCharCode(...new Uint8Array(credential.rawId))));
+                const credIdB64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+                await setLocalPasskeyConfig(true, credIdB64);
 
-                updatePasskeyStatusUI(true);
+                updatePasskeyStatusUI();
                 
                 if (isMandatoryPrompt) {
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
@@ -2875,7 +2907,7 @@
                         showAlert("Registration Failed", err.message || "Passkey creation failed due to an extension or browser block.");
                     }
                 } else {
-                    localStorage.setItem('practice_suite_passkey_enabled', 'false');
+                    await setLocalPasskeyConfig(false, null);
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
                     showApp();
                 }
@@ -2890,10 +2922,10 @@
                 const challenge = new Uint8Array(32);
                 window.crypto.getRandomValues(challenge);
 
-                const credIdBase64 = localStorage.getItem('practice_suite_credential_id');
+                const config = await getLocalPasskeyConfig();
                 let allowCredentials = [];
-                if (credIdBase64) {
-                    const rawId = Uint8Array.from(atob(credIdBase64), c => c.charCodeAt(0));
+                if (config.credentialId) {
+                    const rawId = Uint8Array.from(atob(config.credentialId), c => c.charCodeAt(0));
                     allowCredentials = [{ id: rawId, type: "public-key" }];
                 }
 
@@ -2915,10 +2947,9 @@
                 }
             } catch (err) {
                 console.error("Passkey auth error on this device:", err);
-                // DEVICE-AWARE FALLBACK: If this device lacks the hardware credential (e.g. synced from PC via Chrome),
+                // DEVICE-AWARE FALLBACK: If this device lacks the hardware credential,
                 // automatically deactivate passkeys locally for this device without altering other devices.
-                localStorage.setItem('practice_suite_passkey_enabled', 'false');
-                localStorage.removeItem('practice_suite_credential_id');
+                await setLocalPasskeyConfig(false, null);
                 document.getElementById('passkey-lock-overlay').style.display = 'none';
                 showApp();
             }
@@ -2935,36 +2966,30 @@
 
         async function togglePasskeySetting(checkbox) {
             const isEnabled = checkbox.checked;
-            localStorage.setItem('practice_suite_passkey_enabled', isEnabled ? 'true' : 'false');
-            updatePasskeyStatusUI(isEnabled);
-
             if (isEnabled) {
-                if (!localStorage.getItem('practice_suite_credential_id')) {
-                    const success = await registerPasskey(false);
-                    if (!success) {
-                        checkbox.checked = false;
-                        localStorage.setItem('practice_suite_passkey_enabled', 'false');
-                        updatePasskeyStatusUI(false);
-                    }
+                const success = await registerPasskey(false);
+                if (!success) {
+                    checkbox.checked = false;
+                    await setLocalPasskeyConfig(false, null);
                 }
             } else {
-                localStorage.removeItem('practice_suite_credential_id');
-                updatePasskeyStatusUI(false);
+                await setLocalPasskeyConfig(false, null);
             }
+            updatePasskeyStatusUI();
         }
 
-        function updatePasskeyStatusUI(isEnabled) {
+        async function updatePasskeyStatusUI() {
             const statusEl = document.getElementById('passkey-status-text');
             const checkboxEl = document.getElementById('passkey-toggle-checkbox');
+            const config = await getLocalPasskeyConfig();
             
-            if (checkboxEl) checkboxEl.checked = isEnabled;
+            if (checkboxEl) checkboxEl.checked = config.enabled;
 
             if (statusEl) {
-                const hasCred = !!localStorage.getItem('practice_suite_credential_id');
-                if (isEnabled && hasCred) {
+                if (config.enabled && config.credentialId) {
                     statusEl.textContent = "✅ Active and securing this browser";
                     statusEl.style.color = "var(--success)";
-                } else if (isEnabled && !hasCred) {
+                } else if (config.enabled && !config.credentialId) {
                     statusEl.textContent = "⚠️ Enabled, awaiting biometric registration...";
                     statusEl.style.color = "var(--warning)";
                 } else {
@@ -2974,13 +2999,12 @@
             }
         }
 
-        function checkPostLoginPasskeySetup() {
+        async function checkPostLoginPasskeySetup() {
             document.getElementById('onboarding-overlay').style.display = 'none';
             
-            const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
-            const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
+            const config = await getLocalPasskeyConfig();
 
-            if (!isPasskeyEnabled || !hasCredential) {
+            if (!config.enabled || !config.credentialId) {
                 if (!isWebAuthnSupported()) {
                     showApp();
                     return;
@@ -2998,10 +3022,10 @@
             }
         }
 
-        function skipPasskeyRegistration() {
+        async function skipPasskeyRegistration() {
             document.getElementById('passkey-lock-overlay').style.display = 'none';
-            localStorage.setItem('practice_suite_passkey_enabled', 'false');
-            updatePasskeyStatusUI(false);
+            await setLocalPasskeyConfig(false, null);
+            updatePasskeyStatusUI();
             showApp();
         }
 
@@ -3037,12 +3061,13 @@
             }, 60 * 1000);
         }
 
-        function lockWorkspaceForInactivity() {
+        async function lockWorkspaceForInactivity() {
             clearTimeout(idleLogoutTimer);
             clearTimeout(timeoutWarningTimer);
             clearInterval(countdownInterval);
 
-            if (localStorage.getItem('practice_suite_passkey_enabled') === 'true' && localStorage.getItem('practice_suite_credential_id')) {
+            const config = await getLocalPasskeyConfig();
+            if (config.enabled && config.credentialId) {
                 document.getElementById('app-root').style.display = 'none';
                 const overlay = document.getElementById('passkey-lock-overlay');
                 overlay.dataset.mode = 'auth';
@@ -3107,24 +3132,22 @@
             showLoginGate('You have securely logged out of your session. Your data remains safe on this device and in Google Drive.');
         }
 
-        window.onload = function() {
+        window.onload = async function() {
             populateCategoryDropdown();
             selectedDashboardYear = new Date().getFullYear();
             
             const monthEl = document.getElementById('dash-month-val');
             if (monthEl) monthEl.value = new Date().getMonth();
             
-            // Optimistically update Google status immediately if session ID exists
             if (localStorage.getItem('practice_suite_session_id')) {
                 updateGoogleStatus(true, localStorage.getItem('practice_suite_google_email'));
             } else {
                 updateGoogleStatus(false);
             }
             
-            const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
-            const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
+            const config = await getLocalPasskeyConfig();
 
-            if (isPasskeyEnabled && hasCredential) {
+            if (config.enabled && config.credentialId) {
                 document.getElementById('app-root').style.display = 'none';
                 const overlay = document.getElementById('passkey-lock-overlay');
                 overlay.dataset.mode = 'auth';
@@ -3133,7 +3156,7 @@
                 document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
                 document.getElementById('btn-skip-passkey').style.display = 'none';
                 overlay.style.display = 'flex';
-                updatePasskeyStatusUI(true);
+                updatePasskeyStatusUI();
                 setTimeout(() => triggerPasskeyAuth(), 300);
                 return;
             }
