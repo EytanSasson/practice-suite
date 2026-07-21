@@ -1132,9 +1132,9 @@
                         <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 0; font-weight: 600;">⚪ Passkey security disabled</div>
                     </div>
 
-                    <!-- GOOGLE DRIVE SYNC STATUS PANEL -->
+                    <!-- GOOGLE ACCOUNT PANEL -->
                     <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Drive Account Sync</h3>
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Account</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
                             Your practice data syncs seamlessly and automatically to your connected Google Drive account in the background.
                         </p>
@@ -1184,7 +1184,7 @@
                     <div class="panel" style="max-width: 600px; border: 1.5px solid var(--danger); background-color: #fef2f2;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid #fecaca; padding-bottom: 8px;">⚠️ Danger Zone: Clear All User Data</h3>
                         <p style="font-size: 0.9rem; color: #991b1b; margin-bottom: 16px; line-height: 1.5; font-weight: 500;">
-                            <strong>WARNING:</strong> This action is completely irreversible. Clicking this button will permanently erase all client profiles, financial records, session history logs, appointments, local settings, and saved documents stored on this device. Make sure you have downloaded a backup file first!
+                            <strong>WARNING:</strong> This action is completely irreversible. Clicking this button will permanently erase all local data. If connected to Google Account, your cloud backup will also be erased. Make sure you have downloaded a local backup file first!
                         </p>
                         <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerClearAllUserData()">Clear All Data & Factory Reset</button>
                     </div>
@@ -2594,8 +2594,9 @@
             if (!el) return;
 
             if (connected) {
-                el.textContent = '✅ Connected to Google Drive';
+                el.textContent = '✅ Connected';
                 el.style.color = 'var(--success)';
+                
                 if (userEmail) {
                     emailEl.textContent = `Associated Account: ${userEmail}`;
                     emailEl.style.display = 'block';
@@ -2605,8 +2606,11 @@
                     if (savedEmail) {
                         emailEl.textContent = `Associated Account: ${savedEmail}`;
                         emailEl.style.display = 'block';
+                    } else {
+                        emailEl.style.display = 'none';
                     }
                 }
+                
                 if (connectBtn) connectBtn.style.display = 'none';
                 if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
             } else {
@@ -2682,14 +2686,16 @@
 
         async function fetchGoogleUserInfo(token) {
             try {
-                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                const res = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if (res.ok) {
                     const info = await res.json();
-                    return info.email;
+                    return info.user.emailAddress;
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error("Failed to fetch user info", e);
+            }
             return null;
         }
 
@@ -2751,7 +2757,7 @@
 
         function scheduleAutoDriveSync() {
             if (!googleAccessToken) return;
-            setSyncIndicator('Auto-syncing to Drive…');
+            setSyncIndicator('Auto-syncing to cloud...');
             clearTimeout(driveAutoSyncTimer);
             driveAutoSyncTimer = setTimeout(() => saveToGoogleDriveSilently(), 1500);
         }
@@ -2811,7 +2817,7 @@
             setSyncIndicator('');
 
             if (!silent) {
-                showAlert('Disconnected', 'Your Google Drive account has been disconnected.');
+                showAlert('Disconnected', 'Your Google account has been disconnected.');
                 showLoginGate();
             }
         }
@@ -2984,6 +2990,7 @@
             const isPasskeyEnabled = localStorage.getItem('practice_suite_passkey_enabled') === 'true';
             const hasCredential = !!localStorage.getItem('practice_suite_credential_id');
 
+            // If passkey is turned off or not configured, prompt the user to enable/register it post-login
             if (!isPasskeyEnabled || !hasCredential) {
                 if (!isWebAuthnSupported()) {
                     showApp();
@@ -3095,22 +3102,44 @@
         function triggerClearAllUserData() {
             showConfirm(
                 "DANGER: Clear All User Data", 
-                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings from this device. This cannot be undone!", 
-                () => {
+                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings. If connected to Google, your cloud backup will also be erased. This cannot be undone!", 
+                async () => {
+                    // 1. If connected to Google Drive, overwrite the cloud file with an empty dataset
+                    if (googleAccessToken && driveFileId) {
+                        const emptyContent = JSON.stringify({
+                            dataStore: { clients: [], expenses: [], categories: [], appointments: [] },
+                            practiceSettings: null
+                        });
+                        try {
+                            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+                                method: 'PATCH',
+                                headers: { 'Authorization': 'Bearer ' + googleAccessToken, 'Content-Type': 'application/json' },
+                                body: emptyContent
+                            });
+                        } catch (e) {
+                            console.error('Failed to wipe cloud data', e);
+                        }
+                    }
+
+                    // 2. Wipe all local storage items immediately
                     localStorage.clear();
+
+                    // 3. Wipe IndexedDB and wait for it to finish before reloading
                     const dbReq = indexedDB.deleteDatabase(DB_NAME);
                     
                     dbReq.onsuccess = function() {
-                        window.location.href = window.location.pathname;
+                        window.location.href = window.location.pathname; // Hard reload
                     };
+                    
                     dbReq.onerror = function() {
                         window.location.href = window.location.pathname;
                     };
+
                     dbReq.onblocked = function() {
                         window.location.href = window.location.pathname;
                     };
                 }, 
-                true 
+                true // Destructive red confirmation button
             );
         }
         
