@@ -241,6 +241,18 @@
 
     <div id="print-isolated-target"></div>
 
+    <!-- PASSKEY LOCK SCREEN OVERLAY -->
+    <div id="passkey-lock-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1005; padding: 16px;">
+        <div class="onboarding-card splash-fade" style="text-align: center; max-width: 400px;">
+            <div style="margin-bottom: 16px; color: var(--accent);">
+                <svg style="width: 48px; height: 48px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+            </div>
+            <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700;">Biometric Authentication Required</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Verify your identity with Touch ID, Face ID, or your security key to unlock PracticeSuite.</p>
+            <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerPasskeyAuth()">Unlock with Passkey</button>
+        </div>
+    </div>
+
     <div id="custom-alert-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
             <h3 id="alert-title" style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700;">Notice</h3>
@@ -1094,6 +1106,19 @@
                         <button class="btn" style="margin-bottom: 24px;" onclick="savePracticeSettings()">Update Core Settings</button>
                     </div>
 
+                    <!-- PASSKEY SETTINGS PANEL -->
+                    <div class="panel" style="max-width: 600px; border: 1.5px solid var(--accent);">
+                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Hardware Passkey Security (WebAuthn)</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                            Lock your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows Hello).
+                        </p>
+                        <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 12px; font-weight: 600;">⚪ Passkey not configured on this device</div>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn" style="flex: 1; justify-content: center;" onclick="registerPasskey()">Register This Device</button>
+                            <button class="btn btn-danger" style="flex: 1; justify-content: center;" onclick="removePasskey()">Disable Passkey</button>
+                        </div>
+                    </div>
+
                     <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
                         <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #14532d; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Google Drive Sync</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
@@ -1578,6 +1603,9 @@
             initPickers();
             calculateAndRender();
             resetIdleLogoutTimer();
+            
+            // Check and enforce hardware passkey lock if enabled
+            checkPasskeyLockOnStartup();
         }
 
         function showCreateProfileForm() {
@@ -2553,7 +2581,6 @@
         }
 
         async function attemptSilentReconnect() {
-            // Check for session_id passed via URL fragment after login redirect
             if (window.location.hash.includes('session_id=')) {
                 const hashParts = window.location.hash.replace('#', '').split('&');
                 for (let part of hashParts) {
@@ -2562,7 +2589,6 @@
                         localStorage.setItem('practice_suite_session_id', sessionId);
                     }
                 }
-                // Clean the URL hash
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
@@ -2756,6 +2782,105 @@
         }
 
         window.persistToCloud = function() { scheduleAutoDriveSync(); };
+
+        // --- HARDWARE PASSKEY (WEBAUTHN) LOGIC ---
+        function isWebAuthnSupported() {
+            return window.PublicKeyCredential !== undefined;
+        }
+
+        async function registerPasskey() {
+            if (!isWebAuthnSupported()) {
+                return showAlert("Not Supported", "Your browser or device does not support WebAuthn Passkeys.");
+            }
+
+            try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const publicKeyCredentialCreationOptions = {
+                    challenge: challenge,
+                    rp: { name: "PracticeSuite", id: window.location.hostname },
+                    user: {
+                        id: Uint8Array.from("practice_user_id", c => c.charCodeAt(0)),
+                        name: "eyt.sasn@gmail.com",
+                        displayName: "Eytan Sasson"
+                    },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                    timeout: 60000,
+                    attestation: "direct"
+                };
+
+                const credential = await navigator.credentials.create({ publicKey: publicKeyCredentialCreationOptions });
+                
+                localStorage.setItem('practice_suite_passkey_enabled', 'true');
+                localStorage.setItem('practice_suite_credential_id', btoa(String.fromCharCode(...new Uint8Array(credential.rawId))));
+
+                updatePasskeyStatusUI(true);
+                showAlert("Success", "Hardware passkey registered successfully! This device is now secured.");
+            } catch (err) {
+                console.error(err);
+                showAlert("Registration Failed", "Passkey creation was canceled or failed.");
+            }
+        }
+
+        async function triggerPasskeyAuth() {
+            if (!isWebAuthnSupported()) return;
+
+            try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const credIdBase64 = localStorage.getItem('practice_suite_credential_id');
+                let allowCredentials = [];
+                if (credIdBase64) {
+                    const rawId = Uint8Array.from(atob(credIdBase64), c => c.charCodeAt(0));
+                    allowCredentials = [{ id: rawId, type: "public-key" }];
+                }
+
+                const publicKeyCredentialRequestOptions = {
+                    challenge: challenge,
+                    allowCredentials: allowCredentials,
+                    timeout: 60000,
+                    userVerification: "required"
+                };
+
+                const assertion = await navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
+                
+                if (assertion) {
+                    document.getElementById('passkey-lock-overlay').style.display = 'none';
+                    document.getElementById('app-root').style.display = 'flex';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function removePasskey() {
+            showConfirm("Disable Passkey", "Are you sure you want to remove hardware passkey protection from this device?", () => {
+                localStorage.removeItem('practice_suite_passkey_enabled');
+                localStorage.removeItem('practice_suite_credential_id');
+                updatePasskeyStatusUI(false);
+                showAlert("Disabled", "Passkey security has been removed.");
+            }, true);
+        }
+
+        function updatePasskeyStatusUI(isEnabled) {
+            const statusEl = document.getElementById('passkey-status-text');
+            if (statusEl) {
+                statusEl.textContent = isEnabled ? "✅ Active and securing this browser" : "⚪ Passkey not configured on this device";
+                statusEl.style.color = isEnabled ? "var(--success)" : "var(--text-muted)";
+            }
+        }
+
+        function checkPasskeyLockOnStartup() {
+            const isEnabled = localStorage.getItem('practice_suite_passkey_enabled');
+            if (isEnabled === 'true') {
+                document.getElementById('app-root').style.display = 'none';
+                document.getElementById('passkey-lock-overlay').style.display = 'flex';
+                setTimeout(() => triggerPasskeyAuth(), 300);
+            }
+            updatePasskeyStatusUI(isEnabled === 'true');
+        }
 
         // --- IDLE TIMEOUT LOGIC ---
         function resetIdleLogoutTimer() {
