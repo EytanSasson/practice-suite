@@ -117,10 +117,6 @@
         .invoice-row { display: flex; justify-content: space-between; padding: 4px 0; }
         .invoice-total { border-top: 1px solid var(--border); font-weight: 700; padding-top: 6px; margin-top: 6px; color: var(--success); }
 
-        /* Expandable Notes */
-        .note-content { max-height: 4.5em; overflow: hidden; position: relative; transition: max-height 0.3s ease; }
-        .note-content.expanded { max-height: 2000px; }
-
         .custom-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);
@@ -275,6 +271,17 @@
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button class="btn btn-secondary" onclick="closePrompt(false)">Cancel</button>
                 <button id="prompt-confirm-btn" class="btn" onclick="closePrompt(true)">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: VIEW SESSION NOTES MODAL -->
+    <div id="view-note-modal" class="custom-modal-overlay">
+        <div class="custom-modal-card" style="max-width: 600px;">
+            <h3 style="margin-bottom: 16px; font-size: 1.15rem; font-weight: 700;">Session Notes</h3>
+            <div id="view-note-content" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; margin-bottom: 24px; max-height: 50vh; overflow-y: auto; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border);"></div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeNoteModal()">Close</button>
             </div>
         </div>
     </div>
@@ -1238,17 +1245,19 @@
             return `${hours}:${minutes} ${ampm}`;
         }
 
-        // --- UI TOGGLES ---
-        window.toggleNotes = function(btn) {
-            const content = btn.previousElementSibling;
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                btn.innerText = 'Show full notes';
-            } else {
-                content.classList.add('expanded');
-                btn.innerText = 'Hide notes';
-            }
-        };
+        // --- SESSION NOTES MODAL ---
+        function openNoteModal(clientId, sessionIndex) {
+            const client = dataStore.clients.find(c => c.id === clientId);
+            if (!client || !client.sessions[sessionIndex]) return;
+            const notes = client.sessions[sessionIndex].notes;
+            // innerText handles the line breaks safely without interpreting HTML
+            document.getElementById('view-note-content').innerText = notes;
+            document.getElementById('view-note-modal').classList.add('active');
+        }
+
+        function closeNoteModal() {
+            document.getElementById('view-note-modal').classList.remove('active');
+        }
 
         const DB_NAME = 'SassonPracticeCRM_Docs';
         const STORE_CONTRACTS = 'contracts';
@@ -1888,9 +1897,8 @@
                             <button class="btn btn-secondary btn-sm" onclick="printInvoice('${client.id}', ${actualIndex})">Print Invoice</button>
                         </div>
                     </div>
-                    <div style="font-size:0.95rem; line-height:1.5; color:#334155; margin-bottom:12px;">
-                        <div class="note-content" style="white-space:pre-wrap;">${session.notes}</div>
-                        <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="toggleNotes(this)">Show full notes</button>
+                    <div style="margin-top: 12px;">
+                        <button class="btn btn-secondary btn-sm" onclick="openNoteModal('${client.id}', ${actualIndex})">Show Session Notes</button>
                     </div>
                 `;
                 container.appendChild(card);
