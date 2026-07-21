@@ -1603,9 +1603,6 @@
             initPickers();
             calculateAndRender();
             resetIdleLogoutTimer();
-            
-            // Check and enforce hardware passkey lock if enabled
-            checkPasskeyLockOnStartup();
         }
 
         function showCreateProfileForm() {
@@ -2788,7 +2785,7 @@
             return window.PublicKeyCredential !== undefined;
         }
 
-async function registerPasskey() {
+        async function registerPasskey() {
             if (!isWebAuthnSupported()) {
                 return showAlert("Not Supported", "Your browser or device does not support WebAuthn Passkeys.");
             }
@@ -2810,7 +2807,7 @@ async function registerPasskey() {
                         { alg: -257, type: "public-key" }  // RS256
                     ],
                     authenticatorSelection: {
-                        authenticatorAttachment: "platform", // Forces built-in biometrics (TouchID/FaceID/Windows Hello)
+                        authenticatorAttachment: "platform",
                         userVerification: "required",
                         residentKey: "preferred"
                     },
@@ -2856,10 +2853,10 @@ async function registerPasskey() {
                 
                 if (assertion) {
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
-                    document.getElementById('app-root').style.display = 'flex';
+                    attemptSilentReconnect();
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Passkey auth error:", err);
             }
         }
 
@@ -2878,16 +2875,6 @@ async function registerPasskey() {
                 statusEl.textContent = isEnabled ? "✅ Active and securing this browser" : "⚪ Passkey not configured on this device";
                 statusEl.style.color = isEnabled ? "var(--success)" : "var(--text-muted)";
             }
-        }
-
-        function checkPasskeyLockOnStartup() {
-            const isEnabled = localStorage.getItem('practice_suite_passkey_enabled');
-            if (isEnabled === 'true') {
-                // Keep the app hidden and show the lock overlay until manually clicked
-                document.getElementById('app-root').style.display = 'none';
-                document.getElementById('passkey-lock-overlay').style.display = 'flex';
-            }
-            updatePasskeyStatusUI(isEnabled === 'true');
         }
 
         // --- IDLE TIMEOUT LOGIC ---
@@ -2968,6 +2955,15 @@ async function registerPasskey() {
             if (monthEl) monthEl.value = new Date().getMonth();
             
             updateGoogleStatus(false);
+            
+            // Intercept app loading immediately if a passkey lock is enabled
+            if (localStorage.getItem('practice_suite_passkey_enabled') === 'true') {
+                document.getElementById('app-root').style.display = 'none';
+                document.getElementById('passkey-lock-overlay').style.display = 'flex';
+                updatePasskeyStatusUI(true);
+                return;
+            }
+
             attemptSilentReconnect();
         }
 
