@@ -225,6 +225,7 @@
         </div>
     </div>
 
+    <!-- NOTIFICATION MODALS -->
     <div id="custom-alert-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
             <h3 id="alert-title" style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700;">Notice</h3>
@@ -484,7 +485,7 @@
     </div>
 
     <!-- MAIN APP ROOT -->
-    <div class="app-root" id="app-root">
+    <div class="app-root" id="app-root" style="display: none;">
         <div class="sidebar">
             <div class="brand-wrapper">
                 <div class="brand">
@@ -1974,6 +1975,7 @@
             document.getElementById('profile-phone').innerText = client.phone || 'Not Provided';
             document.getElementById('profile-email').innerText = client.email || 'Not Provided';
             
+            // Client Age Calculation
             let dobDisplay = formatDateToUK(client.dob);
             if (client.dob && client.dob !== 'Not Provided') {
                 const dobDate = new Date(client.dob);
@@ -2150,7 +2152,7 @@
         // --- EXPENSES WITH REPEAT LOGIC ---
         function toggleExpRepeatUntil() {
             const repeatVal = document.getElementById('exp-repeat').value;
-            const group = document.getElementById('exp-repeat-until-group');
+            const group = document.getElementById('repeat-until-group');
             group.style.display = repeatVal === 'none' ? 'none' : 'block';
         }
 
@@ -2841,7 +2843,7 @@
 
             if (!el) return;
 
-            if (connected) {
+            if (connected && googleAccessToken) {
                 el.textContent = '✅ Connected';
                 el.style.color = 'var(--success)';
                 
@@ -2865,7 +2867,10 @@
                 el.style.color = 'var(--text-muted)';
                 if (emailEl) emailEl.style.display = 'none';
                 localStorage.removeItem('practice_suite_google_email');
-                if (connectBtn) connectBtn.style.display = 'inline-flex';
+                if (connectBtn) {
+                    connectBtn.style.display = 'inline-flex';
+                    connectBtn.innerText = 'Reconnect Google Account';
+                }
             }
         }
 
@@ -2877,7 +2882,11 @@
                 el.style.color = color || 'var(--text-muted)';
             }
             if (globalEl) {
-                globalEl.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg> <span>${text}</span>`;
+                let textHtml = text;
+                if (!googleAccessToken && localStorage.getItem('practice_suite_session_id')) {
+                    textHtml = `${text} &bull; <a href="#" onclick="gateGoogleSignIn(); return false;" style="color: var(--warning); text-decoration: underline; font-weight: 600;">Reconnect</a>`;
+                }
+                globalEl.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg> <span>${textHtml}</span>`;
                 globalEl.style.color = color || 'var(--text-muted)';
             }
         }
@@ -2912,14 +2921,20 @@
                         googleAccessToken = data.access_token;
                         proceedPastLogin();
                     } else {
-                        showLoginGate();
+                        googleAccessToken = null;
+                        updateGoogleStatus(false);
+                        setSyncIndicator('⚠ Google Disconnected', 'var(--warning)');
+                        if (practiceSettings) { checkPostLoginPasskeySetup(); } else { showLoginGate(); }
                     }
                 } else {
-                    localStorage.removeItem('practice_suite_session_id');
-                    showLoginGate();
+                    googleAccessToken = null;
+                    updateGoogleStatus(false);
+                    setSyncIndicator('⚠ Session Expired', 'var(--warning)');
+                    if (practiceSettings) { checkPostLoginPasskeySetup(); } else { showLoginGate(); }
                 }
             } catch (err) {
                 console.warn("Offline or network error, continuing with local data");
+                googleAccessToken = null;
                 updateGoogleStatus(false);
                 setSyncIndicator('Operating Offline', 'var(--warning)');
                 
@@ -2938,7 +2953,7 @@
                 const res = await fetch(BACKEND_URL + `/get-token?session_id=${sessionId}`);
                 if (res.ok) {
                     const data = await res.json();
-                    return data.access_token;
+                    return data.access_token || null;
                 }
             } catch (e) {}
             return null;
@@ -2951,7 +2966,7 @@
                 });
                 if (res.ok) {
                     const info = await res.json();
-                    return info.user.emailAddress;
+                    return info.user ? info.user.emailAddress : null;
                 }
             } catch (e) {
                 console.error("Failed to fetch user info", e);
@@ -2969,7 +2984,14 @@
                         headers: { 'Authorization': 'Bearer ' + googleAccessToken }
                     });
                     const parsed = await res.json();
-                    await loadDriveDataIntoApp(parsed);
+                    
+                    // Merging logic: if local data has records, prefer local data to prevent wiping work done offline
+                    if (!dataStore.clients || dataStore.clients.length === 0) {
+                        await loadDriveDataIntoApp(parsed);
+                    } else {
+                        // Immediately sync current local state up to Drive
+                        scheduleAutoDriveSync();
+                    }
                     
                     if (practiceSettings) {
                         checkPostLoginPasskeySetup();
@@ -2981,7 +3003,12 @@
                     if (practiceSettings) { checkPostLoginPasskeySetup(); } else { showCreateProfileForm(); }
                 }
             } else {
-                showCreateProfileForm();
+                if (practiceSettings) {
+                    scheduleAutoDriveSync();
+                    checkPostLoginPasskeySetup();
+                } else {
+                    showCreateProfileForm();
+                }
             }
         }
 
@@ -3025,10 +3052,12 @@
         async function saveToGoogleDriveSilently() {
             googleAccessToken = await refreshAndGetToken();
             if (!googleAccessToken) {
-                setSyncIndicator('⚠ Sync paused (Session Expired)', 'var(--warning)');
+                updateGoogleStatus(false);
+                setSyncIndicator('⚠ Google Disconnected (Session Expired)', 'var(--warning)');
                 return;
             }
 
+            updateGoogleStatus(true);
             const fileContent = JSON.stringify({ dataStore: dataStore, practiceSettings: practiceSettings }, null, 2);
             try {
                 if (!driveFileId) await findExistingDriveFile();
@@ -3298,13 +3327,12 @@
             lastActivityTime = Date.now();
             document.getElementById('timeout-modal').classList.remove('active');
             
-            if (!idleCheckInterval && localStorage.getItem('practice_suite_session_id')) {
+            if (!idleCheckInterval) {
                 idleCheckInterval = setInterval(checkIdleTime, 1000);
             }
         }
 
         async function checkIdleTime() {
-            if (!localStorage.getItem('practice_suite_session_id')) return;
             if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
             
             const now = Date.now();
@@ -3356,28 +3384,6 @@
                 }
             }, { passive: true });
         });
-        
-        async function continueOffline() {
-            const config = await getLocalPasskeyConfig();
-            if (config.enabled && config.credentialId) {
-                document.getElementById('login-gate-overlay').style.display = 'none';
-                const overlay = document.getElementById('passkey-lock-overlay');
-                overlay.dataset.mode = 'auth';
-                document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
-                document.getElementById('passkey-modal-desc').innerText = "Verify your identity to securely access your offline practice data.";
-                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
-                document.getElementById('btn-skip-passkey').style.display = 'none';
-                document.getElementById('btn-switch-account').style.display = 'none';
-                overlay.style.display = 'flex';
-                setTimeout(() => triggerPasskeyAuth(), 300);
-            } else {
-                if (practiceSettings) {
-                    showApp();
-                } else {
-                    showCreateProfileForm();
-                }
-            }
-        }
 
         // --- CLEAR ALL USER DATA / FACTORY RESET ---
         function wipeAllData() {
