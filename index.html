@@ -236,7 +236,7 @@
             .form-group.full-width { grid-column: span 1; }
             .calendar-cell { min-height: 60px; }
             
-            /* Responsive Cards Mobile Table Override to completely eliminate horizontal scrolling */
+            /* Responsive Cards Mobile Table Override */
             table { display: block; width: 100%; border-collapse: collapse; }
             thead { display: none; }
             tbody, tr, td { display: block; width: 100%; }
@@ -273,6 +273,7 @@
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
                 <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="handlePasskeyModalAction()" id="passkey-modal-action-btn">Unlock with Passkey</button>
                 <button id="btn-skip-passkey" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px; display: none;" onclick="skipPasskeyRegistration()">Set up later in Account</button>
+                <button id="btn-switch-account" class="btn btn-charcoal" style="width: 100%; justify-content: center; padding: 10px; display: none;" onclick="switchAccount()">Sign in with a different account</button>
             </div>
         </div>
     </div>
@@ -2955,6 +2956,7 @@
             googleAccessToken = null;
             driveFileId = null;
             localStorage.removeItem('practice_suite_session_id');
+            localStorage.removeItem('practice_suite_google_email');
             
             clearInterval(idleCheckInterval);
             idleCheckInterval = null;
@@ -2963,9 +2965,31 @@
             setSyncIndicator('');
 
             if (!silent) {
-                showAlert('Disconnected', 'Your Google account has been disconnected.');
-                showLoginGate();
+                sessionStorage.setItem('just_logged_out', 'true');
+                window.location.reload();
             }
+        }
+        
+        function switchAccount() {
+            showConfirm("Switch Account", "Signing in with a different account will clear the local data on this device to make room for the new account's data. Ensure your current data is synced to the cloud.", () => {
+                const sessionId = localStorage.getItem('practice_suite_session_id');
+                if (sessionId) {
+                    fetch(BACKEND_URL + `/logout`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + sessionId }
+                    }).catch(() => {});
+                }
+                
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                const dbReq = indexedDB.deleteDatabase(DB_NAME);
+                const goToLogin = () => {
+                    gateGoogleSignIn();
+                };
+                dbReq.onsuccess = dbReq.onerror = dbReq.onblocked = goToLogin;
+                setTimeout(goToLogin, 1000);
+            }, true);
         }
 
         window.persistToCloud = function() { scheduleAutoDriveSync(); };
@@ -3059,7 +3083,9 @@
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
                     resetIdleLogoutTimer();
                     
-                    if (!googleAccessToken && localStorage.getItem('practice_suite_session_id')) {
+                    if (!localStorage.getItem('practice_suite_session_id')) {
+                        if (practiceSettings) { showApp(); } else { showCreateProfileForm(); }
+                    } else if (!googleAccessToken) {
                         attemptSilentReconnect();
                     } else {
                         if (document.getElementById('app-root').style.display === 'none') {
@@ -3134,6 +3160,7 @@
                 document.getElementById('passkey-modal-desc').innerText = "Protect your patient workspace with your device's biometric scanner (Touch ID, Face ID, or Windows Hello).";
                 document.getElementById('passkey-modal-action-btn').innerText = "Enable & Register Passkey";
                 document.getElementById('btn-skip-passkey').style.display = 'block';
+                document.getElementById('btn-switch-account').style.display = 'none';
                 document.getElementById('passkey-lock-overlay').style.display = 'flex';
             } else {
                 showApp();
@@ -3147,18 +3174,17 @@
             showApp();
         }
 
-        // --- IDLE TIMEOUT LOCK LOGIC ---
+        // --- IDLE TIMEOUT LOCK LOGIC (NO BACKGROUND INSTA-LOCK) ---
         function resetIdleLogoutTimer() {
             lastActivityTime = Date.now();
             document.getElementById('timeout-modal').classList.remove('active');
             
-            if (!idleCheckInterval && localStorage.getItem('practice_suite_session_id')) {
+            if (!idleCheckInterval) {
                 idleCheckInterval = setInterval(checkIdleTime, 1000);
             }
         }
 
         async function checkIdleTime() {
-            if (!localStorage.getItem('practice_suite_session_id')) return;
             if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
             
             const now = Date.now();
@@ -3193,6 +3219,7 @@
                 document.getElementById('passkey-modal-desc').innerText = "Locked for your security. Verify your identity with Touch ID, Face ID, or Windows Hello to continue.";
                 document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
                 document.getElementById('btn-skip-passkey').style.display = 'none';
+                document.getElementById('btn-switch-account').style.display = 'block';
                 overlay.style.display = 'flex';
                 setTimeout(() => triggerPasskeyAuth(), 300);
             }
@@ -3209,32 +3236,92 @@
                 }
             }, { passive: true });
         });
+        
+        async function continueOffline() {
+            const config = await getLocalPasskeyConfig();
+            if (config.enabled && config.credentialId) {
+                document.getElementById('login-gate-overlay').style.display = 'none';
+                const overlay = document.getElementById('passkey-lock-overlay');
+                overlay.dataset.mode = 'auth';
+                document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
+                document.getElementById('passkey-modal-desc').innerText = "Verify your identity to securely access your offline practice data.";
+                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
+                document.getElementById('btn-skip-passkey').style.display = 'none';
+                document.getElementById('btn-switch-account').style.display = 'none';
+                overlay.style.display = 'flex';
+                setTimeout(() => triggerPasskeyAuth(), 300);
+            } else {
+                if (practiceSettings) {
+                    showApp();
+                } else {
+                    showCreateProfileForm();
+                }
+            }
+        }
 
         // --- CLEAR ALL USER DATA / FACTORY RESET ---
         function wipeAllData() {
             showConfirm(
                 "DANGER: Clear All User Data", 
-                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings. You will be logged out to prevent cloud restoration.", 
-                () => {
-                    localStorage.removeItem('sasson_practice_secure_store');
-                    localStorage.removeItem('sasson_practice_settings');
-                    localStorage.removeItem('practice_suite_passkey_enabled');
-                    localStorage.removeItem('practice_suite_credential_id');
+                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings. If connected to Google Drive, your cloud backup will also be wiped clean. This cannot be undone!", 
+                async () => {
+                    const btn = document.getElementById('confirm-action-btn');
+                    if(btn) btn.innerText = "Wiping...";
                     
-                    signOutGoogle(true);
+                    if (googleAccessToken && driveFileId) {
+                        try {
+                            const emptyContent = JSON.stringify({
+                                dataStore: { clients: [], expenses: [], categories: [], appointments: [] },
+                                practiceSettings: null
+                            }, null, 2);
+
+                            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': 'Bearer ' + googleAccessToken,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: emptyContent
+                            });
+                        } catch (e) {
+                            console.error("Failed to wipe cloud data", e);
+                        }
+                    }
+                    
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    const sessionId = localStorage.getItem('practice_suite_session_id');
+                    if (sessionId) {
+                        fetch(BACKEND_URL + `/logout`, {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + sessionId }
+                        }).catch(() => {});
+                    }
                     
                     const dbReq = indexedDB.deleteDatabase(DB_NAME);
-                    dbReq.onsuccess = dbReq.onerror = dbReq.onblocked = function() {
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 250);
+                    
+                    const finishWipe = () => {
+                        window.location.href = window.location.pathname; 
                     };
+
+                    dbReq.onsuccess = finishWipe;
+                    dbReq.onerror = finishWipe;
+                    dbReq.onblocked = finishWipe;
+
+                    setTimeout(finishWipe, 1500);
                 }, 
                 true 
             );
         }
 
         window.onload = async function() {
+            if (sessionStorage.getItem('just_logged_out')) {
+                sessionStorage.removeItem('just_logged_out');
+                showLoginGate('You have securely logged out of your session. Your data remains safe on this device and in Google Drive.');
+                return;
+            }
+
             populateCategoryDropdown();
             selectedDashboardYear = new Date().getFullYear();
             
@@ -3257,6 +3344,7 @@
                 document.getElementById('passkey-modal-desc').innerText = "Verify your identity with Touch ID, Face ID, or your security key to unlock PracticeSuite.";
                 document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
                 document.getElementById('btn-skip-passkey').style.display = 'none';
+                document.getElementById('btn-switch-account').style.display = 'block';
                 overlay.style.display = 'flex';
                 updatePasskeyStatusUI();
                 setTimeout(() => triggerPasskeyAuth(), 300);
