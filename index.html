@@ -37,12 +37,10 @@
 
         .sidebar { width: 260px; background-color: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; padding: 24px 16px; flex-shrink: 0; overflow-y: auto; }
         
-        /* Cleaned Up Centered Brand Header */
-        .brand-wrapper { margin-bottom: 24px; padding: 0 8px 24px 8px; border-bottom: 1px solid rgba(148, 163, 184, 0.15); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+        .brand-wrapper { margin-bottom: 24px; padding: 0 8px 24px 8px; border-bottom: 1px solid rgba(148, 163, 184, 0.15); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
         .brand { display: flex; align-items: center; justify-content: center; width: 100%; flex-shrink: 0; }
-        .brand svg { width: 56px; height: 56px; }
-        .brand-practice-title { font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: -0.5px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .brand-subtitle { font-size: 0.75rem; font-weight: 500; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .brand svg { width: 200px; height: 60px; max-width: 100%; }
+        .brand-practice-title { font-size: 0.95rem; font-weight: 600; color: #cbd5e1; letter-spacing: 0.3px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .nav-container { flex-grow: 1; }
         .nav-link { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem; margin-bottom: 4px; transition: all 0.2s; }
@@ -83,7 +81,6 @@
         .control:focus { border-color: var(--accent); background-color: #ffffff; }
         .control.flatpickr-input:read-only { background-color: #ffffff; cursor: pointer; }
 
-        /* Sleek Toggle Switch CSS */
         .switch { position: relative; display: inline-block; width: 48px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
@@ -91,20 +88,8 @@
         input:checked + .slider { background-color: var(--accent); }
         input:checked + .slider:before { transform: translateX(24px); }
 
-        .date-picker-ui {
-            background-image: url("data:image/svg+xml,%3Csvg fill='%2364748b' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 18px;
-            padding-right: 36px !important;
-        }
-        .time-picker-ui {
-            background-image: url("data:image/svg+xml,%3Csvg fill='%2364748b' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 18px;
-            padding-right: 36px !important;
-        }
+        .date-picker-ui { background-image: url("data:image/svg+xml,%3Csvg fill='%2364748b' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 18px; padding-right: 36px !important; }
+        .time-picker-ui { background-image: url("data:image/svg+xml,%3Csvg fill='%2364748b' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 18px; padding-right: 36px !important; }
 
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { padding: 12px 16px; background-color: #f8fafc; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 0.85rem; }
@@ -991,55 +976,6 @@
                     </div>
                 </div>
 
-                <div id="view-onboard" class="section-view">
-                    <div class="panel" style="max-width: 600px; margin: 0 auto;">
-                        <h3 style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 600;">Onboard New Client Record</h3>
-                        
-                        <div class="form-group">
-                            <label>Full Client Name *</label>
-                            <input type="text" id="new-name" class="control" placeholder="E.g., Jane Smith">
-                        </div>
-                        
-                        <div class="form-layout">
-                            <div class="form-group">
-                                <label>Phone Number *</label>
-                                <input type="tel" id="new-phone" class="control" placeholder="E.g., 07123 456789">
-                            </div>
-                            <div class="form-group">
-                                <label>Email Address (Optional)</label>
-                                <input type="email" id="new-email" class="control" placeholder="E.g., jane@example.com">
-                            </div>
-                        </div>
-
-                        <div class="form-layout">
-                            <div class="form-group">
-                                <label>Date of Birth (Optional)</label>
-                                <input type="date" id="new-dob" class="control date-picker-ui">
-                            </div>
-                            <div class="form-group">
-                                <label>Occupation (Optional)</label>
-                                <input type="text" id="new-occupation" class="control" placeholder="E.g., Teacher, Accountant">
-                            </div>
-                        </div>
-
-                        <div class="form-layout">
-                            <div class="form-group">
-                                <label>Agreed Hourly Rate</label>
-                                <input type="number" id="new-rate" class="control" value="60" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Therapy Commencement Date</label>
-                                <input type="date" id="new-start" class="control date-picker-ui">
-                            </div>
-                        </div>
-                        
-                        <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
-                            <button class="btn btn-secondary" style="flex: 1; min-width: 100px; justify-content: center;" type="button" onclick="navigate('dashboard')">Cancel</button>
-                            <button class="btn" style="flex: 2; min-width: 200px; justify-content: center;" type="button" onclick="saveClientProfile()">Create & Open Profile</button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- SECTION: CONFIGURATION & DATA (AUTO-SAVING & AUTO-SYNCING) -->
                 <div id="view-config" class="section-view">
                     <div class="panel" style="max-width: 600px;">
@@ -1194,7 +1130,7 @@
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
                             This will disconnect your Google Account (if synced), lock the application, and require you to sign in again to access your practice data.
                         </p>
-                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="triggerFullReset()">Log Out & Disconnect</button>
+                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="signOutGoogle(false)">Log Out & Disconnect</button>
                     </div>
 
                     <!-- DANGER ZONE: CLEAR ALL DATA -->
@@ -1212,6 +1148,19 @@
     </div> <!-- /app-root -->
 
     <script>
+        function escapeHTML(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
+        }
+
         function toLocalISODateString(dateObj) {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -1470,7 +1419,7 @@
                 if (!val) return;
                 const normalized = val.trim();
                 if (dataStore.categories.some(cat => cat.toLowerCase() === normalized.toLowerCase())) {
-                    return showAlert("Duplicate", `The category "${normalized}" already exists.`);
+                    return showAlert("Duplicate", `The category "${escapeHTML(normalized)}" already exists.`);
                 }
                 dataStore.categories.push(normalized);
                 persist();
@@ -1836,11 +1785,11 @@
             if (!name) return showAlert('Error', 'Client name is required.');
             if (!phone) return showAlert('Error', 'Phone number is required.');
 
-            client.name = name;
-            client.phone = phone;
-            client.email = document.getElementById('edit-email').value.trim() || 'Not Provided';
+            client.name = escapeHTML(name);
+            client.phone = escapeHTML(phone);
+            client.email = escapeHTML(document.getElementById('edit-email').value.trim() || 'Not Provided');
             client.dob = document.getElementById('edit-dob').value || 'Not Provided';
-            client.occupation = document.getElementById('edit-occupation').value.trim() || 'Not Provided';
+            client.occupation = escapeHTML(document.getElementById('edit-occupation').value.trim() || 'Not Provided');
             client.rate = parseFloat(document.getElementById('edit-rate').value) || 0;
             client.startDate = document.getElementById('edit-start').value;
 
@@ -1887,7 +1836,7 @@
                 s.time = time || null;
                 s.location = loc;
                 s.paymentMethod = payment;
-                s.notes = notes;
+                s.notes = escapeHTML(notes);
                 s.roomCost = loc === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0;
                 
                 persist();
@@ -1914,11 +1863,11 @@
 
             const clientRecord = {
                 id: 'c_' + Date.now(),
-                name: name,
-                phone: phone,
-                email: document.getElementById('new-email').value.trim() || 'Not Provided',
+                name: escapeHTML(name),
+                phone: escapeHTML(phone),
+                email: escapeHTML(document.getElementById('new-email').value.trim() || 'Not Provided'),
                 dob: document.getElementById('new-dob').value || 'Not Provided',
-                occupation: document.getElementById('new-occupation').value.trim() || 'Not Provided',
+                occupation: escapeHTML(document.getElementById('new-occupation').value.trim() || 'Not Provided'),
                 rate: parseFloat(document.getElementById('new-rate').value) || 60,
                 startDate: document.getElementById('new-start').value,
                 status: 'Active', 
@@ -1937,9 +1886,9 @@
             if (!client.status) client.status = 'Active';
 
             if (client.status === 'Active') {
-                showPrompt("Archive File", `Provide a reason for closing ${client.name}'s file:`, function(reason) {
+                showPrompt("Archive File", `Provide a reason for closing ${escapeHTML(client.name)}'s file:`, function(reason) {
                     client.status = 'Closed';
-                    client.closedReason = reason.trim() || 'No reason provided';
+                    client.closedReason = escapeHTML(reason.trim()) || 'No reason provided';
                     persist();
                     renderClientProfile();
                 }, "Reason...", "Close File");
@@ -1960,7 +1909,7 @@
                 if (contract) {
                     container.innerHTML = `
                         <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
-                            <span style="font-size: 0.85rem; font-weight: 500; word-break: break-all;">${contract.fileName}</span>
+                            <span style="font-size: 0.85rem; font-weight: 500; word-break: break-all;">${escapeHTML(contract.fileName)}</span>
                             <div style="display: flex; gap: 8px;">
                                 <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="viewDoc('${STORE_CONTRACTS}', '${clientId}')">View</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteDoc('${STORE_CONTRACTS}', '${clientId}')">Delete</button>
@@ -2025,7 +1974,6 @@
             document.getElementById('profile-phone').innerText = client.phone || 'Not Provided';
             document.getElementById('profile-email').innerText = client.email || 'Not Provided';
             
-            // Client Age Calculation
             let dobDisplay = formatDateToUK(client.dob);
             if (client.dob && client.dob !== 'Not Provided') {
                 const dobDate = new Date(client.dob);
@@ -2097,7 +2045,7 @@
                 strip.innerHTML = `
                     <div class="appointment-strip-details">
                         <strong style="color: var(--accent);">${formatDateToUK(apt.date)} @ ${formatTimeBySetting(apt.time)}</strong><br>
-                        <span style="font-size:0.85rem; color: var(--text-muted);">${apt.location}</span>
+                        <span style="font-size:0.85rem; color: var(--text-muted);">${escapeHTML(apt.location)}</span>
                     </div>
                     <div class="appointment-strip-actions">
                         <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log</button>
@@ -2131,7 +2079,7 @@
                 const badgeClass = session.location === 'Office' ? 'badge-office' : 'badge-online';
                 
                 let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-main); margin-left: 8px;">@ ${formatTimeBySetting(session.time)}</span>` : '';
-                let paymentHtml = session.paymentMethod ? `<span style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Paid via: ${session.paymentMethod}</span>` : '';
+                let paymentHtml = session.paymentMethod ? `<span style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Paid via: ${escapeHTML(session.paymentMethod)}</span>` : '';
 
                 card.innerHTML = `
                     <div class="timeline-meta">
@@ -2141,7 +2089,7 @@
                             ${paymentHtml}
                         </div>
                         <div style="display:flex; gap: 8px; align-items: center;">
-                            <span class="badge ${badgeClass}">${session.location}</span>
+                            <span class="badge ${badgeClass}">${escapeHTML(session.location)}</span>
                             <button class="btn btn-secondary btn-sm" onclick="openEditSessionModal('${client.id}', ${actualIndex})">Edit</button>
                             <button class="btn btn-secondary btn-sm" onclick="printInvoice('${client.id}', ${actualIndex})">Print Invoice</button>
                         </div>
@@ -2172,7 +2120,7 @@
                     time: time || null,
                     location: location, 
                     paymentMethod: paymentMethod,
-                    notes: notes,
+                    notes: escapeHTML(notes),
                     invoiceId: Date.now().toString().slice(-6),
                     roomCost: location === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0
                 });
@@ -2220,7 +2168,7 @@
 
             let [y, m, d] = date.split('-').map(Number);
             let currentDateObj = new Date(y, m - 1, d);
-            let endDateObj = currentDateObj;
+            let endDateObj = new Date(y, m - 1, d);
 
             if (repeat !== 'none' && repeatUntil) {
                 let [ey, em, ed] = repeatUntil.split('-').map(Number);
@@ -2241,16 +2189,25 @@
                 dataStore.expenses.push({ 
                     id: expenseId, 
                     date: dateString, 
-                    description: desc, 
+                    description: escapeHTML(desc), 
                     amount: amount, 
-                    category: category, 
-                    hasReceipt: receiptFileInput.files.length > 0 && addedCount === 0 // only attach file to first expense
+                    category: escapeHTML(category), 
+                    hasReceipt: receiptFileInput.files.length > 0 && addedCount === 0 
                 });
                 
                 addedCount++;
-                if (repeat === 'weekly') currentDateObj.setDate(currentDateObj.getDate() + 7);
-                else if (repeat === 'monthly') currentDateObj.setMonth(currentDateObj.getMonth() + 1);
-                else break;
+                
+                if (repeat === 'weekly') {
+                    currentDateObj.setDate(currentDateObj.getDate() + 7);
+                } else if (repeat === 'monthly') {
+                    const currentDay = currentDateObj.getDate();
+                    currentDateObj.setMonth(currentDateObj.getMonth() + 1);
+                    if (currentDateObj.getDate() !== currentDay) {
+                        currentDateObj.setDate(0); 
+                    }
+                } else {
+                    break;
+                }
             }
 
             if (receiptFileInput.files.length > 0 && firstExpenseId) {
@@ -2301,8 +2258,8 @@
                 const receiptUi = exp.hasReceipt ? `<button class="btn btn-secondary btn-sm" onclick="viewDoc('${STORE_RECEIPTS}', '${exp.id}')">View</button>` : 'None';
                 tr.innerHTML = `
                     <td data-label="Date"><strong>${formatDateToUK(exp.date)}</strong></td>
-                    <td data-label="Description">${exp.description}</td>
-                    <td data-label="Category"><span class="badge badge-closed">${exp.category}</span></td>
+                    <td data-label="Description">${escapeHTML(exp.description)}</td>
+                    <td data-label="Category"><span class="badge badge-closed">${escapeHTML(exp.category)}</span></td>
                     <td data-label="Amount" style="color: var(--danger); font-weight: 600;">-${cur}${exp.amount.toFixed(2)}</td>
                     <td data-label="Receipt">${receiptUi}</td>
                     <td data-label="Action"><button class="btn btn-danger btn-sm" onclick="deleteExpense('${exp.id}')">Del</button></td>
@@ -2326,7 +2283,7 @@
             const sanitizedName = client.name.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
             document.title = `${sanitizedName}_INV-${session.invoiceId}`;
 
-            let paymentLine = session.paymentMethod ? `<p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569;">Payment Method: ${session.paymentMethod}</p>` : '';
+            let paymentLine = session.paymentMethod ? `<p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569;">Payment Method: ${escapeHTML(session.paymentMethod)}</p>` : '';
 
             const printContainer = document.getElementById('print-isolated-target');
             printContainer.innerHTML = `
@@ -2345,8 +2302,8 @@
                     <div style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <div>
                             <h4 style="margin: 0 0 4px 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600;">Billed To:</h4>
-                            <p style="font-size: 1rem; font-weight: 600; margin: 0; color: #0f172a;">${client.name}</p>
-                            ${client.email && client.email !== 'Not Provided' ? `<p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569;">${client.email}</p>` : ''}
+                            <p style="font-size: 1rem; font-weight: 600; margin: 0; color: #0f172a;">${escapeHTML(client.name)}</p>
+                            ${client.email && client.email !== 'Not Provided' ? `<p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #475569;">${escapeHTML(client.email)}</p>` : ''}
                         </div>
                         <div style="text-align: right;">
                             <h4 style="margin: 0 0 4px 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600;">Status:</h4>
@@ -2581,14 +2538,14 @@
                     shownDashboardCount++;
                     const row = document.createElement('tr');
                     row.className = 'clickable'; row.onclick = () => navigate('profile', client.id);
-                    row.innerHTML = `<td data-label="Client Name"><strong>${client.name}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Rate / Hr">${cur}${client.rate.toFixed(2)}</td><td data-label="Last Session">${formatDateToUK(lastSessionDate)}</td><td data-label="Net Yield" style="color:var(--success); font-weight:600;">${cur}${(gross - clientRoomCost).toFixed(2)}</td>`;
+                    row.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Rate / Hr">${cur}${client.rate.toFixed(2)}</td><td data-label="Last Session">${formatDateToUK(lastSessionDate)}</td><td data-label="Net Yield" style="color:var(--success); font-weight:600;">${cur}${(gross - clientRoomCost).toFixed(2)}</td>`;
                     dashTable.appendChild(row);
                 }
                 
                 if (dirTable && (currentDirectoryFilter === 'All' || currentDirectoryFilter === client.status)) {
                     const dRow = document.createElement('tr');
                     dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
-                    dRow.innerHTML = `<td data-label="Client Name"><strong>${client.name}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${client.phone}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${client.status}</span></td>`;
+                    dRow.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${escapeHTML(client.phone)}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${escapeHTML(client.status)}</span></td>`;
                     dirTable.appendChild(dRow);
                 }
             });
@@ -2627,7 +2584,7 @@
                     sortedMethods.forEach(([method, amount]) => {
                         pmContainer.innerHTML += `
                             <div class="panel metric-card" style="padding: 16px; margin-bottom: 0;">
-                                <h4>${method}</h4>
+                                <h4>${escapeHTML(method)}</h4>
                                 <p style="font-size: 1.4rem; color: var(--text-main);">${cur}${amount.toFixed(2)}</p>
                             </div>
                         `;
@@ -2654,7 +2611,7 @@
 
             if (futureApts.length > 0) {
                 const next = futureApts[0];
-                details.innerHTML = `<strong>${next.clientName}</strong> &bull; ${formatDateToUK(next.date)} @ ${formatTimeBySetting(next.time)}`;
+                details.innerHTML = `<strong>${escapeHTML(next.clientName)}</strong> &bull; ${formatDateToUK(next.date)} @ ${formatTimeBySetting(next.time)}`;
                 container.style.display = 'flex';
             } else {
                 container.style.display = 'none';
@@ -3104,13 +3061,15 @@
             }
         }
         
-        function signOutGoogle(silent) {
+        async function signOutGoogle(silent) {
             const sessionId = localStorage.getItem('practice_suite_session_id');
             if (sessionId) {
-                fetch(BACKEND_URL + `/logout`, {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + sessionId }
-                }).catch(() => {});
+                try {
+                    await fetch(BACKEND_URL + `/logout`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + sessionId }
+                    });
+                } catch(e) { console.error("Backend logout failed", e); }
             }
 
             googleAccessToken = null;
@@ -3130,23 +3089,23 @@
             }
         }
         
-        function switchAccount() {
-            showConfirm("Switch Account", "Signing in with a different account will clear the local data on this device to make room for the new account's data. Ensure your current data is synced to the cloud.", () => {
+        async function switchAccount() {
+            showConfirm("Switch Account", "Signing in with a different account will clear the local data on this device to make room for the new account's data. Ensure your current data is synced to the cloud.", async () => {
                 const sessionId = localStorage.getItem('practice_suite_session_id');
                 if (sessionId) {
-                    fetch(BACKEND_URL + `/logout`, {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + sessionId }
-                    }).catch(() => {});
+                    try {
+                        await fetch(BACKEND_URL + `/logout`, {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + sessionId }
+                        });
+                    } catch(e) {}
                 }
                 
                 localStorage.clear();
                 sessionStorage.clear();
                 
                 const dbReq = indexedDB.deleteDatabase(DB_NAME);
-                const goToLogin = () => {
-                    gateGoogleSignIn();
-                };
+                const goToLogin = () => { gateGoogleSignIn(); };
                 dbReq.onsuccess = dbReq.onerror = dbReq.onblocked = goToLogin;
                 setTimeout(goToLogin, 1000);
             }, true);
@@ -3444,40 +3403,31 @@
                                 },
                                 body: emptyContent
                             });
-                        } catch (e) {
-                            console.error("Failed to wipe cloud data", e);
-                        }
+                        } catch (e) {}
+                    }
+                    
+                    const sessionId = localStorage.getItem('practice_suite_session_id');
+                    if (sessionId) {
+                        try {
+                            await fetch(BACKEND_URL + `/logout`, {
+                                method: 'POST',
+                                headers: { 'Authorization': 'Bearer ' + sessionId }
+                            });
+                        } catch(e) {}
                     }
                     
                     localStorage.clear();
                     sessionStorage.clear();
                     
-                    const sessionId = localStorage.getItem('practice_suite_session_id');
-                    if (sessionId) {
-                        fetch(BACKEND_URL + `/logout`, {
-                            method: 'POST',
-                            headers: { 'Authorization': 'Bearer ' + sessionId }
-                        }).catch(() => {});
-                    }
-                    
                     const dbReq = indexedDB.deleteDatabase(DB_NAME);
-                    
-                    const finishWipe = () => {
-                        window.location.href = window.location.pathname; 
-                    };
-
+                    const finishWipe = () => { window.location.href = window.location.pathname; };
                     dbReq.onsuccess = finishWipe;
                     dbReq.onerror = finishWipe;
                     dbReq.onblocked = finishWipe;
-
                     setTimeout(finishWipe, 1500);
                 }, 
                 true 
             );
-        }
-        
-        function triggerFullReset() {
-            signOutGoogle(false);
         }
 
         window.onload = async function() {
@@ -3536,7 +3486,7 @@
             const activeClients = dataStore.clients.filter(c => c.status === 'Active');
             activeClients.sort((a,b) => a.name.localeCompare(b.name)).forEach(client => {
                 const opt = document.createElement('option');
-                opt.value = client.id; opt.innerText = client.name; dropdown.appendChild(opt);
+                opt.value = client.id; opt.innerText = escapeHTML(client.name); dropdown.appendChild(opt);
             });
         }
 
@@ -3563,7 +3513,7 @@
             let [y, m, d] = date.split('-').map(Number);
             let currentDateObj = new Date(y, m - 1, d);
             
-            let endDateObj = currentDateObj;
+            let endDateObj = new Date(y, m - 1, d);
             if (repeat !== 'none' && repeatUntil) {
                 let [ey, em, ed] = repeatUntil.split('-').map(Number);
                 endDateObj = new Date(ey, em - 1, ed);
@@ -3573,24 +3523,36 @@
             if (endDateObj < currentDateObj) return showAlert('Invalid Date', 'End date must be after the start date.');
 
             let addedCount = 0;
-            const firstApt = { id: 'apt_' + Date.now(), clientId, clientName: client.name, date, time, location, status: 'Scheduled' };
+            let firstApt = null;
 
             while (currentDateObj <= endDateObj) {
                 const dateString = toLocalISODateString(currentDateObj);
-                dataStore.appointments.push({
+                const aptObj = {
                     id: 'apt_' + Date.now() + Math.random().toString().slice(2,6),
                     clientId: clientId,
-                    clientName: client.name,
+                    clientName: escapeHTML(client.name),
                     date: dateString,
                     time: time,
-                    location: location,
+                    location: escapeHTML(location),
                     status: 'Scheduled'
-                });
+                };
+                
+                if (addedCount === 0) firstApt = aptObj;
+                dataStore.appointments.push(aptObj);
+                
                 addedCount++;
                 
-                if (repeat === 'weekly') currentDateObj.setDate(currentDateObj.getDate() + 7);
-                else if (repeat === 'monthly') currentDateObj.setMonth(currentDateObj.getMonth() + 1);
-                else break;
+                if (repeat === 'weekly') {
+                    currentDateObj.setDate(currentDateObj.getDate() + 7);
+                } else if (repeat === 'monthly') {
+                    const currentDay = currentDateObj.getDate();
+                    currentDateObj.setMonth(currentDateObj.getMonth() + 1);
+                    if (currentDateObj.getDate() !== currentDay) {
+                        currentDateObj.setDate(0); 
+                    }
+                } else {
+                    break;
+                }
             }
 
             persist();
@@ -3691,7 +3653,7 @@
                     const apt = dayApts[i];
                     const label = document.createElement('div');
                     label.className = `calendar-apt-label ${apt.location === 'Office' ? 'apt-label-office' : 'apt-label-online'}`;
-                    label.innerText = `${formatTimeBySetting(apt.time)} ${apt.clientName}`;
+                    label.innerText = `${formatTimeBySetting(apt.time)} ${escapeHTML(apt.clientName)}`;
                     cell.appendChild(label);
                 }
                 if (dayApts.length > maxToShow) {
@@ -3727,13 +3689,13 @@
                 let actionsHtml = apt.status === 'Scheduled' ? 
                     `<button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Complete</button>
                      <button class="btn btn-danger btn-sm" onclick="cancelAppointment('${apt.id}')">Cancel</button>` : 
-                    `<span class="badge ${apt.status === 'Completed' ? 'badge-active' : 'badge-closed'}">${apt.status}</span>`;
+                    `<span class="badge ${apt.status === 'Completed' ? 'badge-active' : 'badge-closed'}">${escapeHTML(apt.status)}</span>`;
 
                 strip.innerHTML = `
                     <div class="appointment-strip-details">
                         <strong style="font-size: 0.95rem;">${formatTimeBySetting(apt.time)}</strong>
-                        <span style="font-weight: 500; margin-left: 8px;">${apt.clientName}</span><br>
-                        <span style="font-size:0.75rem; color: var(--text-muted);">${apt.location}</span>
+                        <span style="font-weight: 500; margin-left: 8px;">${escapeHTML(apt.clientName)}</span><br>
+                        <span style="font-size:0.75rem; color: var(--text-muted);">${escapeHTML(apt.location)}</span>
                     </div>
                     <div class="appointment-strip-actions">${actionsHtml}</div>
                 `;
@@ -3763,8 +3725,8 @@
                 item.innerHTML = `
                     <div class="appointment-strip-details">
                         <span style="font-weight: 600; color: var(--accent);">${formatDateToUK(apt.date)} @ ${formatTimeBySetting(apt.time)}</span><br>
-                        <strong style="margin-right: 8px;">${apt.clientName}</strong>
-                        <span style="font-size:0.75rem; color: var(--text-muted);">(${apt.location})</span>
+                        <strong style="margin-right: 8px;">${escapeHTML(apt.clientName)}</strong>
+                        <span style="font-size:0.75rem; color: var(--text-muted);">(${escapeHTML(apt.location)})</span>
                     </div>
                     <div class="appointment-strip-actions">
                         <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log</button>
