@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SessionVault</title>
+    
+    <!-- App Icons / Shortcut Logos -->
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Flatpickr for custom Date/Time formats -->
@@ -674,7 +679,7 @@
                             </div>
                             <div style="padding-bottom: 12px; flex: 1; min-width: 250px; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
                                 <input type="text" id="client-search-input" class="control" placeholder="Search by name, email, or phone..." oninput="calculateAndRender()" style="width: 100%; max-width: 320px; display: inline-block; padding-left: 36px; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22/%3E%3Cline x1=%2221%22 y1=%2221%22 x2=%2216.65%22 y2=%2216.65%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: 10px center; background-size: 16px;">
-                                <button class="btn" style="flex-shrink: 0;" onclick="openOnboarding()">+ Add Client</button>
+                                <button class="btn" style="flex-shrink: 0; white-space: nowrap;" onclick="openOnboarding()">+ Add Client</button>
                             </div>
                         </div>
                         <div style="overflow-x: auto;">
@@ -1640,34 +1645,6 @@
         }
 
         function navigate(viewId, targetClientId = null) {
-            // Auto-save logic if abandoning the onboard form via navigation
-            const currentView = document.querySelector('.section-view.active-view');
-            if (currentView && currentView.id === 'view-onboard' && viewId !== 'profile') {
-                const nameEl = document.getElementById('new-name');
-                const phoneEl = document.getElementById('new-phone');
-                if (nameEl && phoneEl && nameEl.value.trim() !== '' && phoneEl.value.trim() !== '') {
-                    const clientRecord = {
-                        id: 'c_' + Date.now(),
-                        name: escapeHTML(nameEl.value.trim()),
-                        phone: escapeHTML(phoneEl.value.trim()),
-                        email: escapeHTML(document.getElementById('new-email').value.trim() || 'Not Provided'),
-                        dob: document.getElementById('new-dob').value || 'Not Provided',
-                        occupation: escapeHTML(document.getElementById('new-occupation').value.trim() || 'Not Provided'),
-                        rate: parseFloat(document.getElementById('new-rate').value) || 60,
-                        startDate: document.getElementById('new-start').value,
-                        status: 'Active', 
-                        closedReason: '',
-                        sessions: []
-                    };
-                    dataStore.clients.push(clientRecord);
-                    persist();
-                    
-                    // Clear the form silently
-                    nameEl.value = '';
-                    phoneEl.value = '';
-                }
-            }
-
             document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active-view'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             const activeSection = document.getElementById(`view-${viewId}`);
@@ -3938,4 +3915,83 @@
                                 practiceSettings: null
                             }, null, 2);
 
-                            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${Sorry, something went wrong. Please try your request again.
+                            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': 'Bearer ' + googleAccessToken,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: emptyContent
+                            });
+                        } catch (e) {}
+                    }
+                    
+                    const sessionId = localStorage.getItem('practice_suite_session_id');
+                    if (sessionId) {
+                        try {
+                            await fetch(BACKEND_URL + `/logout`, {
+                                method: 'POST',
+                                headers: { 'Authorization': 'Bearer ' + sessionId }
+                            });
+                        } catch(e) {}
+                    }
+                    
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    const dbReq = indexedDB.deleteDatabase(DB_NAME);
+                    const finishWipe = () => { window.location.href = window.location.pathname; };
+                    dbReq.onsuccess = finishWipe;
+                    dbReq.onerror = finishWipe;
+                    dbReq.onblocked = finishWipe;
+                    setTimeout(finishWipe, 1500);
+                }, 
+                true 
+            );
+        }
+
+        window.onload = async function() {
+            if (sessionStorage.getItem('just_logged_out')) {
+                sessionStorage.removeItem('just_logged_out');
+                showLoginGate('You have securely logged out of your session. Your data remains safe on this device and in Google Drive.');
+                return;
+            }
+
+            populateCategoryDropdown();
+            selectedDashboardYear = new Date().getFullYear();
+            
+            const monthEl = document.getElementById('dash-month-val');
+            if (monthEl) monthEl.value = new Date().getMonth();
+            
+            const sessionId = localStorage.getItem('practice_suite_session_id');
+            const savedEmail = localStorage.getItem('practice_suite_google_email');
+            
+            if (sessionId) {
+                updateGoogleStatus(true, savedEmail);
+            } else {
+                updateGoogleStatus(false);
+            }
+            
+            const config = await getLocalPasskeyConfig();
+            const isUnlocked = sessionStorage.getItem('sessionvault_unlocked') === 'true';
+
+            if (config.enabled && config.credentialId && !isUnlocked) {
+                document.getElementById('app-root').style.display = 'none';
+                const overlay = document.getElementById('passkey-lock-overlay');
+                overlay.dataset.mode = 'auth';
+                document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
+                document.getElementById('passkey-modal-desc').innerText = "Verify your identity with Touch ID, Face ID, or your security key to unlock SessionVault.";
+                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
+                document.getElementById('btn-skip-passkey').style.display = 'none';
+                document.getElementById('btn-switch-account').style.display = 'block';
+                overlay.style.display = 'flex';
+                updatePasskeyStatusUI();
+                setTimeout(() => triggerPasskeyAuth(), 300);
+                return;
+            }
+
+            attemptSilentReconnect();
+        }
+    </script>
+</body>
+</html>
