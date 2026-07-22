@@ -2453,7 +2453,7 @@
 
             return cell;
         }
-
+        
         function renderAgendaForDate(dateStr) {
             const titleEl = document.getElementById('agenda-date-title');
             const container = document.getElementById('daily-agenda-container');
@@ -2462,12 +2462,13 @@
             if (titleEl) titleEl.innerText = `Agenda for ${formatDateToUK(dateStr)}`;
             container.innerHTML = '';
 
+            // Updated filter to completely exclude cancelled appointments from the list
             const dayApts = (dataStore.appointments || [])
-                .filter(a => a.date === dateStr)
+                .filter(a => a.date === dateStr && a.status !== 'Cancelled') 
                 .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
 
             if (dayApts.length === 0) {
-                container.innerHTML = `<p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">No appointments scheduled for this date.</p>`;
+                container.innerHTML = `<p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">No active appointments scheduled for this date.</p>`;
                 return;
             }
 
@@ -2475,6 +2476,7 @@
                 const strip = document.createElement('div');
                 let statusClass = '';
                 if (apt.status === 'Completed') statusClass = 'completed';
+                // (Cancelled class logic is no longer strictly needed here, but left for safety)
                 if (apt.status === 'Cancelled') statusClass = 'cancelled';
                 strip.className = `appointment-strip ${statusClass}`;
 
