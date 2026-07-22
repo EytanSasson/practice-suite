@@ -4000,6 +4000,13 @@
 
             attemptSilentReconnect();
         }
+
+        // --- REGISTER SERVICE WORKER FOR PWA INSTALLATION ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('PWA Service Worker Active'))
+                .catch(err => console.error('SW Registration Failed:', err));
+        }
     </script>
 </body>
 </html>
