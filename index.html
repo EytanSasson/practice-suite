@@ -2264,10 +2264,12 @@
             if (endDate < currDate) return showAlert('Invalid Date', 'Repeat end date must be after start date.');
 
             if (!dataStore.appointments) dataStore.appointments = [];
+            
+            let firstApt = null;
 
             while (currDate <= endDate) {
                 const dateStr = toLocalISODateString(currDate);
-                dataStore.appointments.push({
+                const aptObj = {
                     id: 'apt_' + Date.now() + Math.random().toString().slice(2,6),
                     clientId: client.id,
                     clientName: client.name,
@@ -2275,7 +2277,10 @@
                     time: time,
                     location: location,
                     status: 'Scheduled'
-                });
+                };
+                
+                dataStore.appointments.push(aptObj);
+                if (!firstApt) firstApt = aptObj;
 
                 if (repeat === 'weekly') {
                     currDate.setDate(currDate.getDate() + 7);
@@ -2287,8 +2292,14 @@
             }
 
             persist();
-            showAlert('Appointment Booked', 'Appointment successfully scheduled.');
             renderAppointmentsPage();
+            
+            if (firstApt) {
+                const gCalLink = generateGoogleCalendarLink(firstApt);
+                showConfirm('Appointment Booked', 'Appointment successfully scheduled. Would you like to add this session to your Google Calendar?', () => {
+                    window.open(gCalLink, '_blank');
+                });
+            }
         }
 
         function changeCalendarMonth(delta) {
@@ -2305,6 +2316,7 @@
 
         function selectCalendarDay(dateStr) {
             calendarSelectedDate = dateStr;
+            setInputVal('apt-date', dateStr);
             renderCalendar();
             renderAgendaForDate(dateStr);
         }
@@ -3490,6 +3502,7 @@
             driveFileId = null;
             localStorage.removeItem('practice_suite_session_id');
             localStorage.removeItem('practice_suite_google_email');
+            sessionStorage.removeItem('sessionvault_unlocked');
             
             clearInterval(idleCheckInterval);
             idleCheckInterval = null;
@@ -3613,6 +3626,7 @@
                 const assertion = await window.navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
                 
                 if (assertion) {
+                    sessionStorage.setItem('sessionvault_unlocked', 'true');
                     document.getElementById('passkey-lock-overlay').style.display = 'none';
                     resetIdleLogoutTimer();
                     
@@ -3741,6 +3755,7 @@
         async function lockWorkspaceForInactivity() {
             document.getElementById('timeout-modal').classList.remove('active');
             lastActivityTime = Date.now(); 
+            sessionStorage.removeItem('sessionvault_unlocked');
             
             const config = await getLocalPasskeyConfig();
             if (config.enabled && config.credentialId) {
@@ -3757,6 +3772,9 @@
                 overlay.style.display = 'flex';
                 setTimeout(() => triggerPasskeyAuth(), 300);
             } else {
+                // No passkey configured on this device: there is no local biometric
+                // check we can re-prompt, so the only safe option after idle timeout
+                // is to fully sign the user out rather than leave the session open.
                 clearInterval(idleCheckInterval);
                 idleCheckInterval = null;
                 await signOutGoogle(false);
@@ -3862,8 +3880,9 @@
             }
             
             const config = await getLocalPasskeyConfig();
+            const isUnlocked = sessionStorage.getItem('sessionvault_unlocked') === 'true';
 
-            if (config.enabled && config.credentialId) {
+            if (config.enabled && config.credentialId && !isUnlocked) {
                 document.getElementById('app-root').style.display = 'none';
                 const overlay = document.getElementById('passkey-lock-overlay');
                 overlay.dataset.mode = 'auth';
