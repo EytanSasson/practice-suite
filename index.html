@@ -653,13 +653,18 @@
                 <!-- SECTION: ALL CLIENTS DIRECTORY -->
                 <div id="view-clients" class="section-view">
                     <div class="panel">
-                        <div class="tab-bar">
-                            <div class="tab active" id="dir-tab-all" onclick="switchDirectoryTab('All')">All Records</div>
-                            <div class="tab" id="dir-tab-active" onclick="switchDirectoryTab('Active')">Active Only</div>
-                            <div class="tab" id="dir-tab-closed" onclick="switchDirectoryTab('Closed')">Closed Only</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                            <div class="tab-bar" style="margin-bottom: 0; border-bottom: none;">
+                                <div class="tab active" id="dir-tab-all" onclick="switchDirectoryTab('All')">All Records</div>
+                                <div class="tab" id="dir-tab-active" onclick="switchDirectoryTab('Active')">Active Only</div>
+                                <div class="tab" id="dir-tab-closed" onclick="switchDirectoryTab('Closed')">Closed Only</div>
+                            </div>
+                            <div style="padding-bottom: 12px; flex: 1; min-width: 250px; text-align: right;">
+                                <input type="text" id="client-search-input" class="control" placeholder="Search by name, email, or phone..." oninput="calculateAndRender()" style="width: 100%; max-width: 320px; display: inline-block; padding-left: 36px; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22/%3E%3Cline x1=%2221%22 y1=%2221%22 x2=%2216.65%22 y2=%2216.65%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: 10px center; background-size: 16px;">
+                            </div>
                         </div>
                         <div style="overflow-x: auto;">
-                            <table>
+                            <table id="dir-data-table">
                                 <thead>
                                     <tr>
                                         <th>Client Name</th>
@@ -671,6 +676,9 @@
                                 </thead>
                                 <tbody id="directory-table"></tbody>
                             </table>
+                            <div id="dir-empty-state" class="empty-state" style="display: none;">
+                                No client records found.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2538,6 +2546,9 @@
             if (dashTable) dashTable.innerHTML = '';
             if (dirTable) dirTable.innerHTML = '';
 
+            const searchInput = document.getElementById('client-search-input');
+            const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+
             let grandTotalGross = 0; let activeCount = 0;
             const reportPeriod = getReportingPeriodDates(selectedDashboardYear);
             
@@ -2559,6 +2570,8 @@
             };
 
             let shownDashboardCount = 0;
+            let shownDirectoryCount = 0;
+
             [...dataStore.clients].sort((a,b) => a.name.localeCompare(b.name)).forEach(client => {
                 if (!client.status) client.status = 'Active';
                 const yearSessions = client.sessions.filter(s => isWithinRange(s.date));
@@ -2590,15 +2603,28 @@
                 }
                 
                 if (dirTable && (currentDirectoryFilter === 'All' || currentDirectoryFilter === client.status)) {
-                    const dRow = document.createElement('tr');
-                    dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
-                    dRow.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${escapeHTML(client.phone)}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${escapeHTML(client.status)}</span></td>`;
-                    dirTable.appendChild(dRow);
+                    const searchMatch = !searchQuery || 
+                        client.name.toLowerCase().includes(searchQuery) || 
+                        (client.email && client.email.toLowerCase().includes(searchQuery)) || 
+                        (client.phone && client.phone.toLowerCase().includes(searchQuery));
+
+                    if (searchMatch) {
+                        shownDirectoryCount++;
+                        const dRow = document.createElement('tr');
+                        dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
+                        dRow.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${escapeHTML(client.phone)}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${escapeHTML(client.status)}</span></td>`;
+                        dirTable.appendChild(dRow);
+                    }
                 }
             });
 
             if (document.getElementById('dash-empty-state')) document.getElementById('dash-empty-state').style.display = shownDashboardCount === 0 ? 'block' : 'none';
             if (document.getElementById('dash-data-table')) document.getElementById('dash-data-table').style.display = shownDashboardCount === 0 ? 'none' : 'table';
+
+            const dirEmptyState = document.getElementById('dir-empty-state');
+            const dirDataTable = document.getElementById('dir-data-table');
+            if (dirEmptyState) dirEmptyState.style.display = shownDirectoryCount === 0 ? 'block' : 'none';
+            if (dirDataTable) dirDataTable.style.display = shownDirectoryCount === 0 ? 'none' : 'table';
 
             const totalExpenses = (dataStore.expenses || []).filter(e => isWithinRange(e.date)).reduce((s, e) => s + e.amount, 0);
             
@@ -2884,7 +2910,7 @@
 
             if (!el) return;
 
-            if (connected) {
+            if (connected && googleAccessToken) {
                 el.textContent = '✅ Connected';
                 el.style.color = 'var(--success)';
                 
@@ -2906,10 +2932,9 @@
             } else {
                 el.textContent = '⚪ Not connected';
                 el.style.color = 'var(--text-muted)';
-                if (emailEl) {
+                if (emailEl && !localStorage.getItem('practice_suite_google_email')) {
                     emailEl.style.display = 'none';
                 }
-                localStorage.removeItem('practice_suite_google_email');
                 if (connectBtn) {
                     connectBtn.style.display = 'inline-flex';
                     connectBtn.innerText = 'Connect Google Account';
@@ -3546,8 +3571,11 @@
             const monthEl = document.getElementById('dash-month-val');
             if (monthEl) monthEl.value = new Date().getMonth();
             
-            if (localStorage.getItem('practice_suite_session_id')) {
-                updateGoogleStatus(true, localStorage.getItem('practice_suite_google_email'));
+            const sessionId = localStorage.getItem('practice_suite_session_id');
+            const savedEmail = localStorage.getItem('practice_suite_google_email');
+            
+            if (sessionId) {
+                updateGoogleStatus(true, savedEmail);
             } else {
                 updateGoogleStatus(false);
             }
