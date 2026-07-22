@@ -480,7 +480,7 @@
                     <input type="number" id="ob-reporting-day" class="control" value="6" min="1" max="31">
                 </div>
             </div>
-            <button class="btn" style="width: 100%; margin-top: 12px; justify-content: center; padding: 12px;" onclick="completeOnboarding()">Initialize Practice Portal</button>
+            <button class="btn" style="width: 100%; margin-top: 12px;" onclick="completeOnboarding()">Initialize Practice Portal</button>
         </div>
     </div>
 
@@ -974,6 +974,55 @@
                             </div>
                         </div>
 
+                    </div>
+                </div>
+
+                <div id="view-onboard" class="section-view">
+                    <div class="panel" style="max-width: 600px; margin: 0 auto;">
+                        <h3 style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 600;">Onboard New Client Record</h3>
+                        
+                        <div class="form-group">
+                            <label>Full Client Name *</label>
+                            <input type="text" id="new-name" class="control" placeholder="E.g., Jane Smith">
+                        </div>
+                        
+                        <div class="form-layout">
+                            <div class="form-group">
+                                <label>Phone Number *</label>
+                                <input type="tel" id="new-phone" class="control" placeholder="E.g., 07123 456789">
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address (Optional)</label>
+                                <input type="email" id="new-email" class="control" placeholder="E.g., jane@example.com">
+                            </div>
+                        </div>
+
+                        <div class="form-layout">
+                            <div class="form-group">
+                                <label>Date of Birth (Optional)</label>
+                                <input type="date" id="new-dob" class="control date-picker-ui">
+                            </div>
+                            <div class="form-group">
+                                <label>Occupation (Optional)</label>
+                                <input type="text" id="new-occupation" class="control" placeholder="E.g., Teacher, Accountant">
+                            </div>
+                        </div>
+
+                        <div class="form-layout">
+                            <div class="form-group">
+                                <label>Agreed Hourly Rate</label>
+                                <input type="number" id="new-rate" class="control" value="60" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Therapy Commencement Date</label>
+                                <input type="date" id="new-start" class="control date-picker-ui">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" style="flex: 1; min-width: 100px; justify-content: center;" type="button" onclick="navigate('dashboard')">Cancel</button>
+                            <button class="btn" style="flex: 2; min-width: 200px; justify-content: center;" type="button" onclick="saveClientProfile()">Create & Open Profile</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1786,11 +1835,11 @@
             if (!name) return showAlert('Error', 'Client name is required.');
             if (!phone) return showAlert('Error', 'Phone number is required.');
 
-            client.name = escapeHTML(name);
-            client.phone = escapeHTML(phone);
-            client.email = escapeHTML(document.getElementById('edit-email').value.trim() || 'Not Provided');
+            client.name = name;
+            client.phone = phone;
+            client.email = document.getElementById('edit-email').value.trim() || 'Not Provided';
             client.dob = document.getElementById('edit-dob').value || 'Not Provided';
-            client.occupation = escapeHTML(document.getElementById('edit-occupation').value.trim() || 'Not Provided');
+            client.occupation = document.getElementById('edit-occupation').value.trim() || 'Not Provided';
             client.rate = parseFloat(document.getElementById('edit-rate').value) || 0;
             client.startDate = document.getElementById('edit-start').value;
 
@@ -1837,7 +1886,7 @@
                 s.time = time || null;
                 s.location = loc;
                 s.paymentMethod = payment;
-                s.notes = escapeHTML(notes);
+                s.notes = notes;
                 s.roomCost = loc === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0;
                 
                 persist();
@@ -1847,13 +1896,18 @@
         }
 
         function openOnboarding() {
-            setInputVal('new-start', toLocalISODateString(new Date()));
-            document.getElementById('new-name').value = '';
-            document.getElementById('new-phone').value = '';
-            document.getElementById('new-email').value = '';
-            setInputVal('new-dob', '');
-            document.getElementById('new-occupation').value = '';
-            document.getElementById('new-rate').value = practiceSettings ? practiceSettings.defaultRate : 60;
+            try {
+                setInputVal('new-start', toLocalISODateString(new Date()));
+                const nameEl = document.getElementById('new-name'); if(nameEl) nameEl.value = '';
+                const phoneEl = document.getElementById('new-phone'); if(phoneEl) phoneEl.value = '';
+                const emailEl = document.getElementById('new-email'); if(emailEl) emailEl.value = '';
+                setInputVal('new-dob', '');
+                const occEl = document.getElementById('new-occupation'); if(occEl) occEl.value = '';
+                const rateEl = document.getElementById('new-rate'); 
+                if(rateEl) rateEl.value = (practiceSettings && practiceSettings.defaultRate) ? practiceSettings.defaultRate : 60;
+            } catch(e) {
+                console.error("Onboarding reset non-fatal error:", e);
+            }
             navigate('onboard');
         }
 
@@ -1864,11 +1918,11 @@
 
             const clientRecord = {
                 id: 'c_' + Date.now(),
-                name: escapeHTML(name),
-                phone: escapeHTML(phone),
-                email: escapeHTML(document.getElementById('new-email').value.trim() || 'Not Provided'),
+                name: name,
+                phone: phone,
+                email: document.getElementById('new-email').value.trim() || 'Not Provided',
                 dob: document.getElementById('new-dob').value || 'Not Provided',
-                occupation: escapeHTML(document.getElementById('new-occupation').value.trim() || 'Not Provided'),
+                occupation: document.getElementById('new-occupation').value.trim() || 'Not Provided',
                 rate: parseFloat(document.getElementById('new-rate').value) || 60,
                 startDate: document.getElementById('new-start').value,
                 status: 'Active', 
@@ -1887,9 +1941,9 @@
             if (!client.status) client.status = 'Active';
 
             if (client.status === 'Active') {
-                showPrompt("Archive File", `Provide a reason for closing ${escapeHTML(client.name)}'s file:`, function(reason) {
+                showPrompt("Archive File", `Provide a reason for closing ${client.name}'s file:`, function(reason) {
                     client.status = 'Closed';
-                    client.closedReason = escapeHTML(reason.trim()) || 'No reason provided';
+                    client.closedReason = reason.trim() || 'No reason provided';
                     persist();
                     renderClientProfile();
                 }, "Reason...", "Close File");
@@ -1975,7 +2029,6 @@
             document.getElementById('profile-phone').innerText = client.phone || 'Not Provided';
             document.getElementById('profile-email').innerText = client.email || 'Not Provided';
             
-            // Client Age Calculation
             let dobDisplay = formatDateToUK(client.dob);
             if (client.dob && client.dob !== 'Not Provided') {
                 const dobDate = new Date(client.dob);
@@ -2122,7 +2175,7 @@
                     time: time || null,
                     location: location, 
                     paymentMethod: paymentMethod,
-                    notes: escapeHTML(notes),
+                    notes: notes,
                     invoiceId: Date.now().toString().slice(-6),
                     roomCost: location === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0
                 });
@@ -2191,9 +2244,9 @@
                 dataStore.expenses.push({ 
                     id: expenseId, 
                     date: dateString, 
-                    description: escapeHTML(desc), 
+                    description: desc, 
                     amount: amount, 
-                    category: escapeHTML(category), 
+                    category: category, 
                     hasReceipt: receiptFileInput.files.length > 0 && addedCount === 0 
                 });
                 
@@ -2690,7 +2743,6 @@
                 if (typeof JSZip === 'undefined') throw new Error("ZIP library not loaded");
                 const zip = new JSZip();
                 
-                // Add DB and Settings
                 zip.file("practice_database.json", JSON.stringify(dataStore, null, 2));
                 if (practiceSettings) {
                     zip.file("practice_settings.json", JSON.stringify(practiceSettings, null, 2));
@@ -2698,7 +2750,6 @@
 
                 const db = await getDB();
                 
-                // Add Contracts
                 const contractsFolder = zip.folder("Contracts");
                 const contractsTx = db.transaction(STORE_CONTRACTS, 'readonly');
                 const contractsStore = contractsTx.objectStore(STORE_CONTRACTS);
@@ -2713,7 +2764,6 @@
                     contractsFolder.file(`${clientName}_${contract.fileName}`, contract.fileBlob);
                 });
 
-                // Add Receipts
                 const receiptsFolder = zip.folder("Receipts");
                 const receiptsTx = db.transaction(STORE_RECEIPTS, 'readonly');
                 const receiptsStore = receiptsTx.objectStore(STORE_RECEIPTS);
@@ -2728,7 +2778,6 @@
                     receiptsFolder.file(`${expDate}_${receipt.fileName}`, receipt.fileBlob);
                 });
 
-                // Download ZIP
                 const content = await zip.generateAsync({ type: "blob" });
                 const url = URL.createObjectURL(content);
                 const dlAnchorElem = document.createElement('a');
@@ -2843,7 +2892,7 @@
 
             if (!el) return;
 
-            if (connected && googleAccessToken) {
+            if (connected) {
                 el.textContent = '✅ Connected';
                 el.style.color = 'var(--success)';
                 
@@ -2856,8 +2905,6 @@
                     if (savedEmail) {
                         emailEl.textContent = `Associated Account: ${savedEmail}`;
                         emailEl.style.display = 'block';
-                    } else {
-                        emailEl.style.display = 'none';
                     }
                 }
                 
@@ -2865,11 +2912,12 @@
             } else {
                 el.textContent = '⚪ Not connected';
                 el.style.color = 'var(--text-muted)';
-                if (emailEl) emailEl.style.display = 'none';
-                localStorage.removeItem('practice_suite_google_email');
+                if (emailEl && !localStorage.getItem('practice_suite_google_email')) {
+                    emailEl.style.display = 'none';
+                }
                 if (connectBtn) {
                     connectBtn.style.display = 'inline-flex';
-                    connectBtn.innerText = 'Reconnect Google Account';
+                    connectBtn.innerText = 'Connect Google Account';
                 }
             }
         }
@@ -2921,28 +2969,22 @@
                         googleAccessToken = data.access_token;
                         proceedPastLogin();
                     } else {
-                        googleAccessToken = null;
-                        updateGoogleStatus(false);
                         setSyncIndicator('⚠ Google Disconnected', 'var(--warning)');
-                        if (practiceSettings) { checkPostLoginPasskeySetup(); } else { showLoginGate(); }
+                        if (practiceSettings) { showApp(); } else { showLoginGate(); }
                     }
-                } else {
+                } else if (res.status === 401) {
+                    localStorage.removeItem('practice_suite_session_id');
                     googleAccessToken = null;
                     updateGoogleStatus(false);
-                    setSyncIndicator('⚠ Session Expired', 'var(--warning)');
-                    if (practiceSettings) { checkPostLoginPasskeySetup(); } else { showLoginGate(); }
+                    showLoginGate('Session expired. Please sign in with Google again.');
+                } else {
+                    setSyncIndicator('⚠ Server Error (Sync Paused)', 'var(--warning)');
+                    if (practiceSettings) { showApp(); } else { showLoginGate(); }
                 }
             } catch (err) {
-                console.warn("Offline or network error, continuing with local data");
-                googleAccessToken = null;
-                updateGoogleStatus(false);
+                console.warn("Offline or network error, continuing with local data", err);
                 setSyncIndicator('Operating Offline', 'var(--warning)');
-                
-                if (practiceSettings) {
-                    checkPostLoginPasskeySetup(); 
-                } else {
-                    showLoginGate();
-                }
+                if (practiceSettings) { showApp(); } else { showLoginGate(); }
             }
         }
 
@@ -2985,11 +3027,9 @@
                     });
                     const parsed = await res.json();
                     
-                    // Merging logic: if local data has records, prefer local data to prevent wiping work done offline
                     if (!dataStore.clients || dataStore.clients.length === 0) {
                         await loadDriveDataIntoApp(parsed);
                     } else {
-                        // Immediately sync current local state up to Drive
                         scheduleAutoDriveSync();
                     }
                     
@@ -3050,10 +3090,13 @@
         }
 
         async function saveToGoogleDriveSilently() {
-            googleAccessToken = await refreshAndGetToken();
+            const token = await refreshAndGetToken();
+            if (token) {
+                googleAccessToken = token;
+            }
+
             if (!googleAccessToken) {
-                updateGoogleStatus(false);
-                setSyncIndicator('⚠ Google Disconnected (Session Expired)', 'var(--warning)');
+                setSyncIndicator('⚠ Sync paused (Not connected to Google)', 'var(--warning)');
                 return;
             }
 
@@ -3067,7 +3110,14 @@
                         headers: { 'Authorization': 'Bearer ' + googleAccessToken, 'Content-Type': 'application/json' },
                         body: fileContent
                     });
-                    if (!res.ok) throw new Error('Update failed');
+                    if (!res.ok) {
+                        if (res.status === 401) {
+                            googleAccessToken = null;
+                            setSyncIndicator('⚠ Sync paused (Token Expired)', 'var(--warning)');
+                            return;
+                        }
+                        throw new Error('Update failed with status ' + res.status);
+                    }
                 } else {
                     const boundary = 'sasson_boundary_' + Date.now();
                     const metadata = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
@@ -3086,6 +3136,7 @@
                 const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 setSyncIndicator(`Synced to cloud at ${timeStr}`, 'var(--success)');
             } catch (err) {
+                console.warn("Drive sync error:", err);
                 setSyncIndicator('⚠ Auto-sync failed (Offline?)', 'var(--warning)');
             }
         }
@@ -3327,12 +3378,13 @@
             lastActivityTime = Date.now();
             document.getElementById('timeout-modal').classList.remove('active');
             
-            if (!idleCheckInterval) {
+            if (!idleCheckInterval && localStorage.getItem('practice_suite_session_id')) {
                 idleCheckInterval = setInterval(checkIdleTime, 1000);
             }
         }
 
         async function checkIdleTime() {
+            if (!localStorage.getItem('practice_suite_session_id')) return;
             if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
             
             const now = Date.now();
@@ -3389,7 +3441,7 @@
         function wipeAllData() {
             showConfirm(
                 "DANGER: Clear All User Data", 
-                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings. If connected to Google Drive, your cloud backup will also be wiped clean. This cannot be undone!", 
+                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings. If connected to Google Drive, your cloud backup will also be erased. This cannot be undone!", 
                 async () => {
                     const btn = document.getElementById('confirm-action-btn');
                     if(btn) btn.innerText = "Wiping...";
@@ -3449,8 +3501,11 @@
             const monthEl = document.getElementById('dash-month-val');
             if (monthEl) monthEl.value = new Date().getMonth();
             
-            if (localStorage.getItem('practice_suite_session_id')) {
-                updateGoogleStatus(true, localStorage.getItem('practice_suite_google_email'));
+            const sessionId = localStorage.getItem('practice_suite_session_id');
+            const savedEmail = localStorage.getItem('practice_suite_google_email');
+            
+            if (sessionId) {
+                updateGoogleStatus(true, savedEmail);
             } else {
                 updateGoogleStatus(false);
             }
@@ -3536,10 +3591,10 @@
                 const aptObj = {
                     id: 'apt_' + Date.now() + Math.random().toString().slice(2,6),
                     clientId: clientId,
-                    clientName: escapeHTML(client.name),
+                    clientName: client.name,
                     date: dateString,
                     time: time,
-                    location: escapeHTML(location),
+                    location: location,
                     status: 'Scheduled'
                 };
                 
@@ -3731,41 +3786,4 @@
                 item.innerHTML = `
                     <div class="appointment-strip-details">
                         <span style="font-weight: 600; color: var(--accent);">${formatDateToUK(apt.date)} @ ${formatTimeBySetting(apt.time)}</span><br>
-                        <strong style="margin-right: 8px;">${escapeHTML(apt.clientName)}</strong>
-                        <span style="font-size:0.75rem; color: var(--text-muted);">(${escapeHTML(apt.location)})</span>
-                    </div>
-                    <div class="appointment-strip-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log</button>
-                    </div>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        function completeAppointmentFromCalendar(aptId) {
-            const apt = dataStore.appointments.find(a => a.id === aptId);
-            if (!apt) return;
-            apt.status = 'Completed';
-            persist();
-            cachedSessionTime = apt.time;
-            navigate('profile', apt.clientId);
-            setTimeout(() => {
-                setInputVal('session-date', apt.date);
-                setInputVal('session-location', apt.location);
-                const notesArea = document.getElementById('session-notes');
-                if (notesArea) {
-                    notesArea.placeholder = `Add clinical notes for the completed appointment on ${formatDateToUK(apt.date)} at ${formatTimeBySetting(apt.time)}...`;
-                    notesArea.focus();
-                }
-            }, 150);
-        }
-
-        function cancelAppointment(aptId) {
-            showConfirm("Cancel Appointment", "Are you sure you want to cancel this appointment?", function() {
-                const apt = dataStore.appointments.find(a => a.id === aptId);
-                if (apt) { apt.status = 'Cancelled'; persist(); renderAppointmentsPage(); }
-            });
-        }
-    </script>
-</body>
-</html>
+                        <strong style="margin-I'm having a hard time fulfilling your request. Can I help you with something else instead?
