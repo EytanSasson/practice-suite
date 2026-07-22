@@ -1,5 +1,6 @@
 {
-  "name": "SessionVault Practice Suite",
+  "id": "/",
+  "name": "SessionVault",
   "short_name": "SessionVault",
   "start_url": "/",
   "display": "standalone",
@@ -10,13 +11,13 @@
       "src": "logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
