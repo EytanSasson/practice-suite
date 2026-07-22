@@ -533,6 +533,7 @@
                 <div class="nav-link" id="link-expenses" onclick="navigate('expenses')">Expenses</div>
                 <div class="nav-link" id="link-config" onclick="navigate('config')">Configuration & Data</div>
                 <div class="nav-link" id="link-account" onclick="navigate('account')">Account</div>
+                <div class="nav-link" id="install-app-btn" style="display: none; color: #38bdf8;" onclick="installPWA()">⬇️ Install App</div>
             </div>
         </div>
 
@@ -3956,6 +3957,32 @@
                 }, 
                 true 
             );
+        }
+
+        // --- CUSTOM INSTALL APP BUTTON LOGIC ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Un-hide our custom install button in the sidebar
+            const installBtn = document.getElementById('install-app-btn');
+            if (installBtn) installBtn.style.display = 'flex';
+        });
+
+        function installPWA() {
+            if (!deferredPrompt) return;
+            // Show the native install prompt
+            deferredPrompt.prompt();
+            // Wait for the user's choice
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    // Hide the button if they successfully installed it
+                    document.getElementById('install-app-btn').style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
         }
 
         window.onload = async function() {
