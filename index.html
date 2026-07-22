@@ -230,7 +230,7 @@
             .nav-container.nav-open { display: flex; }
             .nav-link { margin-bottom: 4px; white-space: normal; }
             .top-bar { padding: 12px 16px; }
-            .content-box { padding: 16px; padding-bottom: 100px; } /* Deep clearance for mobile keyboards */
+            .content-box { padding: 16px; padding-bottom: 100px; }
             .split-pane { grid-template-columns: 1fr; }
             .form-layout { grid-template-columns: 1fr; }
             .form-group.full-width { grid-column: span 1; }
@@ -263,7 +263,7 @@
     <div id="print-isolated-target"></div>
 
     <!-- PASSKEY LOCK SCREEN OVERLAY -->
-    <div id="passkey-lock-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--sidebar-bg); display: none; align-items: center; justify-content: center; z-index: 1005; padding: 16px;">
+    <div id="passkey-lock-overlay">
         <div class="onboarding-card splash-fade">
             <div style="margin-bottom: 16px; color: var(--accent);">
                 <svg style="width: 48px; height: 48px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
@@ -569,7 +569,7 @@
                     </svg>
                 </div>
                 <div class="brand-text">
-                    <div id="sidebar-practice-title" class="brand-title">PracticeSuite</div>
+                    <div id="sidebar-practice-title" class="brand-practice-title">PracticeSuite</div>
                     <div class="brand-subtitle">Secure Client CRM</div>
                 </div>
             </div>
@@ -1040,55 +1040,6 @@
                     </div>
                 </div>
 
-                <div id="view-onboard" class="section-view">
-                    <div class="panel" style="max-width: 600px; margin: 0 auto;">
-                        <h3 style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 600;">Onboard New Client Record</h3>
-                        
-                        <div class="form-group">
-                            <label>Full Client Name *</label>
-                            <input type="text" id="new-name" class="control" placeholder="E.g., Jane Smith">
-                        </div>
-                        
-                        <div class="form-layout">
-                            <div class="form-group">
-                                <label>Phone Number *</label>
-                                <input type="tel" id="new-phone" class="control" placeholder="E.g., 07123 456789">
-                            </div>
-                            <div class="form-group">
-                                <label>Email Address (Optional)</label>
-                                <input type="email" id="new-email" class="control" placeholder="E.g., jane@example.com">
-                            </div>
-                        </div>
-
-                        <div class="form-layout">
-                            <div class="form-group">
-                                <label>Date of Birth (Optional)</label>
-                                <input type="date" id="new-dob" class="control date-picker-ui">
-                            </div>
-                            <div class="form-group">
-                                <label>Occupation (Optional)</label>
-                                <input type="text" id="new-occupation" class="control" placeholder="E.g., Teacher, Accountant">
-                            </div>
-                        </div>
-
-                        <div class="form-layout">
-                            <div class="form-group">
-                                <label>Agreed Hourly Rate</label>
-                                <input type="number" id="new-rate" class="control" value="60" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Therapy Commencement Date</label>
-                                <input type="date" id="new-start" class="control date-picker-ui">
-                            </div>
-                        </div>
-                        
-                        <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
-                            <button class="btn btn-secondary" style="flex: 1; min-width: 100px; justify-content: center;" type="button" onclick="navigate('dashboard')">Cancel</button>
-                            <button class="btn" style="flex: 2; min-width: 200px; justify-content: center;" type="button" onclick="saveClientProfile()">Create & Open Profile</button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- SECTION: CONFIGURATION & DATA (AUTO-SAVING & AUTO-SYNCING) -->
                 <div id="view-config" class="section-view">
                     <div class="panel" style="max-width: 600px;">
@@ -1179,6 +1130,12 @@
                         <div style="display: flex; flex-direction: column; gap: 16px;">
                             <div><button class="btn" style="width: 100%; justify-content: center;" onclick="exportDatabase()">Download CRM Database Backup (.json)</button></div>
                             <div><button class="btn btn-charcoal" style="width: 100%; justify-content: center; background-color: #0f172a;" onclick="exportAllAsZip()">Download Complete ZIP Document Archive (.zip)</button></div>
+                            <hr style="border:0; border-top: 1px solid var(--border);">
+                            <div>
+                                <label style="margin-bottom: 8px; font-weight: 600; display: block;">Restore Database from Backup File</label>
+                                <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importDatabase(event)">
+                                <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="document.getElementById('import-file').click()">Import CRM Database (.json)</button>
+                            </div>
                         </div>
                     </div>
 
@@ -1332,7 +1289,6 @@
             }
             const is24h = !practiceSettings || practiceSettings.timeFormat !== '12h';
             
-            // disableMobile is strictly TRUE so the custom UI is used, preventing cross-device mobile bug
             const dateInputs = document.querySelectorAll('input[type="date"]');
             dateInputs.forEach(el => {
                 const fp = flatpickr(el, { altInput: true, altFormat: "d/m/Y", dateFormat: "Y-m-d", disableMobile: true });
@@ -2707,11 +2663,187 @@
             return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${startStr}/${endStr}&details=${details}`;
         }
 
-        async function exportAllAsZip() {
-            showAlert("Notice", "Export functionality is enabled in the full module.");
+        // --- BACKUP & EXPORT FUNCTIONS ---
+        function exportDatabase() {
+            const dataStr = JSON.stringify(dataStore, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.href = url;
+            dlAnchorElem.download = `practice_backup_${toLocalISODateString(new Date())}.json`;
+            document.body.appendChild(dlAnchorElem);
+            dlAnchorElem.click();
+            document.body.removeChild(dlAnchorElem);
+            URL.revokeObjectURL(url);
         }
-        function exportTaxYearArchive() {
-             showAlert("Notice", "Tax export functionality is enabled in the full module.");
+        
+        function importDatabase(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.clients)) {
+                        dataStore = parsed; 
+                        persist(); 
+                        showAlert('Import Completed', 'Database loaded successfully.'); 
+                        navigate('dashboard');
+                    } else if (parsed && parsed.dataStore && Array.isArray(parsed.dataStore.clients)) {
+                        dataStore = parsed.dataStore;
+                        if (parsed.practiceSettings) {
+                            practiceSettings = parsed.practiceSettings;
+                            localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
+                        }
+                        persist(); 
+                        showAlert('Import Completed', 'Database and settings loaded successfully.'); 
+                        navigate('dashboard');
+                    } else {
+                        showAlert('Error', 'Invalid file format. Could not find client data.');
+                    }
+                } catch(err) { showAlert('Error', 'Invalid JSON file.'); }
+                event.target.value = ''; 
+            };
+            reader.readAsText(file);
+        }
+
+        async function exportAllAsZip() {
+            try {
+                if (typeof JSZip === 'undefined') throw new Error("ZIP library not loaded");
+                const zip = new JSZip();
+                
+                // Add DB and Settings
+                zip.file("practice_database.json", JSON.stringify(dataStore, null, 2));
+                if (practiceSettings) {
+                    zip.file("practice_settings.json", JSON.stringify(practiceSettings, null, 2));
+                }
+
+                const db = await getDB();
+                
+                // Add Contracts
+                const contractsFolder = zip.folder("Contracts");
+                const contractsTx = db.transaction(STORE_CONTRACTS, 'readonly');
+                const contractsStore = contractsTx.objectStore(STORE_CONTRACTS);
+                const allContracts = await new Promise((resolve) => {
+                    const req = contractsStore.getAll();
+                    req.onsuccess = () => resolve(req.result);
+                });
+                
+                allContracts.forEach(contract => {
+                    const client = dataStore.clients.find(c => c.id === contract.clientId);
+                    const clientName = client ? client.name.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_') : 'UnknownClient';
+                    contractsFolder.file(`${clientName}_${contract.fileName}`, contract.fileBlob);
+                });
+
+                // Add Receipts
+                const receiptsFolder = zip.folder("Receipts");
+                const receiptsTx = db.transaction(STORE_RECEIPTS, 'readonly');
+                const receiptsStore = receiptsTx.objectStore(STORE_RECEIPTS);
+                const allReceipts = await new Promise((resolve) => {
+                    const req = receiptsStore.getAll();
+                    req.onsuccess = () => resolve(req.result);
+                });
+                
+                allReceipts.forEach(receipt => {
+                    const exp = dataStore.expenses.find(e => e.id === receipt.expenseId);
+                    const expDate = exp ? exp.date : 'UnknownDate';
+                    receiptsFolder.file(`${expDate}_${receipt.fileName}`, receipt.fileBlob);
+                });
+
+                // Download ZIP
+                const content = await zip.generateAsync({ type: "blob" });
+                const url = URL.createObjectURL(content);
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.href = url;
+                dlAnchorElem.download = `PracticeSuite_FullArchive_${toLocalISODateString(new Date())}.zip`;
+                document.body.appendChild(dlAnchorElem);
+                dlAnchorElem.click();
+                document.body.removeChild(dlAnchorElem);
+                URL.revokeObjectURL(url);
+                
+                showAlert("Success", "Full ZIP archive generated successfully.");
+            } catch (err) {
+                console.error(err);
+                showAlert("Export Failed", "Could not generate ZIP archive: " + err.message);
+            }
+        }
+        
+        async function exportTaxYearArchive() {
+            const yearStr = document.getElementById('tax-year-select').value;
+            if (!yearStr) return showAlert("Error", "Please select a target reporting period.");
+            const year = parseInt(yearStr);
+            const period = getReportingPeriodDates(year);
+            
+            try {
+                if (typeof JSZip === 'undefined') throw new Error("ZIP library not loaded");
+                const zip = new JSZip();
+                const cur = getCurrency();
+                
+                let incomeCsv = "Date,Client,Payment Method,Gross Amount\n";
+                let totalIncome = 0;
+                
+                dataStore.clients.forEach(client => {
+                    client.sessions.forEach(s => {
+                        if (s.date >= period.start && s.date <= period.end) {
+                            incomeCsv += `${s.date},"${client.name}",${s.paymentMethod},${client.rate.toFixed(2)}\n`;
+                            totalIncome += client.rate;
+                        }
+                    });
+                });
+                
+                let expenseCsv = "Date,Category,Description,Amount\n";
+                let totalExpenses = 0;
+                
+                dataStore.expenses.forEach(e => {
+                    if (e.date >= period.start && e.date <= period.end) {
+                        expenseCsv += `${e.date},"${e.category}","${e.description}",${e.amount.toFixed(2)}\n`;
+                        totalExpenses += e.amount;
+                    }
+                });
+                
+                const netProfit = totalIncome - totalExpenses;
+                
+                let summaryTxt = `TAX YEAR SUMMARY: ${period.start} to ${period.end}\n`;
+                summaryTxt += `-------------------------------------------------\n`;
+                summaryTxt += `Gross Income:     ${cur}${totalIncome.toFixed(2)}\n`;
+                summaryTxt += `Total Expenses:   ${cur}${totalExpenses.toFixed(2)}\n`;
+                summaryTxt += `Net Profit:       ${cur}${netProfit.toFixed(2)}\n`;
+                summaryTxt += `\nEstimated UK Tax/NI Liability: ${cur}${calculateUKTax(netProfit).toFixed(2)}\n`;
+                
+                zip.file(`Income_Report_${year}.csv`, incomeCsv);
+                zip.file(`Expenses_Report_${year}.csv`, expenseCsv);
+                zip.file(`Tax_Summary_${year}.txt`, summaryTxt);
+                
+                const db = await getDB();
+                const receiptsTx = db.transaction(STORE_RECEIPTS, 'readonly');
+                const receiptsStore = receiptsTx.objectStore(STORE_RECEIPTS);
+                const allReceipts = await new Promise((resolve) => {
+                    const req = receiptsStore.getAll();
+                    req.onsuccess = () => resolve(req.result);
+                });
+                
+                const receiptsFolder = zip.folder("Tax_Year_Receipts");
+                allReceipts.forEach(receipt => {
+                    const exp = dataStore.expenses.find(e => e.id === receipt.expenseId);
+                    if (exp && exp.date >= period.start && exp.date <= period.end) {
+                        receiptsFolder.file(`${exp.date}_${receipt.fileName}`, receipt.fileBlob);
+                    }
+                });
+
+                const content = await zip.generateAsync({ type: "blob" });
+                const url = URL.createObjectURL(content);
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.href = url;
+                dlAnchorElem.download = `HMRC_TaxArchive_${year}_[${period.start}_to_${period.end}].zip`;
+                document.body.appendChild(dlAnchorElem);
+                dlAnchorElem.click();
+                document.body.removeChild(dlAnchorElem);
+                URL.revokeObjectURL(url);
+
+            } catch (err) {
+                console.error(err);
+                showAlert("Error", "Failed to generate Tax Archive: " + err.message);
+            }
         }
         
         // --- SECURE TOKEN-BASED GATEWAY SYNC ---
@@ -3189,12 +3321,13 @@
             lastActivityTime = Date.now();
             document.getElementById('timeout-modal').classList.remove('active');
             
-            if (!idleCheckInterval) {
+            if (!idleCheckInterval && localStorage.getItem('practice_suite_session_id')) {
                 idleCheckInterval = setInterval(checkIdleTime, 1000);
             }
         }
 
         async function checkIdleTime() {
+            if (!localStorage.getItem('practice_suite_session_id')) return;
             if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
             
             const now = Date.now();
@@ -3267,66 +3400,6 @@
                     showCreateProfileForm();
                 }
             }
-        }
-
-        // --- CLEAR ALL USER DATA / FACTORY RESET ---
-        function wipeAllData() {
-            showConfirm(
-                "DANGER: Clear All User Data", 
-                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings. If connected to Google Drive, your cloud backup will also be wiped clean. This cannot be undone!", 
-                async () => {
-                    const btn = document.getElementById('confirm-action-btn');
-                    if(btn) btn.innerText = "Wiping...";
-                    
-                    if (googleAccessToken && driveFileId) {
-                        try {
-                            const emptyContent = JSON.stringify({
-                                dataStore: { clients: [], expenses: [], categories: [], appointments: [] },
-                                practiceSettings: null
-                            }, null, 2);
-
-                            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
-                                method: 'PATCH',
-                                headers: {
-                                    'Authorization': 'Bearer ' + googleAccessToken,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: emptyContent
-                            });
-                        } catch (e) {
-                            console.error("Failed to wipe cloud data", e);
-                        }
-                    }
-                    
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    
-                    const sessionId = localStorage.getItem('practice_suite_session_id');
-                    if (sessionId) {
-                        fetch(BACKEND_URL + `/logout`, {
-                            method: 'POST',
-                            headers: { 'Authorization': 'Bearer ' + sessionId }
-                        }).catch(() => {});
-                    }
-                    
-                    const dbReq = indexedDB.deleteDatabase(DB_NAME);
-                    
-                    const finishWipe = () => {
-                        window.location.href = window.location.pathname; 
-                    };
-
-                    dbReq.onsuccess = finishWipe;
-                    dbReq.onerror = finishWipe;
-                    dbReq.onblocked = finishWipe;
-
-                    setTimeout(finishWipe, 1500);
-                }, 
-                true 
-            );
-        }
-        
-        function triggerFullReset() {
-            signOutGoogle(false);
         }
 
         window.onload = async function() {
