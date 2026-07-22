@@ -1,20 +1,20 @@
 {
-  "id": "/",
+  "id": "sessionvault-app",
   "name": "SessionVault",
   "short_name": "SessionVault",
-  "start_url": "/",
+  "start_url": "https://sessionvault.co.uk/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "https://sessionvault.co.uk/logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo.png",
+      "src": "https://sessionvault.co.uk/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
