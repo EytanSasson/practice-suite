@@ -713,6 +713,7 @@
                     <div class="split-pane">
                         <div>
                             <div class="panel">
+                                
                                 <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Schedule New Appointment</h3>
                                 
                                 <div class="form-group">
@@ -765,6 +766,23 @@
 
                         <div>
                             <div class="panel">
+
+                                <!-- Calendar Color Legend -->
+                                <div class="calendar-legend" style="display: flex; gap: 16px; align-items: center; justify-content: center; font-size: 0.85rem; margin: 12px 0; color: var(--text-muted); flex-wrap: wrap;">
+                                    <span style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; display: inline-block;"></span> Online Session
+                                    </span>
+                                    <span style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="width: 10px; height: 10px; background: #06b6d4; border-radius: 50%; display: inline-block;"></span> Office Session
+                                    </span>
+                                    <span style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; display: inline-block;"></span> Completed
+                                    </span>
+                                    <span style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block;"></span> Awaiting Log
+                                    </span>
+                                </div>
+                                
                                 <div class="calendar-header">
                                     <div style="display: flex; gap: 8px; align-items: center;">
                                         <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(-1)">&lt; Prev</button>
