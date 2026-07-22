@@ -5,26 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Practice Suite</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Flatpickr for custom Date/Time formats -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <style>
         :root {
-            --bg-app: #f8fafc; --sidebar-bg: #0f172a; --sidebar-text: #94a3b8; --sidebar-hover: #1e293b;
-            --panel-bg: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
-            --accent: #2563eb; --accent-hover: #1d4ed8; --success: #16a34a; --warning: #ea580c;
-            --danger: #ef4444; --danger-hover: #dc2626; --charcoal: #475569;
+            --bg-app: #f8fafc;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #94a3b8;
+            --sidebar-hover: #1e293b;
+            --panel-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success: #16a34a;
+            --warning: #ea580c;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --charcoal: #475569;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         
-        body { background-color: var(--bg-app); color: var(--text-main); position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; }
+        body { background-color: var(--bg-app); color: var(--text-main); margin: 0; padding: 0; position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; }
         .app-root { display: flex; height: 100%; width: 100%; overflow: hidden; }
 
         .sidebar { width: 260px; background-color: var(--sidebar-bg); color: var(--sidebar-text); display: flex; flex-direction: column; padding: 24px 16px; flex-shrink: 0; overflow-y: auto; }
         
-        .brand-wrapper { margin-bottom: 24px; padding: 0 8px 24px 8px; border-bottom: 1px solid rgba(148, 163, 184, 0.15); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+        .brand-wrapper { margin-bottom: 24px; padding: 0 8px 24px 8px; border-bottom: 1px solid rgba(148, 163, 184, 0.15); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
         .brand { display: flex; align-items: center; justify-content: center; width: 100%; flex-shrink: 0; }
         .brand svg { width: 200px; height: 60px; max-width: 100%; }
         .brand-practice-title { font-size: 0.95rem; font-weight: 600; color: #cbd5e1; letter-spacing: 0.3px; width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; line-height: 1.3; }
@@ -74,6 +87,9 @@
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--accent); }
         input:checked + .slider:before { transform: translateX(24px); }
+
+        .date-picker-ui { background-image: url("data:image/svg+xml,%3Csvg fill='%2364748b' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 18px; padding-right: 36px !important; }
+        .time-picker-ui { background-image: url("data:image/svg+xml,%3Csvg fill='%2364748b' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 18px; padding-right: 36px !important; }
 
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { padding: 12px 16px; background-color: #f8fafc; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 0.85rem; }
@@ -140,25 +156,30 @@
         #print-isolated-target { display: none; }
         
         .flatpickr-calendar { z-index: 10000 !important; font-family: 'Inter', sans-serif; border-radius: 14px !important; box-shadow: 0 10px 30px -8px rgba(15, 23, 42, 0.35) !important; overflow: hidden; border: none !important; }
+        .flatpickr-calendar.hasTime .flatpickr-time { border-top: 1px solid #e5e7eb !important; }
+        .flatpickr-time { height: 56px !important; }
+        .flatpickr-time input { font-size: 1.15rem !important; font-weight: 600 !important; color: #1e293b !important; }
+        .flatpickr-day.selected { background: var(--accent) !important; border-color: var(--accent) !important; }
         
         @media (max-width: 768px) {
             .app-root { flex-direction: column; height: 100%; }
             .sidebar { width: 100%; height: auto; padding: 16px; flex-shrink: 0; position: relative; }
             .brand-wrapper { margin-bottom: 12px; padding-bottom: 8px; flex-direction: row; text-align: left; align-items: center; justify-content: flex-start; padding-left: 48px; gap: 12px; border-bottom: none; }
             .brand { width: auto; flex-shrink: 0; justify-content: flex-start; }
-            .brand svg { width: 140px; height: auto; }
-            .brand-practice-title { font-size: 0.95rem; margin-left: auto; padding-right: 16px; text-align: right; color: #ffffff; }
-            
+            .brand svg { width: 120px; height: auto; }
+            .brand-practice-title { font-size: 0.85rem; color: #ffffff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; margin: 0; padding: 0; line-height: 1.2; text-align: left; }
             .sidebar-top-row { display: flex; align-items: center; justify-content: space-between; }
             .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: var(--sidebar-hover); border-radius: 8px; cursor: pointer; flex-shrink: 0; position: absolute; left: 16px; top: 16px; }
             .mobile-nav-toggle svg { width: 22px; height: 22px; stroke: #fff; }
             .nav-container { display: none; flex-direction: column; margin-top: 12px; }
             .nav-container.nav-open { display: flex; }
+            .nav-link { margin-bottom: 4px; white-space: normal; }
             .top-bar { padding: 12px 16px; }
             .content-box { padding: 16px; padding-bottom: 100px; }
             .split-pane { grid-template-columns: 1fr; }
             .form-layout { grid-template-columns: 1fr; }
             .form-group.full-width { grid-column: span 1; }
+            .calendar-cell { min-height: 60px; }
             
             table { display: block; width: 100%; border-collapse: collapse; }
             thead { display: none; }
@@ -342,7 +363,7 @@
 
     <!-- LOGIN GATE -->
     <div id="login-gate-overlay">
-        <div class="onboarding-card">
+        <div class="onboarding-card splash-fade" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; max-width: 440px; width: 100%;">
             <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 24px;">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="300" height="90" style="display: block; margin: 0 auto;">
                   <g transform="translate(20, 20)">
@@ -359,7 +380,7 @@
                   <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748b" letter-spacing="0.5">Secure Client Management</text>
                 </svg>
             </div>
-            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; width: 100%; text-align: center;">Sign in with Google to securely access your practice data.</p>
+            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; width: 100%; text-align: center;">Sign in with Google to access your practice data.</p>
             <button id="login-gate-google-btn" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background-color: #fff; border-color: #cbd5e1; color: #334155;" onclick="gateGoogleSignIn()">
                 <svg style="width: 18px; height: 18px; margin-right: 8px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 Sign in with Google
@@ -1577,6 +1598,7 @@
         }
 
         function persist() {
+            dataStore.lastModified = Date.now();
             localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
             setSyncIndicator('Saved locally', 'var(--text-muted)');
             if (typeof window.persistToCloud === 'function') {
@@ -1695,6 +1717,7 @@
             if (!dataStore.expenses) dataStore.expenses = [];
             if (!dataStore.appointments) dataStore.appointments = [];
             
+            dataStore.lastModified = Date.now();
             localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
             populateCategoryDropdown();
             
@@ -2861,7 +2884,7 @@
 
             if (!el) return;
 
-            if (connected && googleAccessToken) {
+            if (connected) {
                 el.textContent = '✅ Connected';
                 el.style.color = 'var(--success)';
                 
@@ -2883,9 +2906,10 @@
             } else {
                 el.textContent = '⚪ Not connected';
                 el.style.color = 'var(--text-muted)';
-                if (emailEl && !localStorage.getItem('practice_suite_google_email')) {
+                if (emailEl) {
                     emailEl.style.display = 'none';
                 }
+                localStorage.removeItem('practice_suite_google_email');
                 if (connectBtn) {
                     connectBtn.style.display = 'inline-flex';
                     connectBtn.innerText = 'Connect Google Account';
@@ -3007,9 +3031,13 @@
                     });
                     const parsed = await res.json();
                     
-                    if (!dataStore.clients || dataStore.clients.length === 0) {
+                    const cloudModified = (parsed.dataStore && parsed.dataStore.lastModified) ? parsed.dataStore.lastModified : 0;
+                    const localModified = (dataStore && dataStore.lastModified) ? dataStore.lastModified : 0;
+
+                    if (!dataStore.clients || dataStore.clients.length === 0 || cloudModified > localModified) {
                         await loadDriveDataIntoApp(parsed);
-                    } else {
+                        calculateAndRender();
+                    } else if (localModified > cloudModified) {
                         scheduleAutoDriveSync();
                     }
                     
@@ -3119,6 +3147,30 @@
                 console.warn("Drive sync error:", err);
                 setSyncIndicator('⚠ Auto-sync failed (Offline?)', 'var(--warning)');
             }
+        }
+        
+        let lastCloudCheckTime = 0;
+        async function checkCloudForUpdatesSilently() {
+            if (Date.now() - lastCloudCheckTime < 15000) return; 
+            if (!googleAccessToken || !driveFileId) return;
+            
+            try {
+                lastCloudCheckTime = Date.now();
+                const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
+                    headers: { 'Authorization': 'Bearer ' + googleAccessToken }
+                });
+                if (!res.ok) return;
+                const parsed = await res.json();
+                const cloudModified = (parsed.dataStore && parsed.dataStore.lastModified) ? parsed.dataStore.lastModified : 0;
+                const localModified = (dataStore && dataStore.lastModified) ? dataStore.lastModified : 0;
+                
+                if (cloudModified > localModified) {
+                    await loadDriveDataIntoApp(parsed);
+                    calculateAndRender();
+                    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    setSyncIndicator(`Auto-synced from cloud at ${timeStr}`, 'var(--success)');
+                }
+            } catch(e) {}
         }
         
         async function signOutGoogle(silent) {
@@ -3417,27 +3469,18 @@
             }, { passive: true });
         });
         
-        async function continueOffline() {
-            const config = await getLocalPasskeyConfig();
-            if (config.enabled && config.credentialId) {
-                document.getElementById('login-gate-overlay').style.display = 'none';
-                const overlay = document.getElementById('passkey-lock-overlay');
-                overlay.dataset.mode = 'auth';
-                document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
-                document.getElementById('passkey-modal-desc').innerText = "Verify your identity to securely access your offline practice data.";
-                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
-                document.getElementById('btn-skip-passkey').style.display = 'none';
-                document.getElementById('btn-switch-account').style.display = 'none';
-                overlay.style.display = 'flex';
-                setTimeout(() => triggerPasskeyAuth(), 300);
-            } else {
-                if (practiceSettings) {
-                    showApp();
-                } else {
-                    showCreateProfileForm();
+        document.addEventListener('visibilitychange', () => { 
+            if (document.visibilityState === 'visible') {
+                if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') {
+                    resetIdleLogoutTimer();
                 }
+                checkCloudForUpdatesSilently();
             }
-        }
+        });
+        
+        window.addEventListener('focus', () => {
+            checkCloudForUpdatesSilently();
+        });
 
         // --- CLEAR ALL USER DATA / FACTORY RESET ---
         function wipeAllData() {
@@ -3527,298 +3570,6 @@
             }
 
             attemptSilentReconnect();
-        }
-
-        let currentCalDate = new Date();
-        let selectedCalDateStr = toLocalISODateString(new Date());
-
-        function renderAppointmentsPage() {
-            populateAptClientDropdown();
-            renderCalendar();
-            renderDailyAgenda();
-            renderUpcomingAppointments();
-        }
-
-        function populateAptClientDropdown() {
-            const dropdown = document.getElementById('apt-client');
-            if (!dropdown) return;
-            dropdown.innerHTML = '<option value="" disabled selected>-- Select Client --</option>';
-            const activeClients = dataStore.clients.filter(c => c.status === 'Active');
-            activeClients.sort((a,b) => a.name.localeCompare(b.name)).forEach(client => {
-                const opt = document.createElement('option');
-                opt.value = client.id; opt.innerText = escapeHTML(client.name); dropdown.appendChild(opt);
-            });
-        }
-
-        function toggleRepeatUntil() {
-            const repeatVal = document.getElementById('apt-repeat').value;
-            const group = document.getElementById('repeat-until-group');
-            group.style.display = repeatVal === 'none' ? 'none' : 'block';
-        }
-
-        function submitAppointment() {
-            const clientId = document.getElementById('apt-client').value;
-            const date = document.getElementById('apt-date').value;
-            const time = document.getElementById('apt-time').value;
-            const location = document.getElementById('apt-location').value;
-            const repeat = document.getElementById('apt-repeat').value;
-            const repeatUntil = document.getElementById('apt-repeat-until').value;
-
-            if (!clientId) return showAlert('Missing Selection', 'Please select a client.');
-            if (!date) return showAlert('Missing Date', 'Please select an appointment date.');
-            if (!time) return showAlert('Missing Time', 'Please select a session time.');
-
-            const client = dataStore.clients.find(c => c.id === clientId);
-            
-            let [y, m, d] = date.split('-').map(Number);
-            let currentDateObj = new Date(y, m - 1, d);
-            
-            let endDateObj = new Date(y, m - 1, d);
-            if (repeat !== 'none' && repeatUntil) {
-                let [ey, em, ed] = repeatUntil.split('-').map(Number);
-                endDateObj = new Date(ey, em - 1, ed);
-            }
-            
-            if (repeat !== 'none' && !repeatUntil) return showAlert('Missing End Date', 'Please provide a repeat until date.');
-            if (endDateObj < currentDateObj) return showAlert('Invalid Date', 'End date must be after the start date.');
-
-            let addedCount = 0;
-            let firstApt = null;
-
-            while (currentDateObj <= endDateObj) {
-                const dateString = toLocalISODateString(currentDateObj);
-                const aptObj = {
-                    id: 'apt_' + Date.now() + Math.random().toString().slice(2,6),
-                    clientId: clientId,
-                    clientName: escapeHTML(client.name),
-                    date: dateString,
-                    time: time,
-                    location: escapeHTML(location),
-                    status: 'Scheduled'
-                };
-                
-                if (addedCount === 0) firstApt = aptObj;
-                dataStore.appointments.push(aptObj);
-                
-                addedCount++;
-                
-                if (repeat === 'weekly') {
-                    currentDateObj.setDate(currentDateObj.getDate() + 7);
-                } else if (repeat === 'monthly') {
-                    const currentDay = currentDateObj.getDate();
-                    currentDateObj.setMonth(currentDateObj.getMonth() + 1);
-                    if (currentDateObj.getDate() !== currentDay) {
-                        currentDateObj.setDate(0); 
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            persist();
-            renderAppointmentsPage();
-
-            if (addedCount === 1) {
-                showConfirm("Google Calendar", `Appointment booked. Would you like to add this session to your Google Calendar?`, () => {
-                    window.open(generateGoogleCalendarLink(firstApt), '_blank');
-                });
-            } else {
-                showAlert('Success', `${addedCount} appointments scheduled successfully.`);
-            }
-
-            setInputVal('apt-date', '');
-            setInputVal('apt-time', '');
-            setInputVal('apt-repeat-until', '');
-        }
-
-        function changeCalendarMonth(offset) {
-            currentCalDate.setMonth(currentCalDate.getMonth() + offset);
-            renderCalendar();
-        }
-
-        function setCalendarToToday() {
-            currentCalDate = new Date();
-            selectedCalDateStr = toLocalISODateString(currentCalDate);
-            renderCalendar(); renderDailyAgenda();
-        }
-
-        function selectCalendarDay(dateStr) {
-            selectedCalDateStr = dateStr;
-            const [y, m, d] = dateStr.split('-').map(Number);
-            const targetDate = new Date(y, m - 1, d);
-            if (targetDate.getMonth() !== currentCalDate.getMonth() || targetDate.getFullYear() !== currentCalDate.getFullYear()) {
-                currentCalDate = new Date(targetDate); renderCalendar();
-            }
-            renderCalendar(); renderDailyAgenda();
-
-            const aptDateEl = document.getElementById('apt-date');
-            if (aptDateEl) {
-                if (aptDateEl._flatpickr) {
-                    aptDateEl._flatpickr.setDate(dateStr, true);
-                } else {
-                    aptDateEl.value = dateStr;
-                }
-            }
-        }
-
-        function renderCalendar() {
-            const gridBody = document.getElementById('calendar-grid-body');
-            if (!gridBody) return;
-            gridBody.innerHTML = '';
-            const monthYearHeader = document.getElementById('calendar-month-year');
-            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            if (monthYearHeader) monthYearHeader.innerText = `${months[currentCalDate.getMonth()]} ${currentCalDate.getFullYear()}`;
-
-            const year = currentCalDate.getFullYear(); const month = currentCalDate.getMonth();
-            const firstDayIndex = new Date(year, month, 1).getDay();
-            const startDayOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
-            const totalDays = new Date(year, month + 1, 0).getDate();
-            const prevMonthTotalDays = new Date(year, month, 0).getDate();
-            const todayStr = toLocalISODateString(new Date());
-
-            for (let i = startDayOffset - 1; i >= 0; i--) {
-                const d = prevMonthTotalDays - i;
-                createDayCell(d, toLocalISODateString(new Date(year, month - 1, d)), true, gridBody, todayStr);
-            }
-            for (let d = 1; d <= totalDays; d++) {
-                createDayCell(d, toLocalISODateString(new Date(year, month, d)), false, gridBody, todayStr);
-            }
-            const gridTotalCells = startDayOffset + totalDays;
-            const nextMonthPadding = gridTotalCells % 7 === 0 ? 0 : 7 - (gridTotalCells % 7);
-            for (let d = 1; d <= nextMonthPadding; d++) {
-                createDayCell(d, toLocalISODateString(new Date(year, month + 1, d)), true, gridBody, todayStr);
-            }
-        }
-
-        function createDayCell(dayNum, dateStr, isInactive, container, todayStr) {
-            const cell = document.createElement('div');
-            cell.className = 'calendar-cell';
-            if (isInactive) cell.classList.add('inactive');
-            if (dateStr === todayStr) cell.classList.add('today');
-            if (dateStr === selectedCalDateStr) cell.classList.add('selected');
-            cell.onclick = () => selectCalendarDay(dateStr);
-
-            const cellHeader = document.createElement('div');
-            cellHeader.className = 'calendar-cell-header';
-            cellHeader.innerHTML = `<span class="calendar-day-num">${dayNum}</span>`;
-            cell.appendChild(cellHeader);
-
-            const dayApts = (dataStore.appointments || [])
-                .filter(a => a.date === dateStr && a.status !== 'Cancelled')
-                .sort((a, b) => a.time.localeCompare(b.time));
-
-            if (dayApts.length > 0) {
-                const maxToShow = 3;
-                for (let i = 0; i < Math.min(dayApts.length, maxToShow); i++) {
-                    const apt = dayApts[i];
-                    const label = document.createElement('div');
-                    label.className = `calendar-apt-label ${apt.location === 'Office' ? 'apt-label-office' : 'apt-label-online'}`;
-                    label.innerText = `${formatTimeBySetting(apt.time)} ${escapeHTML(apt.clientName)}`;
-                    cell.appendChild(label);
-                }
-                if (dayApts.length > maxToShow) {
-                    const more = document.createElement('div');
-                    more.className = 'calendar-apt-label apt-label-more';
-                    more.innerText = `+${dayApts.length - maxToShow} more`;
-                    cell.appendChild(more);
-                }
-            }
-            container.appendChild(cell);
-        }
-
-        function renderDailyAgenda() {
-            const container = document.getElementById('daily-agenda-container');
-            if (!container) return;
-            container.innerHTML = '';
-            
-            const [y, m, d] = selectedCalDateStr.split('-').map(Number);
-            const dateObj = new Date(y, m - 1, d);
-            const formatStr = isNaN(dateObj) ? selectedCalDateStr : dateObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
-            document.getElementById('agenda-date-title').innerText = `Agenda for ${formatStr}`;
-
-            const dayApts = (dataStore.appointments || []).filter(a => a.date === selectedCalDateStr).sort((a, b) => a.time.localeCompare(b.time));
-
-            if (dayApts.length === 0) {
-                container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted); font-style:italic;">No appointments scheduled for this day.</p>`;
-                return;
-            }
-
-            dayApts.forEach(apt => {
-                const strip = document.createElement('div');
-                strip.className = `appointment-strip ${apt.status.toLowerCase()}`;
-                let actionsHtml = apt.status === 'Scheduled' ? 
-                    `<button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Complete</button>
-                     <button class="btn btn-danger btn-sm" onclick="cancelAppointment('${apt.id}')">Cancel</button>` : 
-                    `<span class="badge ${apt.status === 'Completed' ? 'badge-active' : 'badge-closed'}">${escapeHTML(apt.status)}</span>`;
-
-                strip.innerHTML = `
-                    <div class="appointment-strip-details">
-                        <strong style="font-size: 0.95rem;">${formatTimeBySetting(apt.time)}</strong>
-                        <span style="font-weight: 500; margin-left: 8px;">${escapeHTML(apt.clientName)}</span><br>
-                        <span style="font-size:0.75rem; color: var(--text-muted);">${escapeHTML(apt.location)}</span>
-                    </div>
-                    <div class="appointment-strip-actions">${actionsHtml}</div>
-                `;
-                container.appendChild(strip);
-            });
-        }
-
-        function renderUpcomingAppointments() {
-            const container = document.getElementById('upcoming-appointments-list');
-            if (!container) return;
-            container.innerHTML = '';
-
-            const todayStr = toLocalISODateString(new Date());
-            
-            const upcoming = (dataStore.appointments || [])
-                .filter(a => a.date >= todayStr && a.status === 'Scheduled')
-                .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
-
-            if (upcoming.length === 0) {
-                container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted); font-style:italic;">No upcoming scheduled sessions.</p>`;
-                return;
-            }
-
-            upcoming.forEach(apt => {
-                const item = document.createElement('div');
-                item.className = 'appointment-strip';
-                item.innerHTML = `
-                    <div class="appointment-strip-details">
-                        <span style="font-weight: 600; color: var(--accent);">${formatDateToUK(apt.date)} @ ${formatTimeBySetting(apt.time)}</span><br>
-                        <strong style="margin-right: 8px;">${escapeHTML(apt.clientName)}</strong>
-                        <span style="font-size:0.75rem; color: var(--text-muted);">(${escapeHTML(apt.location)})</span>
-                    </div>
-                    <div class="appointment-strip-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log</button>
-                    </div>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        function completeAppointmentFromCalendar(aptId) {
-            const apt = dataStore.appointments.find(a => a.id === aptId);
-            if (!apt) return;
-            apt.status = 'Completed';
-            persist();
-            cachedSessionTime = apt.time;
-            navigate('profile', apt.clientId);
-            setTimeout(() => {
-                setInputVal('session-date', apt.date);
-                setInputVal('session-location', apt.location);
-                const notesArea = document.getElementById('session-notes');
-                if (notesArea) {
-                    notesArea.placeholder = `Add clinical notes for the completed appointment on ${formatDateToUK(apt.date)} at ${formatTimeBySetting(apt.time)}...`;
-                    notesArea.focus();
-                }
-            }, 150);
-        }
-
-        function cancelAppointment(aptId) {
-            showConfirm("Cancel Appointment", "Are you sure you want to cancel this appointment?", function() {
-                const apt = dataStore.appointments.find(a => a.id === aptId);
-                if (apt) { apt.status = 'Cancelled'; persist(); renderAppointmentsPage(); }
-            });
         }
     </script>
 </body>
