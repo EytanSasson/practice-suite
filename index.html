@@ -1754,7 +1754,10 @@
 
                 for (let id in fields) {
                     const el = document.getElementById(id);
-                    if (el) el.value = fields[id];
+                    // Skip the field the user is actively typing in — overwriting it
+                    // mid-keystroke (e.g. with a trimmed value) resets the cursor and
+                    // silently discards things like a trailing space as it's typed.
+                    if (el && el !== document.activeElement) el.value = fields[id];
                 }
 
                 const graphTitle = document.getElementById('yearly-graph-title');
@@ -3478,6 +3481,13 @@
                 document.getElementById('btn-switch-account').style.display = 'block';
                 overlay.style.display = 'flex';
                 setTimeout(() => triggerPasskeyAuth(), 300);
+            } else {
+                // No passkey configured on this device: there is no local biometric
+                // check we can re-prompt, so the only safe option after idle timeout
+                // is to fully sign the user out rather than leave the session open.
+                clearInterval(idleCheckInterval);
+                idleCheckInterval = null;
+                await signOutGoogle(false);
             }
         }
 
