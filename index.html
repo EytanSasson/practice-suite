@@ -137,8 +137,10 @@
         .calendar-day-num { font-size: 0.85rem; font-weight: 600; }
         
         .calendar-apt-label { font-size: 0.65rem; padding: 3px 4px; border-radius: 4px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #ffffff; }
-        .apt-label-office { background-color: var(--success); }
+        .apt-label-office { background-color: #0ea5e9; } /* Adjusted so Future Office doesn't clash with green completed */
         .apt-label-online { background-color: var(--accent); }
+        .apt-label-completed { background-color: var(--success); }
+        .apt-label-missed { background-color: var(--danger); }
         
         .appointment-strip { background: #f8fafc; border-left: 3px solid var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid var(--border); border-left-width: 3px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
         .appointment-strip-details { flex: 1; min-width: 150px; }
@@ -236,6 +238,19 @@
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button class="btn btn-secondary" onclick="closeConfirm(false)">Cancel</button>
                 <button id="confirm-action-btn" class="btn btn-danger" onclick="closeConfirm(true)">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPEAT SERIES CANCEL MODAL -->
+    <div id="cancel-series-modal" class="custom-modal-overlay">
+        <div class="custom-modal-card">
+            <h3 style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700; color: var(--danger);">Cancel Appointment</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">This is a repeating appointment series. How would you like to proceed?</p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button class="btn btn-danger" style="justify-content: center;" onclick="executeCancel('all')">Cancel this & all future meetings</button>
+                <button class="btn btn-secondary" style="justify-content: center; color: var(--danger); border-color: var(--danger);" onclick="executeCancel('single')">Cancel ONLY this specific day</button>
+                <button class="btn btn-secondary" style="justify-content: center;" onclick="executeCancel('abort')">Abort / Keep Appointment</button>
             </div>
         </div>
     </div>
@@ -1943,8 +1958,22 @@
                 showPrompt("Archive File", `Provide a reason for closing ${escapeHTML(client.name)}'s file:`, function(reason) {
                     client.status = 'Closed';
                     client.closedReason = escapeHTML(reason.trim()) || 'No reason provided';
-                    persist();
-                    renderClientProfile();
+                    
+                    const todayStr = toLocalISODateString(new Date());
+                    const futureApts = (dataStore.appointments || []).filter(a => a.clientId === client.id && a.status === 'Scheduled' && a.date >= todayStr);
+                    
+                    if (futureApts.length > 0) {
+                        setTimeout(() => {
+                            showConfirm("Cancel Future Bookings?", `This client has ${futureApts.length} upcoming scheduled appointment(s). Do you want to cancel them?`, () => {
+                                futureApts.forEach(a => a.status = 'Cancelled');
+                                persist();
+                                renderClientProfile();
+                            }, true);
+                        }, 300); 
+                    } else {
+                        persist();
+                        renderClientProfile();
+                    }
                 }, "Reason...", "Close File");
             } else {
                 client.status = 'Active';
@@ -2266,11 +2295,13 @@
             if (!dataStore.appointments) dataStore.appointments = [];
             
             let firstApt = null;
+            const seriesId = repeat !== 'none' ? 'series_' + Date.now() + Math.random().toString().slice(2,6) : null;
 
             while (currDate <= endDate) {
                 const dateStr = toLocalISODateString(currDate);
                 const aptObj = {
                     id: 'apt_' + Date.now() + Math.random().toString().slice(2,6),
+                    seriesId: seriesId,
                     clientId: client.id,
                     clientName: client.name,
                     date: dateStr,
@@ -2310,6 +2341,7 @@
         function setCalendarToToday() {
             currentCalendarViewDate = new Date();
             calendarSelectedDate = toLocalISODateString(new Date());
+            setInputVal('apt-date', calendarSelectedDate);
             renderCalendar();
             renderAgendaForDate(calendarSelectedDate);
         }
@@ -2382,10 +2414,22 @@
             header.innerHTML = `<span class="calendar-day-num">${dayNum}</span>`;
             cell.appendChild(header);
 
-            const dayApts = (dataStore.appointments || []).filter(a => a.date === dateStr && a.status === 'Scheduled');
+            const todayStr = toLocalISODateString(new Date());
+            const dayApts = (dataStore.appointments || []).filter(a => a.date === dateStr && a.status !== 'Cancelled');
+            
             dayApts.forEach(apt => {
                 const label = document.createElement('div');
-                label.className = `calendar-apt-label ${apt.location === 'Office' ? 'apt-label-office' : 'apt-label-online'}`;
+                let labelClass = 'calendar-apt-label ';
+                
+                if (dateStr < todayStr) {
+                    if (apt.status === 'Completed') labelClass += 'apt-label-completed';
+                    else labelClass += 'apt-label-missed';
+                } else {
+                    if (apt.status === 'Completed') labelClass += 'apt-label-completed';
+                    else labelClass += apt.location === 'Office' ? 'apt-label-office' : 'apt-label-online';
+                }
+                
+                label.className = labelClass;
                 label.innerText = `${formatTimeBySetting(apt.time)} ${apt.clientName}`;
                 cell.appendChild(label);
             });
@@ -2480,15 +2524,56 @@
             navigate('profile', apt.clientId);
         }
 
+        let cancellingAptId = null;
+
         function cancelAppointment(aptId) {
-            showConfirm("Cancel Appointment", "Are you sure you want to cancel this scheduled appointment?", () => {
-                const apt = (dataStore.appointments || []).find(a => a.id === aptId);
-                if (apt) {
-                    apt.status = 'Cancelled';
-                    persist();
-                    renderAppointmentsPage();
-                }
-            }, true);
+            const apt = (dataStore.appointments || []).find(a => a.id === aptId);
+            if (!apt) return;
+            
+            cancellingAptId = aptId;
+            
+            if (apt.seriesId) {
+                document.getElementById('cancel-series-modal').classList.add('active');
+            } else {
+                showConfirm("Cancel Appointment", "Are you sure you want to cancel this scheduled appointment?", () => {
+                    executeCancel('single');
+                }, true);
+            }
+        }
+
+        function executeCancel(mode) {
+            document.getElementById('cancel-series-modal').classList.remove('active');
+            
+            if (mode === 'abort') {
+                cancellingAptId = null;
+                return;
+            }
+            
+            const apt = (dataStore.appointments || []).find(a => a.id === cancellingAptId);
+            if (!apt) return;
+
+            if (mode === 'single') {
+                apt.status = 'Cancelled';
+            } else if (mode === 'all') {
+                dataStore.appointments.forEach(a => {
+                    if (a.seriesId === apt.seriesId && a.status === 'Scheduled' && a.date >= apt.date) {
+                        a.status = 'Cancelled';
+                    }
+                });
+            }
+            
+            cancellingAptId = null;
+            persist();
+            
+            const activeView = document.querySelector('.section-view.active-view');
+            if (activeView && activeView.id === 'view-appointments') {
+                renderAppointmentsPage();
+            } else if (activeView && activeView.id === 'view-profile') {
+                renderClientProfile();
+            } else {
+                renderAppointmentsPage();
+                if (activeProfileId) renderClientProfile();
+            }
         }
 
         // --- EXPENSES WITH REPEAT LOGIC ---
@@ -3772,9 +3857,6 @@
                 overlay.style.display = 'flex';
                 setTimeout(() => triggerPasskeyAuth(), 300);
             } else {
-                // No passkey configured on this device: there is no local biometric
-                // check we can re-prompt, so the only safe option after idle timeout
-                // is to fully sign the user out rather than leave the session open.
                 clearInterval(idleCheckInterval);
                 idleCheckInterval = null;
                 await signOutGoogle(false);
