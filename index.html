@@ -1247,7 +1247,7 @@
         }
 
         let practiceSettings = JSON.parse(localStorage.getItem('sasson_practice_settings'));
-        let dataStore = JSON.parse(localStorage.getItem('sasson_practice_secure_store')) || { clients: [], expenses: [], categories: [] };
+        let dataStore = JSON.parse(localStorage.getItem('sasson_practice_secure_store')) || { clients: [], expenses: [], categories: [], appointments: [] };
         let fpInstances = []; 
         let globalEffectiveTaxRate = 0;
         
@@ -1754,9 +1754,6 @@
 
                 for (let id in fields) {
                     const el = document.getElementById(id);
-                    // Skip the field the user is actively typing in — overwriting it
-                    // mid-keystroke (e.g. with a trimmed value) resets the cursor and
-                    // silently discards things like a trailing space as it's typed.
                     if (el && el !== document.activeElement) el.value = fields[id];
                 }
 
@@ -2202,6 +2199,284 @@
                 persist();
                 renderClientProfile();
             }
+        }
+
+        // --- CALENDAR & APPOINTMENT MANAGEMENT ---
+        let currentCalendarViewDate = new Date();
+        let calendarSelectedDate = toLocalISODateString(new Date());
+
+        function renderAppointmentsPage() {
+            populateAppointmentClientDropdown();
+            setInputVal('apt-date', calendarSelectedDate);
+            setInputVal('apt-time', '09:00');
+            document.getElementById('apt-repeat').value = 'none';
+            toggleRepeatUntil();
+            renderCalendar();
+            renderAgendaForDate(calendarSelectedDate);
+            renderUpcomingAppointments();
+        }
+
+        function populateAppointmentClientDropdown() {
+            const select = document.getElementById('apt-client');
+            if (!select) return;
+            select.innerHTML = '';
+            const activeClients = (dataStore.clients || []).filter(c => c.status !== 'Closed').sort((a,b) => a.name.localeCompare(b.name));
+            if (activeClients.length === 0) {
+                select.innerHTML = '<option value="" disabled selected>-- No Active Clients --</option>';
+                return;
+            }
+            activeClients.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = c.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function toggleRepeatUntil() {
+            const repeatVal = document.getElementById('apt-repeat').value;
+            const group = document.getElementById('repeat-until-group');
+            if (group) group.style.display = repeatVal === 'none' ? 'none' : 'block';
+        }
+
+        function submitAppointment() {
+            const clientId = document.getElementById('apt-client').value;
+            const date = document.getElementById('apt-date').value;
+            const time = document.getElementById('apt-time').value;
+            const repeat = document.getElementById('apt-repeat').value;
+            const repeatUntil = document.getElementById('apt-repeat-until').value;
+            const location = document.getElementById('apt-location').value;
+
+            const client = dataStore.clients.find(c => c.id === clientId);
+            if (!client) return showAlert('Missing Selection', 'Please select an active client.');
+            if (!date || !time) return showAlert('Incomplete Entry', 'Date and start time are required.');
+
+            let [y, m, d] = date.split('-').map(Number);
+            let currDate = new Date(y, m - 1, d);
+            let endDate = new Date(y, m - 1, d);
+
+            if (repeat !== 'none' && repeatUntil) {
+                let [ey, em, ed] = repeatUntil.split('-').map(Number);
+                endDate = new Date(ey, em - 1, ed);
+            }
+
+            if (repeat !== 'none' && !repeatUntil) return showAlert('Missing End Date', 'Please select a repeat until date.');
+            if (endDate < currDate) return showAlert('Invalid Date', 'Repeat end date must be after start date.');
+
+            if (!dataStore.appointments) dataStore.appointments = [];
+
+            while (currDate <= endDate) {
+                const dateStr = toLocalISODateString(currDate);
+                dataStore.appointments.push({
+                    id: 'apt_' + Date.now() + Math.random().toString().slice(2,6),
+                    clientId: client.id,
+                    clientName: client.name,
+                    date: dateStr,
+                    time: time,
+                    location: location,
+                    status: 'Scheduled'
+                });
+
+                if (repeat === 'weekly') {
+                    currDate.setDate(currDate.getDate() + 7);
+                } else if (repeat === 'monthly') {
+                    currDate.setMonth(currDate.getMonth() + 1);
+                } else {
+                    break;
+                }
+            }
+
+            persist();
+            showAlert('Appointment Booked', 'Appointment successfully scheduled.');
+            renderAppointmentsPage();
+        }
+
+        function changeCalendarMonth(delta) {
+            currentCalendarViewDate.setMonth(currentCalendarViewDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function setCalendarToToday() {
+            currentCalendarViewDate = new Date();
+            calendarSelectedDate = toLocalISODateString(new Date());
+            renderCalendar();
+            renderAgendaForDate(calendarSelectedDate);
+        }
+
+        function selectCalendarDay(dateStr) {
+            calendarSelectedDate = dateStr;
+            renderCalendar();
+            renderAgendaForDate(dateStr);
+        }
+
+        function renderCalendar() {
+            const monthYearEl = document.getElementById('calendar-month-year');
+            const gridBody = document.getElementById('calendar-grid-body');
+            if (!monthYearEl || !gridBody) return;
+
+            const year = currentCalendarViewDate.getFullYear();
+            const month = currentCalendarViewDate.getMonth();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            
+            monthYearEl.innerText = `${monthNames[month]} ${year}`;
+            gridBody.innerHTML = '';
+
+            const firstDay = new Date(year, month, 1);
+            let startingDay = firstDay.getDay() - 1; // Mon = 0
+            if (startingDay === -1) startingDay = 6; // Sun = 6
+
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            const todayStr = toLocalISODateString(new Date());
+
+            // Previous month padding
+            for (let i = startingDay - 1; i >= 0; i--) {
+                const pDay = prevMonthDays - i;
+                const pDate = new Date(year, month - 1, pDay);
+                const pDateStr = toLocalISODateString(pDate);
+                gridBody.appendChild(createCalendarCell(pDay, pDateStr, true));
+            }
+
+            // Current month days
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cDate = new Date(year, month, day);
+                const cDateStr = toLocalISODateString(cDate);
+                gridBody.appendChild(createCalendarCell(day, cDateStr, false, cDateStr === todayStr, cDateStr === calendarSelectedDate));
+            }
+
+            // Next month padding
+            const totalCells = startingDay + daysInMonth;
+            const nextPadding = (7 - (totalCells % 7)) % 7;
+            for (let n = 1; n <= nextPadding; n++) {
+                const nDate = new Date(year, month + 1, n);
+                const nDateStr = toLocalISODateString(nDate);
+                gridBody.appendChild(createCalendarCell(n, nDateStr, true));
+            }
+        }
+
+        function createCalendarCell(dayNum, dateStr, isInactive, isToday = false, isSelected = false) {
+            const cell = document.createElement('div');
+            let cellClass = 'calendar-cell';
+            if (isInactive) cellClass += ' inactive';
+            if (isToday) cellClass += ' today';
+            if (isSelected) cellClass += ' selected';
+            cell.className = cellClass;
+
+            cell.onclick = () => selectCalendarDay(dateStr);
+
+            const header = document.createElement('div');
+            header.className = 'calendar-cell-header';
+            header.innerHTML = `<span class="calendar-day-num">${dayNum}</span>`;
+            cell.appendChild(header);
+
+            const dayApts = (dataStore.appointments || []).filter(a => a.date === dateStr && a.status === 'Scheduled');
+            dayApts.forEach(apt => {
+                const label = document.createElement('div');
+                label.className = `calendar-apt-label ${apt.location === 'Office' ? 'apt-label-office' : 'apt-label-online'}`;
+                label.innerText = `${formatTimeBySetting(apt.time)} ${apt.clientName}`;
+                cell.appendChild(label);
+            });
+
+            return cell;
+        }
+
+        function renderAgendaForDate(dateStr) {
+            const titleEl = document.getElementById('agenda-date-title');
+            const container = document.getElementById('daily-agenda-container');
+            if (!container) return;
+
+            if (titleEl) titleEl.innerText = `Agenda for ${formatDateToUK(dateStr)}`;
+            container.innerHTML = '';
+
+            const dayApts = (dataStore.appointments || [])
+                .filter(a => a.date === dateStr)
+                .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+            if (dayApts.length === 0) {
+                container.innerHTML = `<p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">No appointments scheduled for this date.</p>`;
+                return;
+            }
+
+            dayApts.forEach(apt => {
+                const strip = document.createElement('div');
+                let statusClass = '';
+                if (apt.status === 'Completed') statusClass = 'completed';
+                if (apt.status === 'Cancelled') statusClass = 'cancelled';
+                strip.className = `appointment-strip ${statusClass}`;
+
+                const gCalLink = generateGoogleCalendarLink(apt);
+
+                strip.innerHTML = `
+                    <div class="appointment-strip-details">
+                        <strong>${escapeHTML(apt.clientName)}</strong> &bull; <span style="color: var(--accent); font-weight: 600;">${formatTimeBySetting(apt.time)}</span><br>
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">${escapeHTML(apt.location)} (${escapeHTML(apt.status)})</span>
+                    </div>
+                    <div class="appointment-strip-actions">
+                        ${apt.status === 'Scheduled' ? `
+                            <a href="${gCalLink}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;" title="Add to Google Calendar">📅 GCal</a>
+                            <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log Session</button>
+                            <button class="btn btn-danger btn-sm" onclick="cancelAppointment('${apt.id}')">Cancel</button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(strip);
+            });
+        }
+
+        function renderUpcomingAppointments() {
+            const container = document.getElementById('upcoming-appointments-list');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const todayStr = toLocalISODateString(new Date());
+            const upcoming = (dataStore.appointments || [])
+                .filter(a => a.status === 'Scheduled' && a.date >= todayStr)
+                .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
+            if (upcoming.length === 0) {
+                container.innerHTML = `<p style="font-size:0.9rem; color:var(--text-muted); font-style:italic;">No upcoming appointments.</p>`;
+                return;
+            }
+
+            upcoming.forEach(apt => {
+                const strip = document.createElement('div');
+                strip.className = 'appointment-strip';
+                const gCalLink = generateGoogleCalendarLink(apt);
+
+                strip.innerHTML = `
+                    <div class="appointment-strip-details">
+                        <strong>${escapeHTML(apt.clientName)}</strong><br>
+                        <span style="color: var(--accent); font-weight: 600;">${formatDateToUK(apt.date)} @ ${formatTimeBySetting(apt.time)}</span>
+                    </div>
+                    <div class="appointment-strip-actions">
+                        <a href="${gCalLink}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;">📅 GCal</a>
+                        <button class="btn btn-secondary btn-sm" onclick="completeAppointmentFromCalendar('${apt.id}')">Log</button>
+                        <button class="btn btn-danger btn-sm" onclick="cancelAppointment('${apt.id}')">Cancel</button>
+                    </div>
+                `;
+                container.appendChild(strip);
+            });
+        }
+
+        function completeAppointmentFromCalendar(aptId) {
+            const apt = (dataStore.appointments || []).find(a => a.id === aptId);
+            if (!apt) return;
+            apt.status = 'Completed';
+            cachedSessionTime = apt.time;
+            persist();
+            navigate('profile', apt.clientId);
+        }
+
+        function cancelAppointment(aptId) {
+            showConfirm("Cancel Appointment", "Are you sure you want to cancel this scheduled appointment?", () => {
+                const apt = (dataStore.appointments || []).find(a => a.id === aptId);
+                if (apt) {
+                    apt.status = 'Cancelled';
+                    persist();
+                    renderAppointmentsPage();
+                }
+            }, true);
         }
 
         // --- EXPENSES WITH REPEAT LOGIC ---
@@ -3482,9 +3757,6 @@
                 overlay.style.display = 'flex';
                 setTimeout(() => triggerPasskeyAuth(), 300);
             } else {
-                // No passkey configured on this device: there is no local biometric
-                // check we can re-prompt, so the only safe option after idle timeout
-                // is to fully sign the user out rather than leave the session open.
                 clearInterval(idleCheckInterval);
                 idleCheckInterval = null;
                 await signOutGoogle(false);
