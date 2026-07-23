@@ -661,10 +661,12 @@
                     </div>
 
                     <div class="panel">
-                        <div class="tab-bar" style="margin-bottom: 20px;">
-                            <div class="tab active" id="dash-tab-active" onclick="switchDashboardTab('Active')">Active Caseload</div>
-                            <div class="tab" id="dash-tab-closed" onclick="switchDashboardTab('Closed')">Closed Case History</div>
+                        <div class="tab-bar" style="margin-bottom: 0; border-bottom: none;">
+                           <div class="tab" id="dir-tab-all" onclick="switchDirectoryTab('All')">All Records</div>
+                           <div class="tab active" id="dir-tab-active" onclick="switchDirectoryTab('Active')">Active Only</div>
+                           <div class="tab" id="dir-tab-closed" onclick="switchDirectoryTab('Closed')">Closed Only</div>
                         </div>
+                        
                         <div style="overflow-x: auto;">
                             <table id="dash-data-table">
                                 <thead>
@@ -1312,7 +1314,7 @@
         
         let activeProfileId = null;
         let currentDashboardFilter = 'Active'; 
-        let currentDirectoryFilter = 'All'; 
+        let currentDirectoryFilter = 'Active';
         let selectedDashboardYear = new Date().getFullYear();
         let cachedSessionTime = null; 
         
