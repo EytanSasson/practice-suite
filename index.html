@@ -116,7 +116,11 @@
         .section-view { display: none; }
         .section-view.active-view { display: block; }
         
-        .split-pane { display: grid; grid-template-columns: 400px 1fr; gap: 24px; }
+        .split-pane { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 24px; }
+        
+        @media (max-width: 1024px) {
+            .split-pane { grid-template-columns: 1fr; }
+        }
 
         .timeline-box { margin-top: 16px; }
         .timeline-card { border-left: 3px solid var(--accent); padding-left: 16px; margin-bottom: 24px; position: relative; }
