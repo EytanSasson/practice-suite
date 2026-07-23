@@ -1,0 +1,12 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Local editor settings
+.vscode/
+.idea/
+
+# Local backup & test dumps
+*.json.bak
+SessionVault_FullArchive_*.zip
+HMRC_TaxArchive_*.zip
