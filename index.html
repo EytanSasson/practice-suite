@@ -385,7 +385,7 @@
                     <label>Payment Received?</label>
                     <div style="margin-top: 8px;">
                         <label class="switch">
-                            <input type="checkbox" id="edit-session-is-paid">
+                            <input type="checkbox" id="session-is-paid" checked>
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -1026,7 +1026,7 @@
                                         <label>Payment Received?</label>
                                         <div style="margin-top: 8px;">
                                             <label class="switch">
-                                                <input type="checkbox" id="session-is-paid" checked>
+                                                <input type="checkbox" id="edit-session-is-paid">
                                                 <span class="slider"></span>
                                             </label>
                                         </div>
@@ -2058,7 +2058,7 @@
             const loc = document.getElementById('edit-session-location').value;
             const payment = document.getElementById('edit-session-payment').value;
             const isPaidEl = document.getElementById('edit-session-is-paid');
-            const isPaid = isPaidEl ? isPaidEl.checked : true;
+            const isPaid = isPaidEl ? isPaidEl.checked : false;
             const notes = document.getElementById('edit-session-notes').value.trim();
 
             if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
@@ -2428,7 +2428,7 @@ let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-
             const location = document.getElementById('session-location').value;
             const paymentMethod = document.getElementById('session-payment').value;
             const isPaidEl = document.getElementById('session-is-paid');
-            const isPaid = isPaidEl ? isPaidEl.checked : true;
+            const isPaid = isPaidEl ? isPaidEl.checked : false;
             const notes = document.getElementById('session-notes').value.trim();
 
             if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
@@ -2996,7 +2996,7 @@ let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-
                         </div>
                         <div style="text-align: right;">
                             <h4 style="margin: 0 0 4px 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600;">Status:</h4>
-                            ${(session.isPaid === false || session.isPaid === "false") ? 
+                            ${session.isPaid === false ? 
                                 '<span style="background-color: #fef2f2; color: #991b1b; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; text-transform: uppercase;">Unpaid</span>' : 
                                 '<span style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; text-transform: uppercase;">Paid in Full</span>'
                             }
@@ -3222,7 +3222,7 @@ let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-
                         if (bucketIdx !== -1) monthlyBuckets[bucketIdx] += (client.rate - sessionRoomCost);
                         
                         // Exclude unpaid sessions from the "Income by Payment Method" breakdown
-                        if (s.isPaid !== false && s.isPaid !== "false") {
+                        if (s.isPaid !== false) {
                             let pm = s.paymentMethod || 'Bank Transfer';
                             paymentBreakdown[pm] = (paymentBreakdown[pm] || 0) + client.rate;
                         }
@@ -3950,4 +3950,408 @@ async function proceedPastLogin() {
                     userVerification: "required"
                 };
 
-                Sorry, something went wrong. Please try your request again.
+                // Explicitly point the browser at the registered credential rather than
+                // relying on a discoverable/resident key. Some authenticators don't
+                // actually create a discoverable credential even with
+                // residentKey: "preferred" during registration, so without this the
+                // browser has nothing to offer and rejects immediately -- before the
+                // native biometric prompt ever has a chance to appear.
+                if (config && config.credentialId) {
+                    const binary = atob(config.credentialId);
+                    const rawId = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) rawId[i] = binary.charCodeAt(i);
+                    publicKeyCredentialRequestOptions.allowCredentials = [{
+                        id: rawId,
+                        type: 'public-key'
+                    }];
+                }
+
+                const assertion = await window.navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
+                
+                if (assertion) {
+                    sessionStorage.setItem('sessionvault_unlocked', 'true');
+                    document.getElementById('passkey-lock-overlay').style.display = 'none';
+                    resetIdleLogoutTimer();
+                    
+                    if (!localStorage.getItem('practice_suite_session_id')) {
+                        if (practiceSettings) { showApp(); } else { showCreateProfileForm(); }
+                    } else if (!googleAccessToken) {
+                        attemptSilentReconnect();
+                    } else {
+                        if (document.getElementById('app-root').style.display === 'none') {
+                            showApp();
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Passkey auth error on this device:", err);
+                showAlert("Authentication Failed", "Biometric verification failed or was canceled. Please try again.");
+            }
+        }
+
+        async function handlePasskeyModalAction() {
+            const mode = document.getElementById('passkey-lock-overlay').dataset.mode;
+            if (mode === 'register') {
+                await registerPasskey(true);
+            } else {
+                await triggerPasskeyAuth();
+            }
+        }
+
+        async function togglePasskeySetting(checkbox) {
+            const isEnabled = checkbox.checked;
+            if (isEnabled) {
+                const success = await registerPasskey(false);
+                if (!success) {
+                    checkbox.checked = false;
+                    await setLocalPasskeyConfig(false, null);
+                }
+            } else {
+                await setLocalPasskeyConfig(false, null);
+            }
+            updatePasskeyStatusUI();
+        }
+
+        async function updatePasskeyStatusUI() {
+            const statusEl = document.getElementById('passkey-status-text');
+            const checkboxEl = document.getElementById('passkey-toggle-checkbox');
+            const config = await getLocalPasskeyConfig();
+            
+            if (checkboxEl) checkboxEl.checked = config.enabled;
+
+            if (statusEl) {
+                if (config.enabled && config.credentialId) {
+                    statusEl.textContent = "✅ Active and securing this browser";
+                    statusEl.style.color = "var(--success)";
+                } else if (config.enabled && !config.credentialId) {
+                    statusEl.textContent = "⚠️ Enabled, awaiting biometric registration...";
+                    statusEl.style.color = "var(--warning)";
+                } else {
+                    statusEl.textContent = "⚪ Passkey security disabled";
+                    statusEl.style.color = "var(--text-muted)";
+                }
+            }
+        }
+
+        async function checkPostLoginPasskeySetup() {
+            const config = await getLocalPasskeyConfig();
+
+            // If a passkey is already configured for this device, only let the user
+            // through if this session has actually been unlocked with it. Silent
+            // reconnect/sync flows (focus, visibilitychange, manual sync) can call this
+            // function well after the initial page load, and must never be able to
+            // bypass a pending or cancelled biometric check.
+            if (config.enabled && config.credentialId) {
+                const isUnlocked = sessionStorage.getItem('sessionvault_unlocked') === 'true';
+                if (isUnlocked) {
+                    document.getElementById('onboarding-overlay').style.display = 'none';
+                    showApp();
+                    return;
+                }
+
+                document.getElementById('onboarding-overlay').style.display = 'none';
+                document.getElementById('app-root').style.display = 'none';
+                const overlay = document.getElementById('passkey-lock-overlay');
+                overlay.dataset.mode = 'auth';
+                document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
+                document.getElementById('passkey-modal-desc').innerText = "Verify your identity with Touch ID, Face ID, or your security key to unlock SessionVault.";
+                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
+                document.getElementById('btn-skip-passkey').style.display = 'none';
+                document.getElementById('btn-switch-account').style.display = 'block';
+                overlay.style.display = 'flex';
+                updatePasskeyStatusUI();
+                return;
+            }
+
+            document.getElementById('onboarding-overlay').style.display = 'none';
+
+            if (!isWebAuthnSupported()) {
+                showApp();
+                return;
+            }
+
+            const overlay = document.getElementById('passkey-lock-overlay');
+            overlay.dataset.mode = 'register';
+            document.getElementById('passkey-modal-title').innerText = "Enable Passkey Security?";
+            document.getElementById('passkey-modal-desc').innerText = "Protect your patient workspace with your device's biometric scanner (Touch ID, Face ID, or Windows Hello).";
+            document.getElementById('passkey-modal-action-btn').innerText = "Enable & Register Passkey";
+            document.getElementById('btn-skip-passkey').style.display = 'block';
+            document.getElementById('btn-switch-account').style.display = 'none';
+            document.getElementById('passkey-lock-overlay').style.display = 'flex';
+        }
+
+        async function skipPasskeyRegistration() {
+            document.getElementById('passkey-lock-overlay').style.display = 'none';
+            await setLocalPasskeyConfig(false, null);
+            updatePasskeyStatusUI();
+            showApp();
+        }
+
+        // --- IDLE TIMEOUT LOCK LOGIC (NO BACKGROUND INSTA-LOCK) ---
+        function resetIdleLogoutTimer() {
+            lastActivityTime = Date.now();
+            document.getElementById('timeout-modal').classList.remove('active');
+            
+            if (!idleCheckInterval && localStorage.getItem('practice_suite_session_id')) {
+                idleCheckInterval = setInterval(checkIdleTime, 1000);
+            }
+        }
+
+        async function checkIdleTime() {
+            if (!localStorage.getItem('practice_suite_session_id')) return;
+            if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
+            
+            const now = Date.now();
+            const idleTime = now - lastActivityTime;
+
+            if (idleTime >= IDLE_TIMEOUT_MS) {
+                lockWorkspaceForInactivity();
+            } else if (idleTime >= (IDLE_TIMEOUT_MS - WARNING_TIME_MS)) {
+                const timeRemaining = Math.ceil((IDLE_TIMEOUT_MS - idleTime) / 1000);
+                const modal = document.getElementById('timeout-modal');
+                if (!modal.classList.contains('active')) {
+                    modal.classList.add('active');
+                }
+                document.getElementById('timeout-countdown').innerText = timeRemaining;
+            } else {
+                document.getElementById('timeout-modal').classList.remove('active');
+            }
+        }
+
+        async function lockWorkspaceForInactivity() {
+            document.getElementById('timeout-modal').classList.remove('active');
+            lastActivityTime = Date.now(); 
+            sessionStorage.removeItem('sessionvault_unlocked');
+            
+            const config = await getLocalPasskeyConfig();
+            if (config.enabled && config.credentialId) {
+                const overlay = document.getElementById('passkey-lock-overlay');
+                if (overlay.style.display === 'flex') return;
+                
+                document.getElementById('app-root').style.display = 'none';
+                overlay.dataset.mode = 'auth';
+                document.getElementById('passkey-modal-title').innerText = "Workspace Locked";
+                document.getElementById('passkey-modal-desc').innerText = "Locked for your security. Verify your identity with Touch ID, Face ID, or Windows Hello to continue.";
+                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
+                document.getElementById('btn-skip-passkey').style.display = 'none';
+                document.getElementById('btn-switch-account').style.display = 'block';
+                overlay.style.display = 'flex';
+            } else {
+                clearInterval(idleCheckInterval);
+                idleCheckInterval = null;
+                await signOutGoogle(false);
+            }
+        }
+
+        function stayLoggedIn() {
+            resetIdleLogoutTimer();
+        }
+
+        ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(evt => {
+            document.addEventListener(evt, () => { 
+                if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') {
+                    resetIdleLogoutTimer();
+                }
+            }, { passive: true });
+        });
+        
+       document.addEventListener('visibilitychange', () => { 
+            if (document.visibilityState === 'visible') {
+                if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') {
+                    // Background tabs throttle setInterval, so the regular idle check may
+                    // not have run while this tab was hidden. Evaluate the real elapsed
+                    // time now (and lock if the 5-minute limit was already passed) rather
+                    // than blindly resetting the timer just because the tab is visible again.
+                    checkIdleTime();
+                    if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') {
+                        resetIdleLogoutTimer();
+                    }
+                }
+                // Trigger the visual sync and reload check when app is resumed
+                manualSyncAndReload(); 
+            }
+        });
+        
+        window.addEventListener('focus', () => {
+            // Trigger the visual sync and reload check when tab is focused
+            manualSyncAndReload();
+        });
+        // --- CLEAR ALL USER DATA / FACTORY RESET ---
+        function wipeAllData() {
+            showConfirm(
+                "DANGER: Clear All User Data", 
+                "Are you absolutely sure you want to clear all data? This will permanently wipe all local clients, appointments, expenses, documents, and settings. If connected to Google Drive, your cloud backup will also be wiped clean. This cannot be undone!", 
+                async () => {
+                    const btn = document.getElementById('confirm-action-btn');
+                    if(btn) btn.innerText = "Wiping...";
+                    
+                    if (googleAccessToken && driveFileId) {
+                        try {
+                            const emptyContent = JSON.stringify({
+                                dataStore: { clients: [], expenses: [], categories: [], appointments: [] },
+                                practiceSettings: null
+                            }, null, 2);
+
+                            await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': 'Bearer ' + googleAccessToken,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: emptyContent
+                            });
+                        } catch (e) {}
+                    }
+                    
+                    const sessionId = localStorage.getItem('practice_suite_session_id');
+                    if (sessionId) {
+                        try {
+                            await fetch(BACKEND_URL + `/logout`, {
+                                method: 'POST',
+                                headers: { 'Authorization': 'Bearer ' + sessionId }
+                            });
+                        } catch(e) {}
+                    }
+                    
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    const dbReq = indexedDB.deleteDatabase(DB_NAME);
+                    const finishWipe = () => { window.location.href = window.location.pathname; };
+                    dbReq.onsuccess = finishWipe;
+                    dbReq.onerror = finishWipe;
+                    dbReq.onblocked = finishWipe;
+                    setTimeout(finishWipe, 1500);
+                }, 
+                true 
+            );
+        }
+
+        // --- CUSTOM INSTALL APP BUTTON LOGIC ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Un-hide our custom install button in the sidebar
+            const installBtn = document.getElementById('install-app-btn');
+            if (installBtn) installBtn.style.display = 'flex';
+        });
+
+        function installPWA() {
+            if (!deferredPrompt) return;
+            // Show the native install prompt
+            deferredPrompt.prompt();
+            // Wait for the user's choice
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    // Hide the button if they successfully installed it
+                    document.getElementById('install-app-btn').style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+
+let isSyncing = false;
+        async function manualSyncAndReload() {
+            if (isSyncing) return;
+            if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
+            isSyncing = true;
+            
+            const btn = document.getElementById('manual-sync-btn');
+            if (btn) btn.classList.add('spinning');
+            
+            let dataChanged = false;
+
+            if (googleAccessToken && driveFileId) {
+                try {
+                    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
+                        headers: { 'Authorization': 'Bearer ' + googleAccessToken }
+                    });
+                    if (res.ok) {
+                        const parsed = await res.json();
+                        const cloudModified = (parsed.dataStore && parsed.dataStore.lastModified) ? parsed.dataStore.lastModified : 0;
+                        const localModified = (dataStore && dataStore.lastModified) ? dataStore.lastModified : 0;
+                        
+                        if (cloudModified > localModified) {
+                            await loadDriveDataIntoApp(parsed);
+                            dataChanged = true;
+                        } else if (localModified > cloudModified) {
+                            await saveToGoogleDriveSilently();
+                        } else {
+                            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            setSyncIndicator(`Last synced to cloud at ${timeStr}`, 'var(--success)');
+                        }
+                    }
+                } catch(e) {
+                    console.error("Manual sync failed:", e);
+                }
+            } else if (localStorage.getItem('practice_suite_session_id')) {
+                await attemptSilentReconnect();
+                if (googleAccessToken && driveFileId) {
+                    if (btn) btn.classList.remove('spinning');
+                    isSyncing = false;
+                    return manualSyncAndReload();
+                }
+            }
+
+            if (btn) btn.classList.remove('spinning');
+            isSyncing = false;
+
+            if (dataChanged) {
+                window.location.reload();
+            }
+        }
+
+        window.onload = async function() {
+            if (sessionStorage.getItem('just_logged_out')) {
+                sessionStorage.removeItem('just_logged_out');
+                showLoginGate('You have securely logged out of your session. Your data remains safe on this device and in Google Drive.');
+                return;
+            }
+
+            populateCategoryDropdown();
+            selectedDashboardYear = new Date().getFullYear();
+            
+            const monthEl = document.getElementById('dash-month-val');
+            if (monthEl) monthEl.value = new Date().getMonth();
+            
+            const sessionId = localStorage.getItem('practice_suite_session_id');
+            const savedEmail = localStorage.getItem('practice_suite_google_email');
+            
+            if (sessionId) {
+                updateGoogleStatus(true, savedEmail);
+            } else {
+                updateGoogleStatus(false);
+            }
+            
+            const config = await getLocalPasskeyConfig();
+            const isUnlocked = sessionStorage.getItem('sessionvault_unlocked') === 'true';
+
+            if (config.enabled && config.credentialId && !isUnlocked) {
+                document.getElementById('app-root').style.display = 'none';
+                const overlay = document.getElementById('passkey-lock-overlay');
+                overlay.dataset.mode = 'auth';
+                document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
+                document.getElementById('passkey-modal-desc').innerText = "Verify your identity with Touch ID, Face ID, or your security key to unlock SessionVault.";
+                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
+                document.getElementById('btn-skip-passkey').style.display = 'none';
+                document.getElementById('btn-switch-account').style.display = 'block';
+                overlay.style.display = 'flex';
+                updatePasskeyStatusUI();
+                return;
+            }
+
+            attemptSilentReconnect();
+        }
+
+        // --- REGISTER SERVICE WORKER FOR PWA INSTALLATION ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('PWA Service Worker Active'))
+                .catch(err => console.error('SW Registration Failed:', err));
+        }
+    </script>
+</body>
+</html>
