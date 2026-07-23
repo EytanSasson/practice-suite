@@ -697,7 +697,7 @@
                                 <div class="tab" id="dir-tab-closed" onclick="switchDirectoryTab('Closed')">Closed Only</div>
                             </div>
                             <div style="padding-bottom: 12px; flex: 1; min-width: 250px; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
-                                <input type="text" id="client-search-input" class="control" placeholder="Search by name, email, or phone..." oninput="calculateAndRender()" style="width: 100%; max-width: 320px; display: inline-block; padding-left: 36px; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22/%3E%3Cline x1=%2221%22 y1=%2221%22 x2=%2216.65%22 y2=%2216.65%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: 10px center; background-size: 16px;">
+                                <input type="text" id="client-search-input" class="control" placeholder="Search by name, email, or phone..." oninput="handleClientSearchInput()" style="width: 100%; max-width: 320px; display: inline-block; padding-left: 36px; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22/%3E%3Cline x1=%2221%22 y1=%2221%22 x2=%2216.65%22 y2=%2216.65%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: 10px center; background-size: 16px;">
                                 <button class="btn" style="flex-shrink: 0; white-space: nowrap;" onclick="openOnboarding()">+ Add Client</button>
                             </div>
                         </div>
@@ -1037,7 +1037,7 @@
                         
                         <div class="form-group">
                             <label>Full Client Name *</label>
-                            <input type="text" id="new-name" class="control" placeholder="E.g., Jane Smith">
+                            <input type="text" id="new-name" class="control" placeholder="E.g., Jane Smith" oninput="capitalizeNameInput(this)">
                         </div>
                         
                         <div class="form-layout">
@@ -1252,6 +1252,18 @@
     </div> <!-- /app-root -->
 
     <script>
+        let clientSearchDebounceTimer = null;
+        function handleClientSearchInput() {
+            // calculateAndRender() rebuilds the whole dashboard/directory tables, which
+            // is too heavy to run synchronously on every keystroke without dropped/late
+            // updates. Debounce it slightly so fast typing filters smoothly and
+            // consistently instead of appearing to lag behind by a few letters.
+            clearTimeout(clientSearchDebounceTimer);
+            clientSearchDebounceTimer = setTimeout(() => {
+                calculateAndRender();
+            }, 120);
+        }
+
         function capitalizeNameInput(input) {
             // Save the current cursor position so it doesn't jump to the end of the line
             const cursorStart = input.selectionStart;
@@ -3417,6 +3429,7 @@
         }
 
         async function attemptSilentReconnect() {
+            if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
             if (window.location.hash.includes('session_id=')) {
                 const hashParts = window.location.hash.replace('#', '').split('&');
                 for (let part of hashParts) {
@@ -3845,27 +3858,50 @@ async function proceedPastLogin() {
         }
 
         async function checkPostLoginPasskeySetup() {
-            document.getElementById('onboarding-overlay').style.display = 'none';
-            
             const config = await getLocalPasskeyConfig();
 
-            if (!config.enabled || !config.credentialId) {
-                if (!isWebAuthnSupported()) {
+            // If a passkey is already configured for this device, only let the user
+            // through if this session has actually been unlocked with it. Silent
+            // reconnect/sync flows (focus, visibilitychange, manual sync) can call this
+            // function well after the initial page load, and must never be able to
+            // bypass a pending or cancelled biometric check.
+            if (config.enabled && config.credentialId) {
+                const isUnlocked = sessionStorage.getItem('sessionvault_unlocked') === 'true';
+                if (isUnlocked) {
+                    document.getElementById('onboarding-overlay').style.display = 'none';
                     showApp();
                     return;
                 }
 
+                document.getElementById('onboarding-overlay').style.display = 'none';
+                document.getElementById('app-root').style.display = 'none';
                 const overlay = document.getElementById('passkey-lock-overlay');
-                overlay.dataset.mode = 'register';
-                document.getElementById('passkey-modal-title').innerText = "Enable Passkey Security?";
-                document.getElementById('passkey-modal-desc').innerText = "Protect your patient workspace with your device's biometric scanner (Touch ID, Face ID, or Windows Hello).";
-                document.getElementById('passkey-modal-action-btn').innerText = "Enable & Register Passkey";
-                document.getElementById('btn-skip-passkey').style.display = 'block';
-                document.getElementById('btn-switch-account').style.display = 'none';
-                document.getElementById('passkey-lock-overlay').style.display = 'flex';
-            } else {
-                showApp();
+                overlay.dataset.mode = 'auth';
+                document.getElementById('passkey-modal-title').innerText = "Biometric Authentication Required";
+                document.getElementById('passkey-modal-desc').innerText = "Verify your identity with Touch ID, Face ID, or your security key to unlock SessionVault.";
+                document.getElementById('passkey-modal-action-btn').innerText = "Unlock with Passkey";
+                document.getElementById('btn-skip-passkey').style.display = 'none';
+                document.getElementById('btn-switch-account').style.display = 'block';
+                overlay.style.display = 'flex';
+                updatePasskeyStatusUI();
+                return;
             }
+
+            document.getElementById('onboarding-overlay').style.display = 'none';
+
+            if (!isWebAuthnSupported()) {
+                showApp();
+                return;
+            }
+
+            const overlay = document.getElementById('passkey-lock-overlay');
+            overlay.dataset.mode = 'register';
+            document.getElementById('passkey-modal-title').innerText = "Enable Passkey Security?";
+            document.getElementById('passkey-modal-desc').innerText = "Protect your patient workspace with your device's biometric scanner (Touch ID, Face ID, or Windows Hello).";
+            document.getElementById('passkey-modal-action-btn').innerText = "Enable & Register Passkey";
+            document.getElementById('btn-skip-passkey').style.display = 'block';
+            document.getElementById('btn-switch-account').style.display = 'none';
+            document.getElementById('passkey-lock-overlay').style.display = 'flex';
         }
 
         async function skipPasskeyRegistration() {
@@ -3924,7 +3960,6 @@ async function proceedPastLogin() {
                 document.getElementById('btn-skip-passkey').style.display = 'none';
                 document.getElementById('btn-switch-account').style.display = 'block';
                 overlay.style.display = 'flex';
-                setTimeout(() => triggerPasskeyAuth(), 300);
             } else {
                 clearInterval(idleCheckInterval);
                 idleCheckInterval = null;
@@ -3947,7 +3982,14 @@ async function proceedPastLogin() {
        document.addEventListener('visibilitychange', () => { 
             if (document.visibilityState === 'visible') {
                 if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') {
-                    resetIdleLogoutTimer();
+                    // Background tabs throttle setInterval, so the regular idle check may
+                    // not have run while this tab was hidden. Evaluate the real elapsed
+                    // time now (and lock if the 5-minute limit was already passed) rather
+                    // than blindly resetting the timer just because the tab is visible again.
+                    checkIdleTime();
+                    if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') {
+                        resetIdleLogoutTimer();
+                    }
                 }
                 // Trigger the visual sync and reload check when app is resumed
                 manualSyncAndReload(); 
@@ -4038,6 +4080,7 @@ async function proceedPastLogin() {
 let isSyncing = false;
         async function manualSyncAndReload() {
             if (isSyncing) return;
+            if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
             isSyncing = true;
             
             const btn = document.getElementById('manual-sync-btn');
@@ -4121,7 +4164,6 @@ let isSyncing = false;
                 document.getElementById('btn-switch-account').style.display = 'block';
                 overlay.style.display = 'flex';
                 updatePasskeyStatusUI();
-                setTimeout(() => triggerPasskeyAuth(), 300);
                 return;
             }
 
