@@ -2039,7 +2039,8 @@
             const time = document.getElementById('edit-session-time').value;
             const loc = document.getElementById('edit-session-location').value;
             const payment = document.getElementById('edit-session-payment').value;
-            const isPaid = document.getElementById('edit-session-is-paid').checked;
+            const isPaidEl = document.getElementById('edit-session-is-paid');
+            const isPaid = isPaidEl ? isPaidEl.checked : false;
             const notes = document.getElementById('edit-session-notes').value.trim();
 
             if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
@@ -2331,11 +2332,11 @@
 let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-main); margin-left: 8px;">@ ${formatTimeBySetting(session.time)}</span>` : '';
                 let paymentHtml = session.paymentMethod ? `<span style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Paid via: ${escapeHTML(session.paymentMethod)}</span>` : '';
 
-                if (session.isPaid === false) {
+                if (session.isPaid === false || session.isPaid === "false") {
                     paymentHtml = `<span style="font-size: 0.8rem; background: #fef2f2; color: #991b1b; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600;">UNPAID</span>`;
                 }
 
-                let markPaidBtn = session.isPaid === false ? `<button class="btn btn-sm" style="background-color: var(--success); color: white;" onclick="markSessionPaid('${client.id}', ${actualIndex})">Mark Paid</button>` : '';
+                let markPaidBtn = (session.isPaid === false || session.isPaid === "false") ? `<button class="btn btn-sm" style="background-color: var(--success); color: white;" onclick="markSessionPaid('${client.id}', ${actualIndex})">Mark Paid</button>` : '';
 
                 card.innerHTML = `
                     <div class="timeline-meta">
@@ -2373,7 +2374,8 @@ let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-
             let time = document.getElementById('session-time').value; // Changed to 'let' so we can modify it
             const location = document.getElementById('session-location').value;
             const paymentMethod = document.getElementById('session-payment').value;
-            const isPaid = document.getElementById('session-is-paid').checked;
+            const isPaidEl = document.getElementById('session-is-paid');
+            const isPaid = isPaidEl ? isPaidEl.checked : false;
             const notes = document.getElementById('session-notes').value.trim();
 
             if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
@@ -3154,9 +3156,11 @@ let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-
                 let gross = yearSessions.length * client.rate;
                 let clientRoomCost = 0;
                 let clientOutstanding = 0;
+                const safeRate = Number(client.rate) || 0;
                 
                 client.sessions.forEach(s => {
-                    if (s.isPaid === false) clientOutstanding += client.rate;
+                    // Fortified check for the global dashboard
+                    if (s.isPaid === false || s.isPaid === "false") clientOutstanding += safeRate;
 
                     if (isWithinRange(s.date)) {
                         const sessionRoomCost = s.location === 'Office' ? (s.roomCost !== undefined ? s.roomCost : (practiceSettings ? practiceSettings.defaultOfficeCost : 10)) : 0;
