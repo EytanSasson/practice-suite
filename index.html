@@ -1967,6 +1967,10 @@
             if (!name) return showAlert('Error', 'Client name is required.');
             if (!phone) return showAlert('Error', 'Phone number is required.');
 
+            // Prevent renaming to an existing client's name (excluding this exact client)
+            const isDuplicate = dataStore.clients.some(c => c.id !== activeProfileId && c.name.toLowerCase() === name.toLowerCase());
+            if (isDuplicate) return showAlert('Duplicate Record', 'Another client with this exact name already exists. Please use a unique name or initial.');
+
             client.name = escapeHTML(name);
             client.phone = escapeHTML(phone);
             client.email = escapeHTML(document.getElementById('edit-email').value.trim() || 'Not Provided');
@@ -2047,6 +2051,10 @@
             const name = document.getElementById('new-name').value.trim();
             const phone = document.getElementById('new-phone').value.trim();
             if (!name || !phone) return showAlert('Incomplete', 'Name and Phone number are required.');
+
+            // Prevent duplicate client names (case-insensitive)
+            const isDuplicate = dataStore.clients.some(c => c.name.toLowerCase() === name.toLowerCase());
+            if (isDuplicate) return showAlert('Duplicate Record', 'A client with this exact name already exists. Please use a unique name or initial.');
 
             const clientRecord = {
                 id: 'c_' + Date.now(),
