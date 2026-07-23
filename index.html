@@ -2312,8 +2312,9 @@
         }
 
         function submitSession() {
+            function submitSession() {
             const date = document.getElementById('session-date').value;
-            const time = document.getElementById('session-time').value;
+            let time = document.getElementById('session-time').value; // Changed to 'let' so we can modify it
             const location = document.getElementById('session-location').value;
             const paymentMethod = document.getElementById('session-payment').value;
             const notes = document.getElementById('session-notes').value.trim();
@@ -2323,6 +2324,24 @@
             const client = dataStore.clients.find(c => c.id === activeProfileId);
             if (client) {
                 if (client.status === 'Closed') return showAlert('Archived', 'Cannot add sessions to a closed file.');
+
+                // --- NEW: Auto-link to an existing scheduled appointment ---
+                const matchingApt = (dataStore.appointments || []).find(a => 
+                    a.clientId === activeProfileId && 
+                    a.date === date && 
+                    a.status === 'Scheduled'
+                );
+
+                if (matchingApt) {
+                    // Mark the calendar appointment as completed (green)
+                    matchingApt.status = 'Completed';
+                    
+                    // If the user didn't manually type a time, grab the time from the calendar appointment
+                    if (!time && matchingApt.time) {
+                        time = matchingApt.time;
+                    }
+                }
+                // -----------------------------------------------------------
 
                 client.sessions.push({ 
                     date: date, 
