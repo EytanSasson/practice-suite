@@ -3592,30 +3592,6 @@
             }
         }
         
-        let lastCloudCheckTime = 0;
-        async function checkCloudForUpdatesSilently() {
-            if (Date.now() - lastCloudCheckTime < 15000) return; 
-            if (!googleAccessToken || !driveFileId) return;
-            
-            try {
-                lastCloudCheckTime = Date.now();
-                const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, {
-                    headers: { 'Authorization': 'Bearer ' + googleAccessToken }
-                });
-                if (!res.ok) return;
-                const parsed = await res.json();
-                const cloudModified = (parsed.dataStore && parsed.dataStore.lastModified) ? parsed.dataStore.lastModified : 0;
-                const localModified = (dataStore && dataStore.lastModified) ? dataStore.lastModified : 0;
-                
-                if (cloudModified > localModified) {
-                    await loadDriveDataIntoApp(parsed);
-                    calculateAndRender();
-                    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    setSyncIndicator(`Last synced to cloud at ${timeStr}`, 'var(--success)');
-                }
-            } catch(e) {}
-        }
-        
         async function signOutGoogle(silent) {
             const sessionId = localStorage.getItem('practice_suite_session_id');
             if (sessionId) {
@@ -3919,19 +3895,20 @@
             }, { passive: true });
         });
         
-        document.addEventListener('visibilitychange', () => { 
+       document.addEventListener('visibilitychange', () => { 
             if (document.visibilityState === 'visible') {
                 if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') {
                     resetIdleLogoutTimer();
                 }
-                checkCloudForUpdatesSilently();
+                // Trigger the visual sync and reload check when app is resumed
+                manualSyncAndReload(); 
             }
         });
         
         window.addEventListener('focus', () => {
-            checkCloudForUpdatesSilently();
+            // Trigger the visual sync and reload check when tab is focused
+            manualSyncAndReload();
         });
-
         // --- CLEAR ALL USER DATA / FACTORY RESET ---
         function wipeAllData() {
             showConfirm(
@@ -4009,7 +3986,11 @@
             });
         }
 
+let isSyncing = false;
         async function manualSyncAndReload() {
+            if (isSyncing) return;
+            isSyncing = true;
+            
             const btn = document.getElementById('manual-sync-btn');
             if (btn) btn.classList.add('spinning');
             
@@ -4042,11 +4023,13 @@
                 await attemptSilentReconnect();
                 if (googleAccessToken && driveFileId) {
                     if (btn) btn.classList.remove('spinning');
+                    isSyncing = false;
                     return manualSyncAndReload();
                 }
             }
 
             if (btn) btn.classList.remove('spinning');
+            isSyncing = false;
 
             if (dataChanged) {
                 window.location.reload();
