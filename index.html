@@ -2066,14 +2066,49 @@
             const client = dataStore.clients.find(c => c.id === editingSessionClientId);
             if (client && client.sessions[editingSessionIndex]) {
                 const s = client.sessions[editingSessionIndex];
+                
+                // Track old values to sync expenses
+                const oldLoc = s.location;
+                const oldDate = s.date;
+                const expectedDesc = `Room Hire - ${client.name}`;
+
+                // Update session
                 s.date = date;
                 s.time = time || null;
                 s.location = loc;
                 s.paymentMethod = payment;
                 s.isPaid = isPaid;
                 s.notes = escapeHTML(notes);
-                s.roomCost = loc === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0;
+                s.roomCost = loc === 'Office' ? (practiceSettings ? Number(practiceSettings.defaultOfficeCost) : 10) : 0;
                 
+                // --- EXPENSE SYNC LOGIC ---
+                if (oldLoc === 'Office' && loc === 'Online') {
+                    // Remove the old expense
+                    const expIndex = dataStore.expenses.findIndex(e => e.category === 'Room Hire' && e.description === expectedDesc && e.date === oldDate);
+                    if (expIndex !== -1) dataStore.expenses.splice(expIndex, 1);
+                } 
+                else if (oldLoc === 'Online' && loc === 'Office') {
+                    // Create a new expense
+                    if (!dataStore.categories.some(c => c.toLowerCase() === 'room hire')) {
+                        dataStore.categories.push('Room Hire');
+                        populateCategoryDropdown();
+                    }
+                    dataStore.expenses.push({
+                        id: 'exp_' + Date.now() + Math.random().toString().slice(2,6),
+                        date: date,
+                        description: expectedDesc,
+                        amount: s.roomCost,
+                        category: 'Room Hire',
+                        hasReceipt: false
+                    });
+                } 
+                else if (oldLoc === 'Office' && loc === 'Office' && oldDate !== date) {
+                    // If they just changed the date, update the existing expense's date to match
+                    const exp = dataStore.expenses.find(e => e.category === 'Room Hire' && e.description === expectedDesc && e.date === oldDate);
+                    if (exp) exp.date = date;
+                }
+                // --------------------------
+
                 persist();
                 renderClientProfile();
                 closeEditSessionModal();
