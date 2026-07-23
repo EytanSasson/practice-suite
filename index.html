@@ -648,6 +648,10 @@
                             <h4>True Net (Post-Tax)</h4>
                             <p id="dash-total-net" style="color: var(--success);">0.00</p>
                         </div>
+                        <div class="panel metric-card">
+                            <h4>Outstanding Arrears</h4>
+                            <p id="dash-total-outstanding" style="color: var(--danger);">0.00</p>
+                        </div>
                     </div>
 
                     <div class="panel">
@@ -674,6 +678,7 @@
                                         <th>Start Date</th>
                                         <th>Rate / Hr</th>
                                         <th>Last Session</th>
+                                        <th>Arrears</th>
                                         <th>Net Yield</th>
                                     </tr>
                                 </thead>
@@ -961,8 +966,11 @@
                                     <label>Net Profit Generated</label>
                                     <p id="profile-net-profit" style="font-size: 1.4rem; font-weight: 700; color: var(--success);">0.00</p>
                                 </div>
+                                <div class="form-group">
+                                    <label>Outstanding Arrears</label>
+                                    <p id="profile-outstanding-balance" style="font-size: 1.4rem; font-weight: 700; color: var(--danger);">0.00</p>
+                                </div>
                                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
-                                
                                 <div class="form-group">
                                     <label>Signed Service Contract (PDF)</label>
                                     <div id="contract-status-container" style="margin-top: 8px;"></div>
@@ -1003,6 +1011,24 @@
                                             <option value="Bank Transfer">Bank Transfer</option>
                                             <option value="Cash">Cash</option>
                                         </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Payment Received?</label>
+                                        <div style="margin-top: 8px;">
+                                            <label class="switch">
+                                                <input type="checkbox" id="session-is-paid" checked>
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Payment Received?</label>
+                                        <div style="margin-top: 8px;">
+                                            <label class="switch">
+                                                <input type="checkbox" id="edit-session-is-paid">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
                                     </div>
                                     <div class="form-group full-width">
                                         <label>Clinical & Follow-up Notes</label>
@@ -1995,6 +2021,8 @@
             setInputVal('edit-session-time', session.time || '');
             document.getElementById('edit-session-location').value = session.location;
             document.getElementById('edit-session-payment').value = session.paymentMethod || 'Bank Transfer';
+            const isPaidEl = document.getElementById('edit-session-is-paid');
+            if(isPaidEl) isPaidEl.checked = session.isPaid !== false; // Backward compatibility
             document.getElementById('edit-session-notes').value = session.notes;
 
             document.getElementById('edit-session-modal').classList.add('active');
@@ -2011,6 +2039,7 @@
             const time = document.getElementById('edit-session-time').value;
             const loc = document.getElementById('edit-session-location').value;
             const payment = document.getElementById('edit-session-payment').value;
+            const isPaid = document.getElementById('edit-session-is-paid').checked;
             const notes = document.getElementById('edit-session-notes').value.trim();
 
             if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
@@ -2022,6 +2051,7 @@
                 s.time = time || null;
                 s.location = loc;
                 s.paymentMethod = payment;
+                s.isPaid = isPaid;
                 s.notes = escapeHTML(notes);
                 s.roomCost = loc === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0;
                 
@@ -2225,9 +2255,10 @@
                 document.getElementById('closed-case-reason-text').innerText = client.closedReason || 'No reason provided';
             }
 
-            let totalGross = 0; let totalDeductions = 0;
+            let totalGross = 0; let totalDeductions = 0; let clientOutstanding = 0;
             client.sessions.forEach(s => {
                 totalGross += client.rate;
+                if (s.isPaid === false) clientOutstanding += client.rate;
                 if (s.location === 'Office') totalDeductions += (s.roomCost !== undefined ? s.roomCost : (practiceSettings ? practiceSettings.defaultOfficeCost : 10));
             });
             
@@ -2235,6 +2266,12 @@
             if (sessionCountEl) sessionCountEl.innerText = client.sessions.length;
             
             document.getElementById('profile-net-profit').innerText = `${cur}${(totalGross - totalDeductions).toFixed(2)}`;
+            
+            const arrearsEl = document.getElementById('profile-outstanding-balance');
+            if (arrearsEl) {
+                arrearsEl.innerText = `${cur}${clientOutstanding.toFixed(2)}`;
+                arrearsEl.style.color = clientOutstanding > 0 ? 'var(--danger)' : 'var(--text-muted)';
+            }
 
             renderContractSection(client.id);
 
@@ -2287,8 +2324,14 @@
                 card.className = 'timeline-card';
                 const badgeClass = session.location === 'Office' ? 'badge-office' : 'badge-online';
                 
-                let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-main); margin-left: 8px;">@ ${formatTimeBySetting(session.time)}</span>` : '';
+let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-main); margin-left: 8px;">@ ${formatTimeBySetting(session.time)}</span>` : '';
                 let paymentHtml = session.paymentMethod ? `<span style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Paid via: ${escapeHTML(session.paymentMethod)}</span>` : '';
+
+                if (session.isPaid === false) {
+                    paymentHtml = `<span style="font-size: 0.8rem; background: #fef2f2; color: #991b1b; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 600;">UNPAID</span>`;
+                }
+
+                let markPaidBtn = session.isPaid === false ? `<button class="btn btn-sm" style="background-color: var(--success); color: white;" onclick="markSessionPaid('${client.id}', ${actualIndex})">Mark Paid</button>` : '';
 
                 card.innerHTML = `
                     <div class="timeline-meta">
@@ -2297,8 +2340,9 @@
                             ${timeHtml}
                             ${paymentHtml}
                         </div>
-                        <div style="display:flex; gap: 8px; align-items: center;">
+                        <div style="display:flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                             <span class="badge ${badgeClass}">${escapeHTML(session.location)}</span>
+                            ${markPaidBtn}
                             <button class="btn btn-secondary btn-sm" onclick="openEditSessionModal('${client.id}', ${actualIndex})">Edit</button>
                             <button class="btn btn-secondary btn-sm" onclick="printInvoice('${client.id}', ${actualIndex})">Print Invoice</button>
                         </div>
@@ -2311,11 +2355,21 @@
             });
         }
 
+        function markSessionPaid(clientId, index) {
+            const client = dataStore.clients.find(c => c.id === clientId);
+            if (client && client.sessions[index]) {
+                client.sessions[index].isPaid = true;
+                persist();
+                renderClientProfile();
+            }
+        }
+        
         function submitSession() {
             const date = document.getElementById('session-date').value;
             let time = document.getElementById('session-time').value; // Changed to 'let' so we can modify it
             const location = document.getElementById('session-location').value;
             const paymentMethod = document.getElementById('session-payment').value;
+            const isPaid = document.getElementById('session-is-paid').checked;
             const notes = document.getElementById('session-notes').value.trim();
 
             if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
@@ -2347,6 +2401,7 @@
                     time: time || null,
                     location: location, 
                     paymentMethod: paymentMethod,
+                    isPaid: isPaid,
                     notes: escapeHTML(notes),
                     invoiceId: Date.now().toString().slice(-6),
                     roomCost: location === 'Office' ? (practiceSettings ? practiceSettings.defaultOfficeCost : 10) : 0
@@ -2882,7 +2937,10 @@
                         </div>
                         <div style="text-align: right;">
                             <h4 style="margin: 0 0 4px 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600;">Status:</h4>
-                            <span style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; text-transform: uppercase;">Paid in Full</span>
+                            ${session.isPaid === false ? 
+                                '<span style="background-color: #fef2f2; color: #991b1b; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; text-transform: uppercase;">Unpaid</span>' : 
+                                '<span style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; text-transform: uppercase;">Paid in Full</span>'
+                            }
                         </div>
                     </div>
                     <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
@@ -3064,14 +3122,14 @@
             const cur = getCurrency();
             if (dashTable) dashTable.innerHTML = '';
 
-            let grandTotalGross = 0; let activeCount = 0;
-            const reportPeriod = getReportingPeriodDates(selectedDashboardYear);
+                let grandTotalGross = 0; let activeCount = 0; let grandTotalOutstanding = 0;
+                const reportPeriod = getReportingPeriodDates(selectedDashboardYear);
             
-            const periodDisplay = document.getElementById('dash-period-display');
-            if (periodDisplay) periodDisplay.innerText = `${formatDateToUK(reportPeriod.start)} to ${formatDateToUK(reportPeriod.end)}`;
+                const periodDisplay = document.getElementById('dash-period-display');
+                if (periodDisplay) periodDisplay.innerText = `${formatDateToUK(reportPeriod.start)} to ${formatDateToUK(reportPeriod.end)}`;
 
-            const isWithinRange = (ds) => ds >= reportPeriod.start && ds <= reportPeriod.end;
-            const monthlyBuckets = Array(12).fill(0);
+                const isWithinRange = (ds) => ds >= reportPeriod.start && ds <= reportPeriod.end;
+                    const monthlyBuckets = Array(12).fill(0);
             
             const sObj = new Date(reportPeriod.start);
             const baseYear = sObj.getFullYear(); const baseMonth = sObj.getMonth();
@@ -3091,19 +3149,26 @@
                 const yearSessions = client.sessions.filter(s => isWithinRange(s.date));
                 let gross = yearSessions.length * client.rate;
                 let clientRoomCost = 0;
+                let clientOutstanding = 0;
                 
                 client.sessions.forEach(s => {
+                    if (s.isPaid === false) clientOutstanding += client.rate;
+
                     if (isWithinRange(s.date)) {
                         const sessionRoomCost = s.location === 'Office' ? (s.roomCost !== undefined ? s.roomCost : (practiceSettings ? practiceSettings.defaultOfficeCost : 10)) : 0;
                         clientRoomCost += sessionRoomCost;
                         const bucketIdx = getBucketIndex(s.date);
                         if (bucketIdx !== -1) monthlyBuckets[bucketIdx] += (client.rate - sessionRoomCost);
                         
-                        let pm = s.paymentMethod || 'Bank Transfer';
-                        paymentBreakdown[pm] = (paymentBreakdown[pm] || 0) + client.rate;
+                        // Exclude unpaid sessions from the "Income by Payment Method" breakdown
+                        if (s.isPaid !== false) {
+                            let pm = s.paymentMethod || 'Bank Transfer';
+                            paymentBreakdown[pm] = (paymentBreakdown[pm] || 0) + client.rate;
+                        }
                     }
                 });
 
+                grandTotalOutstanding += clientOutstanding;
                 grandTotalGross += gross;
                 if (client.status === 'Active') activeCount++;
                 let lastSessionDate = client.sessions.length > 0 ? client.sessions[client.sessions.length - 1].date : 'No sessions';
@@ -3112,7 +3177,7 @@
                     shownDashboardCount++;
                     const row = document.createElement('tr');
                     row.className = 'clickable'; row.onclick = () => navigate('profile', client.id);
-                    row.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Rate / Hr">${cur}${client.rate.toFixed(2)}</td><td data-label="Last Session">${formatDateToUK(lastSessionDate)}</td><td data-label="Net Yield" style="color:var(--success); font-weight:600;">${cur}${(gross - clientRoomCost).toFixed(2)}</td>`;
+                    row.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Rate / Hr">${cur}${client.rate.toFixed(2)}</td><td data-label="Last Session">${formatDateToUK(lastSessionDate)}</td><td data-label="Arrears" style="color:${clientOutstanding > 0 ? 'var(--danger)' : 'var(--text-muted)'}; font-weight:600;">${clientOutstanding > 0 ? cur + clientOutstanding.toFixed(2) : '-'}</td><td data-label="Net Yield" style="color:var(--success); font-weight:600;">${cur}${(gross - clientRoomCost).toFixed(2)}</td>`;
                     dashTable.appendChild(row);
                 }
             });
@@ -3137,7 +3202,8 @@
             globalEffectiveTaxRate = totalNet > 0 ? (estimatedTax / totalNet) : 0;
             const effectiveRateDisplay = (globalEffectiveTaxRate * 100).toFixed(1);
 
-            if (document.getElementById('dash-active-count')) document.getElementById('dash-active-count').innerText = activeCount;
+                    if (document.getElementById('dash-total-outstanding')) document.getElementById('dash-total-outstanding').innerText = `${cur}${grandTotalOutstanding.toFixed(2)}`;
+                    if (document.getElementById('dash-active-count')) document.getElementById('dash-active-count').innerText = activeCount;
             if (document.getElementById('dash-total-gross')) document.getElementById('dash-total-gross').innerText = `${cur}${grandTotalGross.toFixed(2)}`;
             if (document.getElementById('dash-total-overhead')) document.getElementById('dash-total-overhead').innerText = `${cur}${totalExpenses.toFixed(2)}`;
             if (document.getElementById('dash-total-tax')) document.getElementById('dash-total-tax').innerText = `${cur}${estimatedTax.toFixed(2)}`;
