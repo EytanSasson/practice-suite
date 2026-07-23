@@ -309,13 +309,13 @@
         </div>
     </div>
 
-    <!-- EDIT CLIENT MODAL -->
+<!-- EDIT CLIENT MODAL -->
     <div id="edit-client-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
             <h3 style="margin-bottom: 16px; font-size: 1.15rem; font-weight: 700;">Edit Client Profile</h3>
             <div class="form-group">
                 <label>Full Client Name *</label>
-                <input type="text" id="edit-name" class="control">
+                <input type="text" id="edit-name" class="control" oninput="capitalizeNameInput(this)">
             </div>
             <div class="form-layout">
                 <div class="form-group">
@@ -1252,6 +1252,18 @@
     </div> <!-- /app-root -->
 
     <script>
+        function capitalizeNameInput(input) {
+            // Save the current cursor position so it doesn't jump to the end of the line
+            const cursorStart = input.selectionStart;
+            const cursorEnd = input.selectionEnd;
+            
+            // Capitalize the first letter of the string, and any letter following a space, hyphen, or apostrophe
+            input.value = input.value.replace(/(^\w|\s\w|-\w|'\w)/g, letter => letter.toUpperCase());
+            
+            // Restore the cursor position
+            input.setSelectionRange(cursorStart, cursorEnd);
+        }
+        
         function escapeHTML(str) {
             if (str === null || str === undefined) return '';
             return String(str).replace(/[&<>'"]/g, 
