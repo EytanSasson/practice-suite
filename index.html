@@ -3732,7 +3732,7 @@ async function proceedPastLogin() {
                     challenge: challenge,
                     rp: { name: "SessionVault", id: window.location.hostname },
                     user: {
-                        id: Uint8Array.from("practice_user_id", c => c.charCodeAt(0)),
+                        id: window.crypto.getRandomValues(new Uint8Array(16)),
                         name: "eyt.sasn@gmail.com",
                         displayName: "SessionVault Admin"
                     },
