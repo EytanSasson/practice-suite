@@ -209,7 +209,7 @@
             .btn, select, textarea, input, .sidebar, .top-bar { display: none !important; }
             @page { size: portrait; margin: 15mm; }
         }
-
+        
         @keyframes spin-anim { 100% { transform: rotate(360deg); } }
         .spinning { animation: spin-anim 1s linear infinite; }
     </style>
@@ -540,7 +540,8 @@
             </div>
         </div>
 
-        <div class="top-bar">
+        <div class="main-frame">
+            <div class="top-bar">
                 <h2 id="view-title" style="font-size: 1.3rem; font-weight: 700;">Dashboard</h2>
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -552,6 +553,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="content-box">
                 
                 <!-- SECTION: HOME DASHBOARD OVERVIEW -->
@@ -4050,8 +4052,6 @@
                 window.location.reload();
             }
         }
-
-        // --- CUSTOM INSTALL APP BUTTON LOGIC ---
 
         window.onload = async function() {
             if (sessionStorage.getItem('just_logged_out')) {
