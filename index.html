@@ -3463,9 +3463,14 @@
             return null;
         }
 
-        async function proceedPastLogin() {
+async function proceedPastLogin() {
             const userEmail = await fetchGoogleUserInfo(googleAccessToken);
             updateGoogleStatus(true, userEmail);
+            
+            // Spin the icon while verifying cloud data on refresh
+            const btn = document.getElementById('manual-sync-btn');
+            if (btn) btn.classList.add('spinning');
+
             await findExistingDriveFile();
             if (driveFileId) {
                 try {
@@ -3480,8 +3485,14 @@
                     if (!dataStore.clients || dataStore.clients.length === 0 || cloudModified > localModified) {
                         await loadDriveDataIntoApp(parsed);
                         calculateAndRender();
+                        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        setSyncIndicator(`Last synced to cloud at ${timeStr}`, 'var(--success)');
                     } else if (localModified > cloudModified) {
                         scheduleAutoDriveSync();
+                    } else {
+                        // Mark successful sync if data is already perfectly matched
+                        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        setSyncIndicator(`Last synced to cloud at ${timeStr}`, 'var(--success)');
                     }
                     
                     if (practiceSettings) {
@@ -3501,6 +3512,9 @@
                     showCreateProfileForm();
                 }
             }
+            
+            // Stop spinning once complete
+            if (btn) btn.classList.remove('spinning');
         }
 
         async function findExistingDriveFile() {
