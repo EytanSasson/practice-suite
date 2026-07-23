@@ -1706,7 +1706,7 @@
             if (viewId === 'clients') {
                 const searchInput = document.getElementById('client-search-input');
                 if (searchInput) searchInput.value = '';
-                calculateAndRender();
+                switchDirectoryTab('Active');
             }
 
             if (viewId === 'profile' && targetClientId) {
