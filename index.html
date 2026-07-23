@@ -385,7 +385,7 @@
                     <label>Payment Received?</label>
                     <div style="margin-top: 8px;">
                         <label class="switch">
-                            <input type="checkbox" id="session-is-paid" checked>
+                            <input type="checkbox" id="edit-session-is-paid">
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -1026,7 +1026,7 @@
                                         <label>Payment Received?</label>
                                         <div style="margin-top: 8px;">
                                             <label class="switch">
-                                                <input type="checkbox" id="edit-session-is-paid">
+                                                <input type="checkbox" id="session-is-paid" checked>
                                                 <span class="slider"></span>
                                             </label>
                                         </div>
@@ -2040,7 +2040,7 @@
             document.getElementById('edit-session-location').value = session.location;
             document.getElementById('edit-session-payment').value = session.paymentMethod || 'Bank Transfer';
             const isPaidEl = document.getElementById('edit-session-is-paid');
-            if(isPaidEl) isPaidEl.checked = session.isPaid !== false; // Backward compatibility
+            if(isPaidEl) isPaidEl.checked = (session.isPaid !== false && session.isPaid !== "false"); // Backward compatibility
             document.getElementById('edit-session-notes').value = session.notes;
 
             document.getElementById('edit-session-modal').classList.add('active');
@@ -2309,12 +2309,12 @@
                 document.getElementById('closed-case-reason-text').innerText = client.closedReason || 'No reason provided';
             }
 
-           let totalGross = 0; let totalDeductions = 0; let clientOutstanding = 0;
+            let totalGross = 0; let totalDeductions = 0; let clientOutstanding = 0;
             client.sessions.forEach(s => {
                 const sessionRate = Number(client.rate) || 0;
                 totalGross += sessionRate;
                 
-                // Fortified check to catch both booleans and strings
+                // Bulletproof check to catch both booleans and strings
                 if (s.isPaid === false || s.isPaid === "false") clientOutstanding += sessionRate;
                 
                 if (s.location === 'Office') totalDeductions += (s.roomCost !== undefined ? Number(s.roomCost) : (practiceSettings ? Number(practiceSettings.defaultOfficeCost) : 10));
@@ -2382,7 +2382,7 @@
                 card.className = 'timeline-card';
                 const badgeClass = session.location === 'Office' ? 'badge-office' : 'badge-online';
                 
-let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-main); margin-left: 8px;">@ ${formatTimeBySetting(session.time)}</span>` : '';
+                let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-main); margin-left: 8px;">@ ${formatTimeBySetting(session.time)}</span>` : '';
                 let paymentHtml = session.paymentMethod ? `<span style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Paid via: ${escapeHTML(session.paymentMethod)}</span>` : '';
 
                 if (session.isPaid === false || session.isPaid === "false") {
@@ -2428,7 +2428,7 @@ let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-
             const location = document.getElementById('session-location').value;
             const paymentMethod = document.getElementById('session-payment').value;
             const isPaidEl = document.getElementById('session-is-paid');
-            const isPaid = isPaidEl ? isPaidEl.checked : false;
+            const isPaid = isPaidEl ? isPaidEl.checked : true;
             const notes = document.getElementById('session-notes').value.trim();
 
             if (!notes) return showAlert('Missing Entry', 'Session details cannot be empty.');
@@ -2996,7 +2996,7 @@ let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-
                         </div>
                         <div style="text-align: right;">
                             <h4 style="margin: 0 0 4px 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 600;">Status:</h4>
-                            ${session.isPaid === false ? 
+                            ${(session.isPaid === false || session.isPaid === "false") ? 
                                 '<span style="background-color: #fef2f2; color: #991b1b; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; text-transform: uppercase;">Unpaid</span>' : 
                                 '<span style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; display: inline-block; text-transform: uppercase;">Paid in Full</span>'
                             }
@@ -3222,7 +3222,7 @@ let timeHtml = session.time ? `<span style="font-weight: 600; color: var(--text-
                         if (bucketIdx !== -1) monthlyBuckets[bucketIdx] += (client.rate - sessionRoomCost);
                         
                         // Exclude unpaid sessions from the "Income by Payment Method" breakdown
-                        if (s.isPaid !== false) {
+                        if (s.isPaid !== false && s.isPaid !== "false") {
                             let pm = s.paymentMethod || 'Bank Transfer';
                             paymentBreakdown[pm] = (paymentBreakdown[pm] || 0) + client.rate;
                         }
