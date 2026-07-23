@@ -2255,11 +2255,15 @@
                 document.getElementById('closed-case-reason-text').innerText = client.closedReason || 'No reason provided';
             }
 
-            let totalGross = 0; let totalDeductions = 0; let clientOutstanding = 0;
+           let totalGross = 0; let totalDeductions = 0; let clientOutstanding = 0;
             client.sessions.forEach(s => {
-                totalGross += client.rate;
-                if (s.isPaid === false) clientOutstanding += client.rate;
-                if (s.location === 'Office') totalDeductions += (s.roomCost !== undefined ? s.roomCost : (practiceSettings ? practiceSettings.defaultOfficeCost : 10));
+                const sessionRate = Number(client.rate) || 0;
+                totalGross += sessionRate;
+                
+                // Fortified check to catch both booleans and strings
+                if (s.isPaid === false || s.isPaid === "false") clientOutstanding += sessionRate;
+                
+                if (s.location === 'Office') totalDeductions += (s.roomCost !== undefined ? Number(s.roomCost) : (practiceSettings ? Number(practiceSettings.defaultOfficeCost) : 10));
             });
             
             const sessionCountEl = document.getElementById('profile-session-count');
