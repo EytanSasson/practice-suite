@@ -1252,16 +1252,47 @@
     </div> <!-- /app-root -->
 
     <script>
+        function renderDirectoryTable() {
+            const dirTable = document.getElementById('directory-table');
+            if (!dirTable) return;
+            dirTable.innerHTML = '';
+
+            const cur = getCurrency();
+            const searchInput = document.getElementById('client-search-input');
+            const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            let shownDirectoryCount = 0;
+
+            [...dataStore.clients].sort((a,b) => a.name.localeCompare(b.name)).forEach(client => {
+                if (!client.status) client.status = 'Active';
+                if (currentDirectoryFilter !== 'All' && currentDirectoryFilter !== client.status) return;
+
+                const searchMatch = !searchQuery ||
+                    client.name.toLowerCase().includes(searchQuery) ||
+                    (client.email && client.email.toLowerCase().includes(searchQuery)) ||
+                    (client.phone && client.phone.toLowerCase().includes(searchQuery));
+
+                if (!searchMatch) return;
+
+                shownDirectoryCount++;
+                const dRow = document.createElement('tr');
+                dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
+                dRow.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${escapeHTML(client.phone)}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${escapeHTML(client.status)}</span></td>`;
+                dirTable.appendChild(dRow);
+            });
+
+            const dirEmptyState = document.getElementById('dir-empty-state');
+            const dirDataTable = document.getElementById('dir-data-table');
+            if (dirEmptyState) dirEmptyState.style.display = shownDirectoryCount === 0 ? 'block' : 'none';
+            if (dirDataTable) dirDataTable.style.display = shownDirectoryCount === 0 ? 'none' : 'table';
+        }
+
         let clientSearchDebounceTimer = null;
         function handleClientSearchInput() {
-            // calculateAndRender() rebuilds the whole dashboard/directory tables, which
-            // is too heavy to run synchronously on every keystroke without dropped/late
-            // updates. Debounce it slightly so fast typing filters smoothly and
-            // consistently instead of appearing to lag behind by a few letters.
+            // Filtering the directory list is cheap (no financial recalculation), so
+            // render it immediately on every keystroke -- no debounce, no stale results.
             clearTimeout(clientSearchDebounceTimer);
-            clientSearchDebounceTimer = setTimeout(() => {
-                calculateAndRender();
-            }, 120);
+            renderDirectoryTable();
         }
 
         function capitalizeNameInput(input) {
@@ -3006,13 +3037,8 @@
 
         function calculateAndRender() {
             const dashTable = document.getElementById('dashboard-table');
-            const dirTable = document.getElementById('directory-table');
             const cur = getCurrency();
             if (dashTable) dashTable.innerHTML = '';
-            if (dirTable) dirTable.innerHTML = '';
-
-            const searchInput = document.getElementById('client-search-input');
-            const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
 
             let grandTotalGross = 0; let activeCount = 0;
             const reportPeriod = getReportingPeriodDates(selectedDashboardYear);
@@ -3035,7 +3061,6 @@
             };
 
             let shownDashboardCount = 0;
-            let shownDirectoryCount = 0;
 
             [...dataStore.clients].sort((a,b) => a.name.localeCompare(b.name)).forEach(client => {
                 if (!client.status) client.status = 'Active';
@@ -3066,33 +3091,16 @@
                     row.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Rate / Hr">${cur}${client.rate.toFixed(2)}</td><td data-label="Last Session">${formatDateToUK(lastSessionDate)}</td><td data-label="Net Yield" style="color:var(--success); font-weight:600;">${cur}${(gross - clientRoomCost).toFixed(2)}</td>`;
                     dashTable.appendChild(row);
                 }
-                
-                if (dirTable && (currentDirectoryFilter === 'All' || currentDirectoryFilter === client.status)) {
-                    const searchMatch = !searchQuery || 
-                        client.name.toLowerCase().includes(searchQuery) || 
-                        (client.email && client.email.toLowerCase().includes(searchQuery)) || 
-                        (client.phone && client.phone.toLowerCase().includes(searchQuery));
-
-                    if (searchMatch) {
-                        shownDirectoryCount++;
-                        const dRow = document.createElement('tr');
-                        dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
-                        dRow.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${escapeHTML(client.phone)}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${escapeHTML(client.status)}</span></td>`;
-                        dirTable.appendChild(dRow);
-                    }
-                }
             });
 
             if (document.getElementById('dash-empty-state')) document.getElementById('dash-empty-state').style.display = shownDashboardCount === 0 ? 'block' : 'none';
             if (document.getElementById('dash-data-table')) document.getElementById('dash-data-table').style.display = shownDashboardCount === 0 ? 'none' : 'table';
 
-            const dirEmptyState = document.getElementById('dir-empty-state');
-            const dirDataTable = document.getElementById('dir-data-table');
-            if (dirEmptyState) dirEmptyState.style.display = shownDirectoryCount === 0 ? 'block' : 'none';
-            if (dirDataTable) dirDataTable.style.display = shownDirectoryCount === 0 ? 'none' : 'table';
+            renderDirectoryTable();
 
             const totalExpenses = (dataStore.expenses || []).filter(e => isWithinRange(e.date)).reduce((s, e) => s + e.amount, 0);
             
+
             dataStore.expenses.forEach(e => {
                 if (isWithinRange(e.date)) {
                     const bucketIdx = getBucketIndex(e.date);
