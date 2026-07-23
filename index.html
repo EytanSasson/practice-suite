@@ -1725,9 +1725,21 @@
 
         function switchDirectoryTab(filter) {
             currentDirectoryFilter = filter;
-            document.getElementById('dir-tab-all').classList.toggle('active', filter === 'All');
-            document.getElementById('dir-tab-active').classList.toggle('active', filter === 'Active');
-            document.getElementById('dir-tab-closed').classList.toggle('active', filter === 'Closed');
+            
+            // 1. Explicitly remove the highlight from all tabs to prevent it from getting stuck
+            document.getElementById('dir-tab-all').classList.remove('active');
+            document.getElementById('dir-tab-active').classList.remove('active');
+            document.getElementById('dir-tab-closed').classList.remove('active');
+            
+            // 2. Forcefully apply the highlight only to the target tab
+            if (filter === 'All') {
+                document.getElementById('dir-tab-all').classList.add('active');
+            } else if (filter === 'Active') {
+                document.getElementById('dir-tab-active').classList.add('active');
+            } else if (filter === 'Closed') {
+                document.getElementById('dir-tab-closed').classList.add('active');
+            }
+            
             calculateAndRender();
         }
 
