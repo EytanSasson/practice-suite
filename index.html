@@ -3789,6 +3789,7 @@ async function proceedPastLogin() {
             if (!isWebAuthnSupported()) return;
 
             try {
+                const config = await getLocalPasskeyConfig();
                 const challenge = new Uint8Array(32);
                 window.crypto.getRandomValues(challenge);
 
@@ -3797,6 +3798,22 @@ async function proceedPastLogin() {
                     timeout: 60000,
                     userVerification: "required"
                 };
+
+                // Explicitly point the browser at the registered credential rather than
+                // relying on a discoverable/resident key. Some authenticators don't
+                // actually create a discoverable credential even with
+                // residentKey: "preferred" during registration, so without this the
+                // browser has nothing to offer and rejects immediately -- before the
+                // native biometric prompt ever has a chance to appear.
+                if (config && config.credentialId) {
+                    const binary = atob(config.credentialId);
+                    const rawId = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) rawId[i] = binary.charCodeAt(i);
+                    publicKeyCredentialRequestOptions.allowCredentials = [{
+                        id: rawId,
+                        type: 'public-key'
+                    }];
+                }
 
                 const assertion = await window.navigator.credentials.get({ publicKey: publicKeyCredentialRequestOptions });
                 
