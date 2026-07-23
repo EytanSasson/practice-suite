@@ -1857,6 +1857,11 @@
             };
 
             localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
+            
+            // Force the global timestamp to update so other devices detect the change
+            dataStore.lastModified = Date.now();
+            localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
+
             applySettingsBranding();
             initPickers(); 
             calculateAndRender();
