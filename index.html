@@ -715,13 +715,14 @@
                             </div>
                         </div>
                         <div style="overflow-x: auto;">
-                            <table id="dir-data-table">
+                           <table id="dir-data-table">
                                 <thead>
                                     <tr>
                                         <th>Client Name</th>
                                         <th>Start Date</th>
                                         <th>Hourly Rate</th>
                                         <th>Phone</th>
+                                        <th>Arrears</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -1299,9 +1300,26 @@
                 if (!searchMatch) return;
 
                 shownDirectoryCount++;
+                
+                // Calculate arrears for the directory list
+                let clientOutstanding = 0;
+                const safeRate = Number(client.rate) || 0;
+                if (client.sessions) {
+                    client.sessions.forEach(s => {
+                        if (s.isPaid === false || s.isPaid === "false") {
+                            clientOutstanding += safeRate;
+                        }
+                    });
+                }
+                
+                // Format the arrears text (red if they owe money, grey dash if they are clear)
+                const arrearsDisplay = clientOutstanding > 0 
+                    ? `<span style="color: var(--danger); font-weight: 600;">${cur}${clientOutstanding.toFixed(2)}</span>` 
+                    : `<span style="color: var(--text-muted);">-</span>`;
+
                 const dRow = document.createElement('tr');
                 dRow.className = 'clickable'; dRow.onclick = () => navigate('profile', client.id);
-                dRow.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${escapeHTML(client.phone)}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${escapeHTML(client.status)}</span></td>`;
+                dRow.innerHTML = `<td data-label="Client Name"><strong>${escapeHTML(client.name)}</strong></td><td data-label="Start Date">${formatDateToUK(client.startDate)}</td><td data-label="Hourly Rate">${cur}${client.rate.toFixed(2)}</td><td data-label="Phone">${escapeHTML(client.phone)}</td><td data-label="Arrears">${arrearsDisplay}</td><td data-label="Status"><span class="badge ${client.status === 'Active' ? 'badge-active' : 'badge-closed'}">${escapeHTML(client.status)}</span></td>`;
                 dirTable.appendChild(dRow);
             });
 
