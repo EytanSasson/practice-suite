@@ -10,3 +10,11 @@ Thumbs.db
 *.json.bak
 SessionVault_FullArchive_*.zip
 HMRC_TaxArchive_*.zip
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
