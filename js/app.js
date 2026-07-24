@@ -6,14 +6,14 @@ if (!dataStore.categories) dataStore.categories = [];
 if (!dataStore.expenses) dataStore.expenses = [];
 if (!dataStore.appointments) dataStore.appointments = [];
 
-let fpInstances = []; 
+let fpInstances = [];
 let globalEffectiveTaxRate = 0;
 
 let activeProfileId = null;
-let currentDashboardFilter = 'Active'; 
+let currentDashboardFilter = 'Active';
 let currentDirectoryFilter = 'Active';
 let selectedDashboardYear = new Date().getFullYear();
-let cachedSessionTime = null; 
+let cachedSessionTime = null;
 
 let editingSessionClientId = null;
 let editingSessionIndex = null;
@@ -30,7 +30,7 @@ const DB_NAME = 'SassonPracticeCRM_Docs';
 const STORE_CONTRACTS = 'contracts';
 const STORE_RECEIPTS = 'receipts';
 const BACKEND_URL = 'https://api.sessionvault.co.uk';
-let driveFileId = null; 
+let driveFileId = null;
 let driveAutoSyncTimer = null;
 let googleAccessToken = null;
 const DRIVE_FILE_NAME = 'sasson_practice_suite_backup.json';
@@ -38,8 +38,8 @@ const DRIVE_FILE_NAME = 'sasson_practice_suite_backup.json';
 // Security Globals
 let lastActivityTime = Date.now();
 let idleCheckInterval = null;
-const IDLE_TIMEOUT_MS = 5 * 60 * 1000; 
-const WARNING_TIME_MS = 60 * 1000; 
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+const WARNING_TIME_MS = 60 * 1000;
 
 let alertCallback = null;
 let confirmCallback = null;
@@ -57,7 +57,7 @@ function capitalizeNameInput(input) {
 
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
-    return String(str).replace(/[&<>'"]/g, 
+    return String(str).replace(/[&<>'"]/g,
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag])
     );
 }
@@ -87,14 +87,14 @@ function formatTimeBySetting(timeStr) {
     if (isNaN(hours)) return timeStr;
     const ampm = hours >= 12 ? 'pm' : 'am';
     hours = hours % 12;
-    hours = hours ? hours : 12; 
+    hours = hours ? hours : 12;
     return `${hours}:${minutes} ${ampm}`;
 }
 
 function setInputVal(id, val) {
     const el = document.getElementById(id);
     if (!el) return;
-    try { if (el._flatpickr) el._flatpickr.setDate(val, false); } catch(e) {}
+    try { if (el._flatpickr) el._flatpickr.setDate(val, false); } catch (e) { }
     el.value = val;
 }
 
@@ -121,12 +121,12 @@ function getReportingPeriodDates(year) {
     const startDay = practiceSettings ? (parseInt(practiceSettings.reportingPeriodStartDay) || 6) : 6;
     const pad = n => String(n).padStart(2, '0');
     const startDateStr = `${year}-${pad(startMonth)}-${pad(startDay)}`;
-    
+
     const startDateObj = new Date(year, startMonth - 1, startDay);
     const endDateObj = new Date(startDateObj);
     endDateObj.setFullYear(startDateObj.getFullYear() + 1);
     endDateObj.setDate(startDateObj.getDate() - 1);
-    
+
     const endDateStr = `${endDateObj.getFullYear()}-${pad(endDateObj.getMonth() + 1)}-${pad(endDateObj.getDate())}`;
     return { start: startDateStr, end: endDateStr };
 }
@@ -284,14 +284,14 @@ function completeOnboarding() {
 
     practiceSettings = { country: country, practiceName: name, defaultRate: rate, defaultOfficeCost: roomCost, timeFormat: timeFormat, currency: currency, reportingPeriodStartMonth: reportingMonth, reportingPeriodStartDay: reportingDay };
     localStorage.setItem('sasson_practice_settings', JSON.stringify(practiceSettings));
-    
+
     if (!dataStore.categories || dataStore.categories.length === 0) {
         dataStore.categories = ['Rent', 'Supervision', 'Training & CPD', 'Travel', 'Insurance', 'Membership Fees', 'Other'];
     }
     dataStore.lastModified = Date.now();
     localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
     populateCategoryDropdown();
-    
+
     if (localStorage.getItem('practice_suite_session_id')) saveToGoogleDriveSilently();
     checkPostLoginPasskeySetup();
 }
@@ -345,7 +345,7 @@ async function savePracticeSettings() {
     localStorage.setItem('sasson_practice_secure_store', JSON.stringify(dataStore));
 
     applySettingsBranding();
-    initPickers(); 
+    initPickers();
     calculateAndRender();
     setSyncIndicator('Last synced to cloud at..', 'var(--text-muted)');
     if (typeof window.persistToCloud === 'function') window.persistToCloud();
@@ -355,13 +355,13 @@ function autoFillLocaleSettings(prefix) {
     const country = document.getElementById(`${prefix}-country`).value;
     const timeFormatEl = document.getElementById(`${prefix}-time-format`);
     const currencyEl = document.getElementById(`${prefix}-currency`);
-    
+
     const localeMap = { 'UK': { time: '24h', curr: '£' }, 'US': { time: '12h', curr: '$' }, 'CA': { time: '12h', curr: 'C$' }, 'AU': { time: '12h', curr: 'A$' }, 'IL': { time: '24h', curr: '₪' }, 'EU': { time: '24h', curr: '€' } };
-    
+
     if (localeMap[country]) {
-        if(timeFormatEl) timeFormatEl.value = localeMap[country].time;
-        if(currencyEl) currencyEl.value = localeMap[country].curr;
-        if(prefix === 'set') savePracticeSettings();
+        if (timeFormatEl) timeFormatEl.value = localeMap[country].time;
+        if (currencyEl) currencyEl.value = localeMap[country].curr;
+        if (prefix === 'set') savePracticeSettings();
     }
 }
 
@@ -374,7 +374,7 @@ function guessCountryByTimezone() {
         if (tz.includes('Jerusalem') || tz.includes('Tel_Aviv')) return 'IL';
         if (tz.includes('London') || tz.includes('Belfast')) return 'UK';
         if (tz.startsWith('Europe/')) return 'EU';
-    } catch (e) {}
+    } catch (e) { }
     return 'UK';
 }
 
@@ -390,7 +390,7 @@ function resetIdleLogoutTimer() {
 async function checkIdleTime() {
     if (!localStorage.getItem('practice_suite_session_id')) return;
     if (document.getElementById('passkey-lock-overlay').style.display === 'flex') return;
-    
+
     const now = Date.now();
     const idleTime = now - lastActivityTime;
 
@@ -408,14 +408,14 @@ async function checkIdleTime() {
 
 async function lockWorkspaceForInactivity() {
     document.getElementById('timeout-modal').classList.remove('active');
-    lastActivityTime = Date.now(); 
+    lastActivityTime = Date.now();
     sessionStorage.removeItem('sessionvault_unlocked');
-    
+
     const config = await getLocalPasskeyConfig();
     if (config.enabled && config.credentialId) {
         const overlay = document.getElementById('passkey-lock-overlay');
         if (overlay.style.display === 'flex') return;
-        
+
         document.getElementById('app-root').style.display = 'none';
         overlay.dataset.mode = 'auth';
         document.getElementById('passkey-modal-title').innerText = "Workspace Locked";
@@ -434,18 +434,18 @@ async function lockWorkspaceForInactivity() {
 function stayLoggedIn() { resetIdleLogoutTimer(); }
 
 ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(evt => {
-    document.addEventListener(evt, () => { 
+    document.addEventListener(evt, () => {
         if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') resetIdleLogoutTimer();
     }, { passive: true });
 });
 
-document.addEventListener('visibilitychange', () => { 
+document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
         if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') {
             checkIdleTime();
             if (document.getElementById('passkey-lock-overlay').style.display !== 'flex') resetIdleLogoutTimer();
         }
-        manualSyncAndReload(); 
+        manualSyncAndReload();
     }
 });
 
@@ -469,7 +469,24 @@ function installPWA() {
     });
 }
 
-window.onload = async function() {
+// --- AUTO-UPDATE VERSION FROM PACKAGE.JSON ---
+async function fetchAndApplyVersion() {
+    try {
+        const response = await fetch('package.json');
+        const data = await response.json();
+        const versionEl = document.getElementById('version-label');
+        if (versionEl && data.version) {
+            versionEl.textContent = `v${data.version}`;
+        }
+    } catch (error) {
+        console.warn('Could not load version from package.json:', error);
+    }
+}
+
+window.onload = async function () {
+    // Call the version fetcher here
+    fetchAndApplyVersion();
+
     if (sessionStorage.getItem('just_logged_out')) {
         sessionStorage.removeItem('just_logged_out');
         showLoginGate('You have securely logged out of your session. Your data remains safe on this device and in Google Drive.');
@@ -479,11 +496,11 @@ window.onload = async function() {
     selectedDashboardYear = new Date().getFullYear();
     const monthEl = document.getElementById('dash-month-val');
     if (monthEl) monthEl.value = new Date().getMonth();
-    
+
     const sessionId = localStorage.getItem('practice_suite_session_id');
     const savedEmail = localStorage.getItem('practice_suite_google_email');
     if (sessionId) updateGoogleStatus(true, savedEmail); else updateGoogleStatus(false);
-    
+
     const config = await getLocalPasskeyConfig();
     const isUnlocked = sessionStorage.getItem('sessionvault_unlocked') === 'true';
 

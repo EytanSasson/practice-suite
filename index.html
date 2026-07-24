@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <!-- Required for mobile scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
+
     <title>SessionVault</title>
-    
+
     <!-- PWA Manifest & App Icons -->
     <link rel="manifest" href="manifest.json?v=3">
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="apple-touch-icon" href="assets/logo.png">
-    
+
     <!-- Theme color for mobile browser tab bar -->
     <meta name="theme-color" content="#0f172a">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Flatpickr for custom Date/Time formats -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -25,6 +26,7 @@
     <!-- Main App Styles -->
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
     <div id="print-isolated-target"></div>
@@ -33,14 +35,25 @@
     <div id="passkey-lock-overlay">
         <div class="onboarding-card">
             <div style="margin-bottom: 16px; color: var(--accent);">
-                <svg style="width: 48px; height: 48px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                <svg style="width: 48px; height: 48px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                    </path>
+                </svg>
             </div>
-            <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700;" id="passkey-modal-title">Biometric Authentication Required</h3>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;" id="passkey-modal-desc">Verify your identity to unlock SessionVault.</p>
+            <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700;" id="passkey-modal-title">Biometric
+                Authentication Required</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;" id="passkey-modal-desc">Verify
+                your identity to unlock SessionVault.</p>
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="handlePasskeyModalAction()" id="passkey-modal-action-btn">Unlock with Passkey</button>
-                <button id="btn-skip-passkey" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px; display: none;" onclick="skipPasskeyRegistration()">Set up later in Account</button>
-                <button id="btn-switch-account" class="btn btn-charcoal" style="width: 100%; justify-content: center; padding: 10px; display: none;" onclick="switchAccount()">Sign in with a different account</button>
+                <button class="btn" style="width: 100%; justify-content: center; padding: 12px;"
+                    onclick="handlePasskeyModalAction()" id="passkey-modal-action-btn">Unlock with Passkey</button>
+                <button id="btn-skip-passkey" class="btn btn-secondary"
+                    style="width: 100%; justify-content: center; padding: 10px; display: none;"
+                    onclick="skipPasskeyRegistration()">Set up later in Account</button>
+                <button id="btn-switch-account" class="btn btn-charcoal"
+                    style="width: 100%; justify-content: center; padding: 10px; display: none;"
+                    onclick="switchAccount()">Sign in with a different account</button>
             </div>
         </div>
     </div>
@@ -49,7 +62,9 @@
     <div id="custom-alert-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
             <h3 id="alert-title" style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700;">Notice</h3>
-            <p id="alert-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.4; white-space: pre-wrap;"></p>
+            <p id="alert-message"
+                style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.4; white-space: pre-wrap;">
+            </p>
             <div style="display: flex; justify-content: flex-end;">
                 <button class="btn" onclick="closeAlert()">Acknowledge</button>
             </div>
@@ -58,8 +73,11 @@
 
     <div id="custom-confirm-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
-            <h3 id="confirm-title" style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700; color: var(--danger);">Confirm Action</h3>
-            <p id="confirm-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.4;"></p>
+            <h3 id="confirm-title"
+                style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700; color: var(--danger);">Confirm Action
+            </h3>
+            <p id="confirm-message"
+                style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.4;"></p>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button class="btn btn-secondary" onclick="closeConfirm(false)">Cancel</button>
                 <button id="confirm-action-btn" class="btn btn-danger" onclick="closeConfirm(true)">Confirm</button>
@@ -70,12 +88,18 @@
     <!-- REPEAT SERIES CANCEL MODAL -->
     <div id="cancel-series-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
-            <h3 style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700; color: var(--danger);">Cancel Appointment</h3>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">This is a repeating appointment series. How would you like to proceed?</p>
+            <h3 style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700; color: var(--danger);">Cancel
+                Appointment</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">This is a repeating
+                appointment series. How would you like to proceed?</p>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button class="btn btn-danger" style="justify-content: center;" onclick="executeCancel('all')">Cancel this & all future meetings</button>
-                <button class="btn btn-secondary" style="justify-content: center; color: var(--danger); border-color: var(--danger);" onclick="executeCancel('single')">Cancel ONLY this specific day</button>
-                <button class="btn btn-secondary" style="justify-content: center;" onclick="executeCancel('abort')">Abort / Keep Appointment</button>
+                <button class="btn btn-danger" style="justify-content: center;" onclick="executeCancel('all')">Cancel
+                    this & all future meetings</button>
+                <button class="btn btn-secondary"
+                    style="justify-content: center; color: var(--danger); border-color: var(--danger);"
+                    onclick="executeCancel('single')">Cancel ONLY this specific day</button>
+                <button class="btn btn-secondary" style="justify-content: center;"
+                    onclick="executeCancel('abort')">Abort / Keep Appointment</button>
             </div>
         </div>
     </div>
@@ -83,7 +107,8 @@
     <div id="custom-prompt-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
             <h3 id="prompt-title" style="margin-bottom: 8px; font-size: 1.15rem; font-weight: 700;">Input</h3>
-            <p id="prompt-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px; line-height: 1.4;"></p>
+            <p id="prompt-message"
+                style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px; line-height: 1.4;"></p>
             <input type="text" id="prompt-input" class="control" style="margin-bottom: 20px;">
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button class="btn btn-secondary" onclick="closePrompt(false)">Cancel</button>
@@ -96,10 +121,15 @@
     <div id="view-note-modal" class="custom-modal-overlay">
         <div class="custom-modal-card" style="max-width: 900px; width: 95%;">
             <h3 style="margin-bottom: 16px; font-size: 1.25rem; font-weight: 700;">Session Notes</h3>
-            <div id="view-note-summary" style="display: none; font-size: 0.95rem; line-height: 1.6; color: #4c1d95; background: #ede9fe; padding: 16px; border-radius: 8px; border: 1px solid #c4b5fd; margin-bottom: 16px; white-space: normal;"></div>
-            <div id="view-note-content" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; word-break: break-word; overflow-x: hidden; overflow-y: auto; margin-bottom: 24px; max-height: 70vh; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border);"></div>
+            <div id="view-note-summary"
+                style="display: none; font-size: 0.95rem; line-height: 1.6; color: #4c1d95; background: #ede9fe; padding: 16px; border-radius: 8px; border: 1px solid #c4b5fd; margin-bottom: 16px; white-space: normal;">
+            </div>
+            <div id="view-note-content"
+                style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; word-break: break-word; overflow-x: hidden; overflow-y: auto; margin-bottom: 24px; max-height: 70vh; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+            </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <button class="btn" id="btn-ai-summarize" onclick="summarizeCurrentNote()" style="display: inline-flex; background-color: #8b5cf6; border: none; color: white;">
+                <button class="btn" id="btn-ai-summarize" onclick="summarizeCurrentNote()"
+                    style="display: inline-flex; background-color: #8b5cf6; border: none; color: white;">
                     Summarize (On-Device AI)
                 </button>
                 <button class="btn btn-secondary" onclick="closeNoteModal()">Close</button>
@@ -110,13 +140,17 @@
     <!-- IDLE TIMEOUT MODAL -->
     <div id="timeout-modal" class="custom-modal-overlay">
         <div class="custom-modal-card" style="text-align: center;">
-            <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700; color: var(--warning);">Are you still there?</h3>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">For your security, your workspace will lock in <strong id="timeout-countdown" style="color: var(--danger);">60</strong> seconds.</p>
-            <button class="btn" style="width: 100%; justify-content: center; padding: 12px;" onclick="stayLoggedIn()">Stay Logged In</button>
+            <h3 style="margin-bottom: 8px; font-size: 1.25rem; font-weight: 700; color: var(--warning);">Are you still
+                there?</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">For your security, your
+                workspace will lock in <strong id="timeout-countdown" style="color: var(--danger);">60</strong> seconds.
+            </p>
+            <button class="btn" style="width: 100%; justify-content: center; padding: 12px;"
+                onclick="stayLoggedIn()">Stay Logged In</button>
         </div>
     </div>
 
-<!-- EDIT CLIENT MODAL -->
+    <!-- EDIT CLIENT MODAL -->
     <div id="edit-client-modal" class="custom-modal-overlay">
         <div class="custom-modal-card">
             <h3 style="margin-bottom: 16px; font-size: 1.15rem; font-weight: 700;">Edit Client Profile</h3>
@@ -155,8 +189,10 @@
                 </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap;">
-                <button class="btn btn-secondary" style="flex: 1; min-width: 100px; justify-content: center;" onclick="closeEditClientModal()">Cancel</button>
-                <button class="btn" style="flex: 1; min-width: 160px; justify-content: center;" onclick="saveClientEdit()">Save Changes</button>
+                <button class="btn btn-secondary" style="flex: 1; min-width: 100px; justify-content: center;"
+                    onclick="closeEditClientModal()">Cancel</button>
+                <button class="btn" style="flex: 1; min-width: 160px; justify-content: center;"
+                    onclick="saveClientEdit()">Save Changes</button>
             </div>
         </div>
     </div>
@@ -181,7 +217,7 @@
                         <option value="Office">Office Session</option>
                     </select>
                 </div>
-               <div class="form-group">
+                <div class="form-group">
                     <label>Payment Method</label>
                     <select id="edit-session-payment" class="control">
                         <option value="Bank Transfer">Bank Transfer</option>
@@ -203,8 +239,10 @@
                 </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap;">
-                <button class="btn btn-secondary" style="flex: 1; min-width: 100px; justify-content: center;" onclick="closeEditSessionModal()">Cancel</button>
-                <button class="btn" style="flex: 1; min-width: 160px; justify-content: center;" onclick="saveSessionEdit()">Save Changes</button>
+                <button class="btn btn-secondary" style="flex: 1; min-width: 100px; justify-content: center;"
+                    onclick="closeEditSessionModal()">Cancel</button>
+                <button class="btn" style="flex: 1; min-width: 160px; justify-content: center;"
+                    onclick="saveSessionEdit()">Save Changes</button>
             </div>
         </div>
     </div>
@@ -213,24 +251,49 @@
     <div id="login-gate-overlay">
         <div class="onboarding-card">
             <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin-bottom: 24px;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="300" height="90" style="display: block; margin: 0 auto;">
-                  <g transform="translate(20, 20)">
-                    <polygon points="40,2 72,20 72,56 40,74 8,56 8,20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
-                    <line x1="40" y1="20" x2="40" y2="56" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="20" y1="32" x2="60" y2="44" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                    <line x1="20" y1="44" x2="60" y2="32" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                    <circle cx="40" cy="20" r="5" fill="#1d4ed8"/>
-                    <circle cx="40" cy="56" r="5" fill="#1d4ed8"/>
-                    <circle cx="20" cy="32" r="5" fill="#1d4ed8"/>
-                    <circle cx="60" cy="44" r="5" fill="#1d4ed8"/>
-                  </g>
-                  <text x="115" y="56" font-family="'Inter', -apple-system, sans-serif" font-size="25" font-weight="700" fill="#0f172a">SessionVault</text>
-                  <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11" font-weight="500" fill="#64748b" letter-spacing="0.5">Secure Client Management</text>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="300" height="90"
+                    style="display: block; margin: 0 auto;">
+                    <g transform="translate(20, 20)">
+                        <polygon points="40,2 72,20 72,56 40,74 8,56 8,20" fill="#f1f5f9" stroke="#cbd5e1"
+                            stroke-width="2" />
+                        <line x1="40" y1="20" x2="40" y2="56" stroke="#2563eb" stroke-width="3"
+                            stroke-linecap="round" />
+                        <line x1="20" y1="32" x2="60" y2="44" stroke="#2563eb" stroke-width="3"
+                            stroke-linecap="round" />
+                        <line x1="20" y1="44" x2="60" y2="32" stroke="#2563eb" stroke-width="3"
+                            stroke-linecap="round" />
+                        <circle cx="40" cy="20" r="5" fill="#1d4ed8" />
+                        <circle cx="40" cy="56" r="5" fill="#1d4ed8" />
+                        <circle cx="20" cy="32" r="5" fill="#1d4ed8" />
+                        <circle cx="60" cy="44" r="5" fill="#1d4ed8" />
+                    </g>
+                    <text x="115" y="56" font-family="'Inter', -apple-system, sans-serif" font-size="25"
+                        font-weight="700" fill="#0f172a">SessionVault</text>
+                    <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11"
+                        font-weight="500" fill="#64748b" letter-spacing="0.5">Secure Client Management</text>
                 </svg>
             </div>
-            <p id="login-gate-message" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; width: 100%; text-align: center;">Sign in with Google to securely access your practice data.</p>
-            <button id="login-gate-google-btn" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 12px; background-color: #fff; border-color: #cbd5e1; color: #334155;" onclick="gateGoogleSignIn()">
-                <svg style="width: 18px; height: 18px; margin-right: 8px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            <p id="login-gate-message"
+                style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; width: 100%; text-align: center;">
+                Sign in with Google to securely access your practice data.</p>
+            <button id="login-gate-google-btn" class="btn btn-secondary"
+                style="width: 100%; justify-content: center; padding: 12px; background-color: #fff; border-color: #cbd5e1; color: #334155;"
+                onclick="gateGoogleSignIn()">
+                <svg style="width: 18px; height: 18px; margin-right: 8px;" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        fill="#4285F4" />
+                    <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853" />
+                    <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        fill="#FBBC05" />
+                    <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        fill="#EA4335" />
+                </svg>
                 Sign in with Google
             </button>
         </div>
@@ -239,9 +302,11 @@
     <!-- ONBOARDING MODAL OVERLAY -->
     <div id="onboarding-overlay">
         <div class="onboarding-card">
-            <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">Setup Your Practice</h2>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">Welcome to your Practice Management Suite. Please configure your initial workspace settings to get started.</p>
-            
+            <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px;">Setup Your
+                Practice</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5;">Welcome to
+                your Practice Management Suite. Please configure your initial workspace settings to get started.</p>
+
             <div class="form-layout" style="width: 100%;">
                 <div class="form-group">
                     <label>Country / Region</label>
@@ -266,7 +331,8 @@
             <div class="form-layout" style="width: 100%;">
                 <div class="form-group full-width">
                     <label>Practice Name</label>
-                    <input type="text" id="ob-practice-name" class="control" placeholder="E.g., SessionVault" value="SessionVault">
+                    <input type="text" id="ob-practice-name" class="control" placeholder="E.g., SessionVault"
+                        value="SessionVault">
                 </div>
             </div>
 
@@ -295,7 +361,8 @@
                 </div>
             </div>
 
-            <div class="form-layout" style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px; width: 100%;">
+            <div class="form-layout"
+                style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px; width: 100%;">
                 <div class="form-group">
                     <label>Reporting Start Month</label>
                     <select id="ob-reporting-month" class="control">
@@ -318,7 +385,8 @@
                     <input type="number" id="ob-reporting-day" class="control" value="6" min="1" max="31">
                 </div>
             </div>
-            <button class="btn" style="width: 100%; margin-top: 12px; justify-content: center; padding: 12px;" onclick="completeOnboarding()">Initialize Practice Portal</button>
+            <button class="btn" style="width: 100%; margin-top: 12px; justify-content: center; padding: 12px;"
+                onclick="completeOnboarding()">Initialize Practice Portal</button>
         </div>
     </div>
 
@@ -328,25 +396,36 @@
             <div class="brand-wrapper">
                 <div class="brand">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="200" height="60">
-                      <g transform="translate(20, 20)">
-                        <polygon points="40,2 72,20 72,56 40,74 8,56 8,20" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
-                        <line x1="40" y1="20" x2="40" y2="56" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                        <line x1="20" y1="32" x2="60" y2="44" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                        <line x1="20" y1="44" x2="60" y2="32" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
-                        <circle cx="40" cy="20" r="5" fill="#1d4ed8"/>
-                        <circle cx="40" cy="56" r="5" fill="#1d4ed8"/>
-                        <circle cx="20" cy="32" r="5" fill="#1d4ed8"/>
-                        <circle cx="60" cy="44" r="5" fill="#1d4ed8"/>
-                      </g>
-                      <text x="115" y="56" font-family="'Inter', -apple-system, sans-serif" font-size="25" font-weight="700" fill="#ffffff">SessionVault</text>
-                      <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11" font-weight="500" fill="#94a3b8" letter-spacing="0.5">Secure Client Management</text>
+                        <g transform="translate(20, 20)">
+                            <polygon points="40,2 72,20 72,56 40,74 8,56 8,20" fill="#f1f5f9" stroke="#cbd5e1"
+                                stroke-width="2" />
+                            <line x1="40" y1="20" x2="40" y2="56" stroke="#2563eb" stroke-width="3"
+                                stroke-linecap="round" />
+                            <line x1="20" y1="32" x2="60" y2="44" stroke="#2563eb" stroke-width="3"
+                                stroke-linecap="round" />
+                            <line x1="20" y1="44" x2="60" y2="32" stroke="#2563eb" stroke-width="3"
+                                stroke-linecap="round" />
+                            <circle cx="40" cy="20" r="5" fill="#1d4ed8" />
+                            <circle cx="40" cy="56" r="5" fill="#1d4ed8" />
+                            <circle cx="20" cy="32" r="5" fill="#1d4ed8" />
+                            <circle cx="60" cy="44" r="5" fill="#1d4ed8" />
+                        </g>
+                        <text x="115" y="56" font-family="'Inter', -apple-system, sans-serif" font-size="25"
+                            font-weight="700" fill="#ffffff">SessionVault</text>
+                        <text x="117" y="78" font-family="'Inter', -apple-system, sans-serif" font-size="11"
+                            font-weight="500" fill="#94a3b8" letter-spacing="0.5">Secure Client Management</text>
                     </svg>
                 </div>
                 <div id="sidebar-practice-title" class="brand-practice-title">SessionVault</div>
             </div>
             <div class="sidebar-top-row">
                 <div class="mobile-nav-toggle" id="mobile-nav-toggle" onclick="toggleMobileNav()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
                 </div>
             </div>
             <div class="nav-container" id="nav-container">
@@ -356,14 +435,16 @@
                 <div class="nav-link" id="link-expenses" onclick="navigate('expenses')">Expenses</div>
                 <div class="nav-link" id="link-config" onclick="navigate('config')">Configuration & Data</div>
                 <div class="nav-link" id="link-account" onclick="navigate('account')">Account</div>
-                <div class="nav-link" id="install-app-btn" style="display: none; color: #38bdf8;" onclick="installPWA()">⬇️ Install App</div>
-                
-                
+                <div class="nav-link" id="install-app-btn" style="display: none; color: #38bdf8;"
+                    onclick="installPWA()">⬇️ Install App</div>
+
+
             </div>
             <!-- Session Vault Version Label -->
-                <div style="text-align: center; padding-top: 16px; font-size: 0.75rem; color: var(--sidebar-text); font-weight: 500;">
-                    v1.0.2
-                </div>
+            <div id="version-label"
+                style="text-align: center; padding-top: 16px; font-size: 0.75rem; color: var(--sidebar-text); font-weight: 500;">
+                v1.0.2
+            </div>
         </div>
 
         <div class="main-frame">
@@ -371,34 +452,54 @@
                 <h2 id="view-title" style="font-size: 1.3rem; font-weight: 700;">Dashboard</h2>
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div id="global-sync-status" style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                        <div id="global-sync-status"
+                            style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z">
+                                </path>
+                            </svg>
                             <span>Last synced to cloud at..</span>
                         </div>
-                        <svg id="manual-sync-btn" onclick="manualSyncAndReload()" style="width: 14px; height: 14px; cursor: pointer; color: var(--text-muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <svg id="manual-sync-btn" onclick="manualSyncAndReload()"
+                            style="width: 14px; height: 14px; cursor: pointer; color: var(--text-muted);" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
                     </div>
                 </div>
             </div>
 
             <div class="content-box">
-                
+
                 <!-- SECTION: HOME DASHBOARD OVERVIEW -->
                 <div id="view-dashboard" class="section-view active-view">
 
                     <!-- Next Appointment Banner -->
-                    <div id="dash-next-apt-container" style="display: none; margin-bottom: 24px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div id="dash-next-apt-container"
+                        style="display: none; margin-bottom: 24px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
                         <div>
-                            <h4 style="font-size: 0.8rem; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">Next Scheduled Session</h4>
-                            <div id="dash-next-apt-details" style="font-size: 1.1rem; color: #1e3a8a; font-weight: 600;">Client @ Time</div>
+                            <h4
+                                style="font-size: 0.8rem; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">
+                                Next Scheduled Session</h4>
+                            <div id="dash-next-apt-details"
+                                style="font-size: 1.1rem; color: #1e3a8a; font-weight: 600;">Client @ Time</div>
                         </div>
-                        <button class="btn btn-sm" style="background-color: #1e40af;" onclick="navigate('appointments')">Go to Calendar</button>
+                        <button class="btn btn-sm" style="background-color: #1e40af;"
+                            onclick="navigate('appointments')">Go to Calendar</button>
                     </div>
 
                     <!-- Monthly Analytics -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Monthly Performance</h3>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Monthly Performance
+                        </h3>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <select id="dash-month-val" class="control" style="width: 130px; height: 38px; padding: 4px 8px; margin-bottom: 0;" onchange="calculateMonthly()">
+                            <select id="dash-month-val" class="control"
+                                style="width: 130px; height: 38px; padding: 4px 8px; margin-bottom: 0;"
+                                onchange="calculateMonthly()">
                                 <option value="0">January</option>
                                 <option value="1">February</option>
                                 <option value="2">March</option>
@@ -412,7 +513,9 @@
                                 <option value="10">November</option>
                                 <option value="11">December</option>
                             </select>
-                            <select id="dash-month-year-val" class="control" style="width: 90px; height: 38px; padding: 4px 8px; margin-bottom: 0;" onchange="calculateMonthly()">
+                            <select id="dash-month-year-val" class="control"
+                                style="width: 90px; height: 38px; padding: 4px 8px; margin-bottom: 0;"
+                                onchange="calculateMonthly()">
                             </select>
                         </div>
                     </div>
@@ -437,15 +540,22 @@
                     </div>
 
                     <!-- Yearly Practice Analytics -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Yearly Practice Analytics</h3>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Yearly Practice
+                            Analytics</h3>
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; margin-bottom: 0;">Reporting Period Year:</label>
-                                <select id="dash-year-select" class="control" style="width: 110px; height: 38px; padding: 4px 8px; margin-bottom: 0;" onchange="changeDashboardYear(this.value)"></select>
+                                <label
+                                    style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; margin-bottom: 0;">Reporting
+                                    Period Year:</label>
+                                <select id="dash-year-select" class="control"
+                                    style="width: 110px; height: 38px; padding: 4px 8px; margin-bottom: 0;"
+                                    onchange="changeDashboardYear(this.value)"></select>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span id="dash-period-display" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); background: #f1f5f9; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; white-space: nowrap;">
+                                <span id="dash-period-display"
+                                    style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); background: #f1f5f9; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; white-space: nowrap;">
                                     Loading period...
                                 </span>
                             </div>
@@ -464,7 +574,9 @@
                         <div class="panel metric-card">
                             <h4>Est. HMRC Tax Liability</h4>
                             <p id="dash-total-tax" style="color: var(--warning);">0.00</p>
-                            <span id="dash-tax-rate" style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 4px;">0.0% effective rate</span>
+                            <span id="dash-tax-rate"
+                                style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 4px;">0.0%
+                                effective rate</span>
                         </div>
                         <div class="panel metric-card">
                             <h4>True Net (Post-Tax)</h4>
@@ -477,21 +589,27 @@
                     </div>
 
                     <div class="panel">
-                        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 16px;">Gross Income by Payment Method</h3>
-                        <div class="grid-metrics" id="payment-method-breakdown" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 0;"></div>
+                        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 16px;">Gross Income by Payment
+                            Method</h3>
+                        <div class="grid-metrics" id="payment-method-breakdown"
+                            style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 0;">
+                        </div>
                     </div>
 
                     <div class="panel">
-                        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 8px;" id="yearly-graph-title">Yearly Revenue Bar Chart</h3>
+                        <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 8px;" id="yearly-graph-title">
+                            Yearly Revenue Bar Chart</h3>
                         <div id="yearly-chart-box" style="margin-top: 16px;"></div>
                     </div>
 
                     <div class="panel">
                         <div class="tab-bar" style="margin-bottom: 20px;">
-                            <div class="tab active" id="dash-tab-active" onclick="switchDashboardTab('Active')">Active Caseload</div>
-                            <div class="tab" id="dash-tab-closed" onclick="switchDashboardTab('Closed')">Closed Case History</div>
+                            <div class="tab active" id="dash-tab-active" onclick="switchDashboardTab('Active')">Active
+                                Caseload</div>
+                            <div class="tab" id="dash-tab-closed" onclick="switchDashboardTab('Closed')">Closed Case
+                                History</div>
                         </div>
-                        
+
                         <div style="overflow-x: auto;">
                             <table id="dash-data-table">
                                 <thead>
@@ -516,19 +634,27 @@
                 <!-- SECTION: ALL CLIENTS DIRECTORY -->
                 <div id="view-clients" class="section-view">
                     <div class="panel">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                            <div class="tab-bar" id="directory-tab-container" style="margin-bottom: 0; border-bottom: none;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                            <div class="tab-bar" id="directory-tab-container"
+                                style="margin-bottom: 0; border-bottom: none;">
                                 <div class="tab" id="dir-tab-all" onclick="switchDirectoryTab('All')">All Records</div>
-                                <div class="tab active" id="dir-tab-active" onclick="switchDirectoryTab('Active')">Active Only</div>
-                                <div class="tab" id="dir-tab-closed" onclick="switchDirectoryTab('Closed')">Closed Only</div>
+                                <div class="tab active" id="dir-tab-active" onclick="switchDirectoryTab('Active')">
+                                    Active Only</div>
+                                <div class="tab" id="dir-tab-closed" onclick="switchDirectoryTab('Closed')">Closed Only
+                                </div>
                             </div>
-                            <div style="padding-bottom: 12px; flex: 1; min-width: 250px; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
-                                <input type="text" id="client-search-input" class="control" placeholder="Search by name or phone..." oninput="handleClientSearchInput()" style="width: 100%; max-width: 320px; display: inline-block; padding-left: 36px; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22/%3E%3Cline x1=%2221%22 y1=%2221%22 x2=%2216.65%22 y2=%2216.65%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: 10px center; background-size: 16px;">
-                                <button class="btn" style="flex-shrink: 0; white-space: nowrap;" onclick="openOnboarding()">+ Add Client</button>
+                            <div
+                                style="padding-bottom: 12px; flex: 1; min-width: 250px; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
+                                <input type="text" id="client-search-input" class="control"
+                                    placeholder="Search by name or phone..." oninput="handleClientSearchInput()"
+                                    style="width: 100%; max-width: 320px; display: inline-block; padding-left: 36px; background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22/%3E%3Cline x1=%2221%22 y1=%2221%22 x2=%2216.65%22 y2=%2216.65%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: 10px center; background-size: 16px;">
+                                <button class="btn" style="flex-shrink: 0; white-space: nowrap;"
+                                    onclick="openOnboarding()">+ Add Client</button>
                             </div>
                         </div>
                         <div style="overflow-x: auto;">
-                           <table id="dir-data-table">
+                            <table id="dir-data-table">
                                 <thead>
                                     <tr>
                                         <th>Client Name</th>
@@ -552,9 +678,10 @@
                     <div class="split-pane">
                         <div>
                             <div class="panel">
-                                
-                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Schedule New Appointment</h3>
-                                
+
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Schedule New
+                                    Appointment</h3>
+
                                 <div class="form-group">
                                     <label>Select Client *</label>
                                     <select id="apt-client" class="control" style="height: 42px;"></select>
@@ -594,25 +721,33 @@
                                     </select>
                                 </div>
 
-                                <button class="btn" style="width: 100%; margin-top: 12px;" onclick="submitAppointment()">Schedule Appointment</button>
+                                <button class="btn" style="width: 100%; margin-top: 12px;"
+                                    onclick="submitAppointment()">Schedule Appointment</button>
                             </div>
 
                             <div class="panel">
-                                <h3 id="agenda-date-title" style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Selected Day's Agenda</h3>
+                                <h3 id="agenda-date-title"
+                                    style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Selected Day's
+                                    Agenda</h3>
                                 <div id="daily-agenda-container"></div>
                             </div>
                         </div>
 
                         <div>
                             <div class="panel">
-                                
+
                                 <div class="calendar-header">
                                     <div style="display: flex; gap: 8px; align-items: center;">
-                                        <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(-1)">&lt; Prev</button>
-                                        <h3 id="calendar-month-year" style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0; white-space: nowrap;">Month Year</h3>
-                                        <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(1)">Next &gt;</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(-1)">&lt;
+                                            Prev</button>
+                                        <h3 id="calendar-month-year"
+                                            style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0; white-space: nowrap;">
+                                            Month Year</h3>
+                                        <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(1)">Next
+                                            &gt;</button>
                                     </div>
-                                    <button class="btn btn-secondary btn-sm" onclick="setCalendarToToday()">Today</button>
+                                    <button class="btn btn-secondary btn-sm"
+                                        onclick="setCalendarToToday()">Today</button>
                                 </div>
 
                                 <div class="calendar-month-grid" id="calendar-days-header">
@@ -626,25 +761,35 @@
                                 </div>
                                 <div class="calendar-month-grid" id="calendar-grid-body" style="margin-top: 4px;"></div>
 
-                                  <!-- Calendar Color Legend -->
-                                <div class="calendar-legend" style="display: flex; gap: 16px; align-items: center; justify-content: center; font-size: 0.85rem; margin: 12px 0; color: var(--text-muted); flex-wrap: wrap;">
+                                <!-- Calendar Color Legend -->
+                                <div class="calendar-legend"
+                                    style="display: flex; gap: 16px; align-items: center; justify-content: center; font-size: 0.85rem; margin: 12px 0; color: var(--text-muted); flex-wrap: wrap;">
                                     <span style="display: flex; align-items: center; gap: 6px;">
-                                        <span style="width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; display: inline-block;"></span> Online Session
+                                        <span
+                                            style="width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; display: inline-block;"></span>
+                                        Online Session
                                     </span>
                                     <span style="display: flex; align-items: center; gap: 6px;">
-                                        <span style="width: 10px; height: 10px; background: #06b6d4; border-radius: 50%; display: inline-block;"></span> Office Session
+                                        <span
+                                            style="width: 10px; height: 10px; background: #06b6d4; border-radius: 50%; display: inline-block;"></span>
+                                        Office Session
                                     </span>
                                     <span style="display: flex; align-items: center; gap: 6px;">
-                                        <span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; display: inline-block;"></span> Completed
+                                        <span
+                                            style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
+                                        Completed
                                     </span>
                                     <span style="display: flex; align-items: center; gap: 6px;">
-                                        <span style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block;"></span> Awaiting Log
+                                        <span
+                                            style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; display: inline-block;"></span>
+                                        Awaiting Log
                                     </span>
                                 </div>
                             </div>
 
                             <div class="panel">
-                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Upcoming Scheduled Sessions</h3>
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Upcoming
+                                    Scheduled Sessions</h3>
                                 <div id="upcoming-appointments-list"></div>
                             </div>
                         </div>
@@ -655,7 +800,8 @@
                     <div class="split-pane">
                         <div>
                             <div class="panel">
-                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Log New Expense</h3>
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Log New Expense
+                                </h3>
                                 <div class="form-layout">
                                     <div class="form-group">
                                         <label>Expense Date</label>
@@ -663,14 +809,16 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Amount *</label>
-                                        <input type="number" id="exp-amount" class="control" placeholder="0.00" step="0.01" min="0">
+                                        <input type="number" id="exp-amount" class="control" placeholder="0.00"
+                                            step="0.01" min="0">
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label>Description / Vendor *</label>
-                                    <input type="text" id="exp-description" class="control" placeholder="E.g., Therapy Room Hire, Web Hosting">
+                                    <input type="text" id="exp-description" class="control"
+                                        placeholder="E.g., Therapy Room Hire, Web Hosting">
                                 </div>
-                                
+
                                 <div class="form-layout">
                                     <div class="form-group">
                                         <label>Repeat Pattern</label>
@@ -689,33 +837,45 @@
                                 <div class="form-group" style="margin-top: 20px; margin-bottom: 20px;">
                                     <label>Expense Category *</label>
                                     <div style="display: flex; gap: 12px; align-items: center;">
-                                        <select id="exp-category" class="control" style="flex: 1; min-width: 0; height: 42px;"></select>
-                                        <button type="button" class="btn btn-secondary" onclick="triggerAddCategoryModal()" style="white-space: nowrap; height: 42px; padding: 0 16px;">+ Create Category</button>
+                                        <select id="exp-category" class="control"
+                                            style="flex: 1; min-width: 0; height: 42px;"></select>
+                                        <button type="button" class="btn btn-secondary"
+                                            onclick="triggerAddCategoryModal()"
+                                            style="white-space: nowrap; height: 42px; padding: 0 16px;">+ Create
+                                            Category</button>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label>Receipt Document (Optional PDF / Image)</label>
-                                    <input type="file" id="exp-receipt-file" class="control" accept="image/*,application/pdf">
+                                    <input type="file" id="exp-receipt-file" class="control"
+                                        accept="image/*,application/pdf">
                                 </div>
-                                <button class="btn btn-danger" style="width: 100%; margin-top: 12px;" onclick="submitExpense()">Commit Expense Record</button>
+                                <button class="btn btn-danger" style="width: 100%; margin-top: 12px;"
+                                    onclick="submitExpense()">Commit Expense Record</button>
                             </div>
                         </div>
 
                         <div>
                             <div class="panel">
-                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Practice Expense Ledger</h3>
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Practice Expense
+                                    Ledger</h3>
                                 <div class="form-layout" style="align-items: flex-end; margin-bottom: 20px;">
                                     <div class="form-group" style="margin-bottom: 0;">
                                         <label>Start Date</label>
-                                        <input type="date" id="exp-filter-start" class="control date-picker-ui" onchange="renderExpenses()">
+                                        <input type="date" id="exp-filter-start" class="control date-picker-ui"
+                                            onchange="renderExpenses()">
                                     </div>
                                     <div class="form-group" style="margin-bottom: 0;">
                                         <label>End Date</label>
-                                        <input type="date" id="exp-filter-end" class="control date-picker-ui" onchange="renderExpenses()">
+                                        <input type="date" id="exp-filter-end" class="control date-picker-ui"
+                                            onchange="renderExpenses()">
                                     </div>
-                                    <div class="form-group full-width" style="margin-bottom: 0; display: flex; gap: 8px;">
-                                        <button class="btn btn-secondary" onclick="clearExpenseFilters()" style="flex: 1; justify-content: center;">Reset Filters</button>
-                                        <button class="btn" onclick="printExpenseReport()" style="flex: 1.5; justify-content: center;">Export Report (PDF)</button>
+                                    <div class="form-group full-width"
+                                        style="margin-bottom: 0; display: flex; gap: 8px;">
+                                        <button class="btn btn-secondary" onclick="clearExpenseFilters()"
+                                            style="flex: 1; justify-content: center;">Reset Filters</button>
+                                        <button class="btn" onclick="printExpenseReport()"
+                                            style="flex: 1.5; justify-content: center;">Export Report (PDF)</button>
                                     </div>
                                 </div>
                                 <div style="overflow-x: auto;">
@@ -743,26 +903,32 @@
 
                 <div id="view-profile" class="section-view">
                     <div class="split-pane">
-                        
+
                         <div>
                             <div class="panel" style="max-height: 85vh; overflow-y: auto;">
-                                <button class="btn btn-secondary btn-sm" style="margin-bottom: 16px; display: inline-flex;" onclick="navigate('clients')">
+                                <button class="btn btn-secondary btn-sm"
+                                    style="margin-bottom: 16px; display: inline-flex;" onclick="navigate('clients')">
                                     &larr; Back to Directory
                                 </button>
 
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                    <h2 id="profile-client-name" style="font-size: 1.4rem; margin-bottom: 6px; word-break: break-all;">Client Name</h2>
-                                    <button class="btn btn-secondary btn-sm" onclick="openEditClientModal()" style="padding: 4px 8px; font-size: 0.75rem;">Edit Profile</button>
+                                    <h2 id="profile-client-name"
+                                        style="font-size: 1.4rem; margin-bottom: 6px; word-break: break-all;">Client
+                                        Name</h2>
+                                    <button class="btn btn-secondary btn-sm" onclick="openEditClientModal()"
+                                        style="padding: 4px 8px; font-size: 0.75rem;">Edit Profile</button>
                                 </div>
                                 <div id="profile-status-badge-container" style="margin-bottom: 20px;"></div>
-                                
+
                                 <div class="form-group">
                                     <label>Phone Number</label>
-                                    <p id="profile-phone" style="font-size: 0.95rem; font-weight: 500; word-break: break-all;"></p>
+                                    <p id="profile-phone"
+                                        style="font-size: 0.95rem; font-weight: 500; word-break: break-all;"></p>
                                 </div>
                                 <div class="form-group">
                                     <label>Email Address</label>
-                                    <p id="profile-email" style="font-size: 0.95rem; font-weight: 500; word-break: break-all;"></p>
+                                    <p id="profile-email"
+                                        style="font-size: 0.95rem; font-weight: 500; word-break: break-all;"></p>
                                 </div>
                                 <div class="form-group">
                                     <label>Date of Birth</label>
@@ -778,7 +944,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Start Date</label>
-                                    <p id="profile-start" style="font-size: 0.95rem; font-weight: 500; color: var(--text-muted);"></p>
+                                    <p id="profile-start"
+                                        style="font-size: 0.95rem; font-weight: 500; color: var(--text-muted);"></p>
                                 </div>
                                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
                                 <div class="form-group">
@@ -787,11 +954,13 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Net Profit Generated</label>
-                                    <p id="profile-net-profit" style="font-size: 1.4rem; font-weight: 700; color: var(--success);">0.00</p>
+                                    <p id="profile-net-profit"
+                                        style="font-size: 1.4rem; font-weight: 700; color: var(--success);">0.00</p>
                                 </div>
                                 <div class="form-group">
                                     <label>Outstanding Arrears</label>
-                                    <p id="profile-outstanding-balance" style="font-size: 1.4rem; font-weight: 700; color: var(--danger);">0.00</p>
+                                    <p id="profile-outstanding-balance"
+                                        style="font-size: 1.4rem; font-weight: 700; color: var(--danger);">0.00</p>
                                 </div>
                                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
                                 <div class="form-group">
@@ -799,19 +968,21 @@
                                     <div id="contract-status-container" style="margin-top: 8px;"></div>
                                 </div>
                                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;">
-                                
+
                                 <div id="profile-case-action-container"></div>
                             </div>
                         </div>
 
                         <div>
                             <div class="panel" id="client-upcoming-sessions-panel" style="background-color: #f8fafc;">
-                                <h3 style="font-size: 1.05rem; margin-bottom: 12px; font-weight: 600;">Upcoming Scheduled Session</h3>
+                                <h3 style="font-size: 1.05rem; margin-bottom: 12px; font-weight: 600;">Upcoming
+                                    Scheduled Session</h3>
                                 <div id="client-upcoming-list"></div>
                             </div>
 
                             <div class="panel" id="session-logger-panel">
-                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Record New Session Log</h3>
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Record New
+                                    Session Log</h3>
                                 <div class="form-layout">
                                     <div class="form-group">
                                         <label>Session Date</label>
@@ -825,7 +996,8 @@
                                         <label>Location Profile</label>
                                         <select id="session-location" class="control">
                                             <option value="Online">Online Session</option>
-                                            <option value="Office">Office Session (Applies Configured Default Cost)</option>
+                                            <option value="Office">Office Session (Applies Configured Default Cost)
+                                            </option>
                                         </select>
                                     </div>
                                     <div class="form-group">
@@ -846,23 +1018,35 @@
                                     </div>
                                     <div class="form-group full-width">
                                         <label>Clinical & Follow-up Notes</label>
-                                        <textarea id="session-notes" class="control" rows="5" placeholder="Document progress details, themes discussed, and objective benchmarks..."></textarea>
+                                        <textarea id="session-notes" class="control" rows="5"
+                                            placeholder="Document progress details, themes discussed, and objective benchmarks..."></textarea>
                                     </div>
                                 </div>
-                                <button class="btn" style="width: 100%; justify-content: center;" onclick="submitSession()">Commit Session Log</button>
+                                <button class="btn" style="width: 100%; justify-content: center;"
+                                    onclick="submitSession()">Commit Session Log</button>
                             </div>
-                            
-                            <div class="panel" id="closed-case-notice" style="display: none; border-left: 4px solid var(--charcoal); background-color: #f8fafc;">
-                                <h3 style="color: var(--charcoal); font-size: 1rem; font-weight: 700; margin-bottom: 6px;">Case Closed / Read-Only Mode</h3>
-                                <p style="font-size: 0.9rem; color: var(--text-muted);">Reopen this case file using the sidebar action button to record new sessions or compile financial billing logs.</p>
-                                <div id="closed-case-reason-box" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border);">
-                                    <strong style="font-size: 0.85rem; color: var(--charcoal); display: block; margin-bottom: 4px;">Reason for Closure:</strong>
-                                    <p id="closed-case-reason-text" style="font-size: 0.9rem; color: var(--text-main); font-style: italic; line-height: 1.4;"></p>
+
+                            <div class="panel" id="closed-case-notice"
+                                style="display: none; border-left: 4px solid var(--charcoal); background-color: #f8fafc;">
+                                <h3
+                                    style="color: var(--charcoal); font-size: 1rem; font-weight: 700; margin-bottom: 6px;">
+                                    Case Closed / Read-Only Mode</h3>
+                                <p style="font-size: 0.9rem; color: var(--text-muted);">Reopen this case file using the
+                                    sidebar action button to record new sessions or compile financial billing logs.</p>
+                                <div id="closed-case-reason-box"
+                                    style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border);">
+                                    <strong
+                                        style="font-size: 0.85rem; color: var(--charcoal); display: block; margin-bottom: 4px;">Reason
+                                        for Closure:</strong>
+                                    <p id="closed-case-reason-text"
+                                        style="font-size: 0.9rem; color: var(--text-main); font-style: italic; line-height: 1.4;">
+                                    </p>
                                 </div>
                             </div>
 
                             <div class="panel">
-                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Session History Timeline</h3>
+                                <h3 style="font-size: 1.05rem; margin-bottom: 16px; font-weight: 600;">Session History
+                                    Timeline</h3>
                                 <div id="timeline-container" class="timeline-box"></div>
                             </div>
                         </div>
@@ -872,13 +1056,15 @@
 
                 <div id="view-onboard" class="section-view">
                     <div class="panel" style="max-width: 600px; margin: 0 auto;">
-                        <h3 style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 600;">Onboard New Client Record</h3>
-                        
+                        <h3 style="font-size: 1.2rem; margin-bottom: 20px; font-weight: 600;">Onboard New Client Record
+                        </h3>
+
                         <div class="form-group">
                             <label>Full Client Name *</label>
-                            <input type="text" id="new-name" class="control" placeholder="E.g., Jane Smith" oninput="capitalizeNameInput(this)">
+                            <input type="text" id="new-name" class="control" placeholder="E.g., Jane Smith"
+                                oninput="capitalizeNameInput(this)">
                         </div>
-                        
+
                         <div class="form-layout">
                             <div class="form-group">
                                 <label>Phone Number *</label>
@@ -897,7 +1083,8 @@
                             </div>
                             <div class="form-group">
                                 <label>Occupation (Optional)</label>
-                                <input type="text" id="new-occupation" class="control" placeholder="E.g., Teacher, Accountant">
+                                <input type="text" id="new-occupation" class="control"
+                                    placeholder="E.g., Teacher, Accountant">
                             </div>
                         </div>
 
@@ -911,10 +1098,13 @@
                                 <input type="date" id="new-start" class="control date-picker-ui">
                             </div>
                         </div>
-                        
+
                         <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
-                            <button class="btn btn-secondary" style="flex: 1; min-width: 100px; justify-content: center;" type="button" onclick="navigate('dashboard')">Cancel</button>
-                            <button class="btn" style="flex: 2; min-width: 200px; justify-content: center;" type="button" onclick="saveClientProfile()">Create & Open Profile</button>
+                            <button class="btn btn-secondary"
+                                style="flex: 1; min-width: 100px; justify-content: center;" type="button"
+                                onclick="navigate('dashboard')">Cancel</button>
+                            <button class="btn" style="flex: 2; min-width: 200px; justify-content: center;"
+                                type="button" onclick="saveClientProfile()">Create & Open Profile</button>
                         </div>
                     </div>
                 </div>
@@ -922,9 +1112,12 @@
                 <!-- SECTION: CONFIGURATION & DATA (AUTO-SAVING & AUTO-SYNCING) -->
                 <div id="view-config" class="section-view">
                     <div class="panel" style="max-width: 600px;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Practice Setup Configurations</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Changes are saved and synced automatically as you edit.</p>
-                        
+                        <h3
+                            style="font-size: 1.15rem; margin-bottom: 20px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                            Practice Setup Configurations</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Changes are saved
+                            and synced automatically as you edit.</p>
+
                         <div class="form-layout">
                             <div class="form-group">
                                 <label>Country / Region</label>
@@ -948,17 +1141,20 @@
                         <div class="form-layout">
                             <div class="form-group full-width">
                                 <label>Practice Name</label>
-                                <input type="text" id="set-practice-name" class="control" oninput="savePracticeSettings()">
+                                <input type="text" id="set-practice-name" class="control"
+                                    oninput="savePracticeSettings()">
                             </div>
                         </div>
                         <div class="form-layout">
                             <div class="form-group">
                                 <label>Default Hourly Rate</label>
-                                <input type="number" id="set-default-rate" class="control" oninput="savePracticeSettings()">
+                                <input type="number" id="set-default-rate" class="control"
+                                    oninput="savePracticeSettings()">
                             </div>
                             <div class="form-group">
                                 <label>Default Office Cost (/hr)</label>
-                                <input type="number" id="set-default-office-cost" class="control" oninput="savePracticeSettings()">
+                                <input type="number" id="set-default-office-cost" class="control"
+                                    oninput="savePracticeSettings()">
                             </div>
                         </div>
                         <div class="form-layout">
@@ -976,7 +1172,8 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="form-layout" style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
+                        <div class="form-layout"
+                            style="border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px;">
                             <div class="form-group">
                                 <label>Reporting Period Start Month</label>
                                 <select id="set-reporting-month" class="control" onchange="savePracticeSettings()">
@@ -996,40 +1193,57 @@
                             </div>
                             <div class="form-group">
                                 <label>Reporting Period Start Day</label>
-                                <input type="number" id="set-reporting-day" class="control" min="1" max="31" oninput="savePracticeSettings()">
+                                <input type="number" id="set-reporting-day" class="control" min="1" max="31"
+                                    oninput="savePracticeSettings()">
                             </div>
                         </div>
                     </div>
 
                     <div class="panel" style="max-width: 600px;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Backup & Data Archive</h3>
+                        <h3
+                            style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                            Backup & Data Archive</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-                            Because this software operates entirely locally inside your browser, download a data backup file periodically. We recommend downloading the complete ZIP backup archive.
+                            Because this software operates entirely locally inside your browser, download a data backup
+                            file periodically. We recommend downloading the complete ZIP backup archive.
                         </p>
                         <div style="display: flex; flex-direction: column; gap: 16px;">
-                            <div><button class="btn" style="width: 100%; justify-content: center;" onclick="exportDatabase()">Download CRM Database Backup (.json)</button></div>
-                            <div><button class="btn btn-charcoal" style="width: 100%; justify-content: center; background-color: #0f172a;" onclick="exportAllAsZip()">Download Complete ZIP Document Archive (.zip)</button></div>
+                            <div><button class="btn" style="width: 100%; justify-content: center;"
+                                    onclick="exportDatabase()">Download CRM Database Backup (.json)</button></div>
+                            <div><button class="btn btn-charcoal"
+                                    style="width: 100%; justify-content: center; background-color: #0f172a;"
+                                    onclick="exportAllAsZip()">Download Complete ZIP Document Archive (.zip)</button>
+                            </div>
                             <hr style="border:0; border-top: 1px solid var(--border);">
                             <div>
-                                <label style="margin-bottom: 8px; font-weight: 600; display: block;">Restore Database from Backup File</label>
-                                <input type="file" id="import-file" style="display: none;" accept=".json" onchange="importDatabase(event)">
-                                <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="document.getElementById('import-file').click()">Import CRM Database (.json)</button>
+                                <label style="margin-bottom: 8px; font-weight: 600; display: block;">Restore Database
+                                    from Backup File</label>
+                                <input type="file" id="import-file" style="display: none;" accept=".json"
+                                    onchange="importDatabase(event)">
+                                <button class="btn btn-secondary" style="width: 100%; justify-content: center;"
+                                    onclick="document.getElementById('import-file').click()">Import CRM Database
+                                    (.json)</button>
                             </div>
                         </div>
                     </div>
 
                     <div class="panel" style="max-width: 600px; border: 1.5px solid #2563eb;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid var(--border); padding-bottom: 8px;">UK HMRC Self-Assessment Tax Exporter</h3>
+                        <h3
+                            style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                            UK HMRC Self-Assessment Tax Exporter</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
                             Compile and download a ready-to-file tax archive for any selected reporting period.
                         </p>
                         <div class="form-layout" style="align-items: flex-end; margin-bottom: 8px; gap: 12px;">
                             <div class="form-group" style="margin-bottom: 0;">
                                 <label style="font-weight: 600;">Choose Target Reporting Period</label>
-                                <select id="tax-year-select" class="control" style="height: 42px; background-color: #ffffff;"></select>
+                                <select id="tax-year-select" class="control"
+                                    style="height: 42px; background-color: #ffffff;"></select>
                             </div>
                             <div class="form-group" style="margin-bottom: 0;">
-                                <button class="btn" style="width: 100%; height: 42px; background-color: #1e3a8a; justify-content: center;" onclick="exportTaxYearArchive()">Export Tax Year ZIP</button>
+                                <button class="btn"
+                                    style="width: 100%; height: 42px; background-color: #1e3a8a; justify-content: center;"
+                                    onclick="exportTaxYearArchive()">Export Tax Year ZIP</button>
                             </div>
                         </div>
                     </div>
@@ -1039,50 +1253,75 @@
                 <div id="view-account" class="section-view">
                     <!-- GOOGLE ACCOUNT PANEL -->
                     <div class="panel" style="max-width: 600px; border: 1.5px solid #16a34a;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
-                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #14532d; margin-bottom: 0;">Google Account</h3>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: #14532d; margin-bottom: 0;">Google
+                                Account</h3>
                             <div id="google-status" style="font-size: 0.9rem; font-weight: 600;">⚪ Not connected</div>
                         </div>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                            Your practice data syncs seamlessly and automatically to your connected Google Drive account in the background.
+                            Your practice data syncs seamlessly and automatically to your connected Google Drive account
+                            in the background.
                         </p>
-                        <div id="google-user-email" style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 12px; font-weight: 600; display: none;"></div>
-                        <div id="google-sync-indicator" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;"></div>
-                        
-                        <button id="google-connect-btn" class="btn" style="width: 100%; justify-content: center; background-color: #16a34a;" onclick="gateGoogleSignIn()">Connect Google Account</button>
+                        <div id="google-user-email"
+                            style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 12px; font-weight: 600; display: none;">
+                        </div>
+                        <div id="google-sync-indicator"
+                            style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; min-height: 18px;">
+                        </div>
+
+                        <button id="google-connect-btn" class="btn"
+                            style="width: 100%; justify-content: center; background-color: #16a34a;"
+                            onclick="gateGoogleSignIn()">Connect Google Account</button>
                     </div>
 
                     <!-- PASSKEY SECURITY PANEL -->
                     <div class="panel" style="max-width: 600px; border: 1.5px solid var(--accent);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
-                            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--accent); margin-bottom: 0;">Passkey Security</h3>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 12px;">
+                            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--accent); margin-bottom: 0;">
+                                Passkey Security</h3>
                             <label class="switch">
-                                <input type="checkbox" id="passkey-toggle-checkbox" onchange="togglePasskeySetting(this)">
+                                <input type="checkbox" id="passkey-toggle-checkbox"
+                                    onchange="togglePasskeySetting(this)">
                                 <span class="slider"></span>
                             </label>
                         </div>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                            Protect your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows Hello). Toggle on to enable or register.
+                            Protect your workspace behind your device's biometric scanner (Touch ID, Face ID, or Windows
+                            Hello). Toggle on to enable or register.
                         </p>
-                        <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 0; font-weight: 600;">⚪ Passkey security disabled</div>
+                        <div id="passkey-status-text" style="font-size: 0.9rem; margin-bottom: 0; font-weight: 600;">⚪
+                            Passkey security disabled</div>
                     </div>
 
                     <!-- LOG OUT SESSION -->
                     <div class="panel" style="max-width: 600px; border-color: var(--danger);">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid var(--border); padding-bottom: 8px;">Log Out Session</h3>
+                        <h3
+                            style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                            Log Out Session</h3>
                         <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-                            This will disconnect your Google Account (if synced), lock the application, and require you to sign in again to access your practice data.
+                            This will disconnect your Google Account (if synced), lock the application, and require you
+                            to sign in again to access your practice data.
                         </p>
-                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="signOutGoogle(false)">Log Out & Disconnect</button>
+                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;"
+                            onclick="signOutGoogle(false)">Log Out & Disconnect</button>
                     </div>
 
                     <!-- DANGER ZONE: CLEAR ALL DATA -->
-                    <div class="panel" style="max-width: 600px; border: 1.5px solid var(--danger); background-color: #fef2f2;">
-                        <h3 style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid #fecaca; padding-bottom: 8px;">⚠️ Danger Zone: Clear All User Data</h3>
-                        <p style="font-size: 0.9rem; color: #991b1b; margin-bottom: 16px; line-height: 1.5; font-weight: 500;">
-                            <strong>WARNING:</strong> This action is completely irreversible. Clicking this button will permanently erase all local data. If connected to a Google Account, your cloud backup will also be erased. Make sure you have downloaded a local backup file first!
+                    <div class="panel"
+                        style="max-width: 600px; border: 1.5px solid var(--danger); background-color: #fef2f2;">
+                        <h3
+                            style="font-size: 1.15rem; margin-bottom: 12px; font-weight: 700; color: var(--danger); border-bottom: 1px solid #fecaca; padding-bottom: 8px;">
+                            ⚠️ Danger Zone: Clear All User Data</h3>
+                        <p
+                            style="font-size: 0.9rem; color: #991b1b; margin-bottom: 16px; line-height: 1.5; font-weight: 500;">
+                            <strong>WARNING:</strong> This action is completely irreversible. Clicking this button will
+                            permanently erase all local data. If connected to a Google Account, your cloud backup will
+                            also be erased. Make sure you have downloaded a local backup file first!
                         </p>
-                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;" onclick="wipeAllData()">Clear All Data & Factory Reset</button>
+                        <button class="btn btn-danger" style="width: 100%; justify-content: center; padding: 12px;"
+                            onclick="wipeAllData()">Clear All Data & Factory Reset</button>
                     </div>
                 </div>
 
@@ -1097,4 +1336,5 @@
     <script src="js/calendar.js"></script>
     <script src="js/clients.js"></script>
 </body>
+
 </html>
