@@ -469,23 +469,7 @@ function installPWA() {
     });
 }
 
-// --- AUTO-UPDATE VERSION FROM PACKAGE.JSON ---
-async function fetchAndApplyVersion() {
-    try {
-        const response = await fetch('package.json');
-        const data = await response.json();
-        const versionEl = document.getElementById('version-label');
-        if (versionEl && data.version) {
-            versionEl.textContent = `v${data.version}`;
-        }
-    } catch (error) {
-        console.warn('Could not load version from package.json:', error);
-    }
-}
-
 window.onload = async function () {
-    // Call the version fetcher here
-    fetchAndApplyVersion();
 
     if (sessionStorage.getItem('just_logged_out')) {
         sessionStorage.removeItem('just_logged_out');
